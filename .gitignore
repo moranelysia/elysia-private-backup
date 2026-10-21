@@ -1,0 +1,80 @@
+# Elysia private source archive: keep reproducible source, exclude private/runtime/generated data.
+
+# Large external tools, references, and obsolete companion copies
+/ComfyUI/
+/zhuochong/
+/cyrene-源码/
+/.cache/
+/_温度测试/
+/_测试/
+/小窗口.py
+/验收成功.txt
+
+# Machine-specific or personal root files
+/elysia.config.json
+/给墨染.txt
+
+# Dependencies, generated output, local models, caches
+**/node_modules/
+**/.cache/
+**/.venv/
+**/__pycache__/
+**/dist/
+**/out/
+**/build/
+/爱莉希雅/local-models/
+/爱莉希雅/renderer/models/*
+!/爱莉希雅/renderer/models/elysia-v13/
+!/爱莉希雅/renderer/models/elysia-v13/**
+
+# Old experiments and machine-local helpers at the project root
+/爱莉希雅/.npmrc
+/爱莉希雅/_多写测试/
+/爱莉希雅/_写文件测试/
+/爱莉希雅/a.txt
+/爱莉希雅/b.txt
+/爱莉希雅/hanshu.js
+/爱莉希雅/starfall.c
+/爱莉希雅/stars.c
+/爱莉希雅/下载内核.cmd
+/爱莉希雅/今天下午.txt
+
+# Private runtime data and credentials
+/爱莉希雅/记忆/
+/爱莉希雅/脑/钥匙.txt
+/爱莉希雅/脑/钥匙.json
+**/.env
+**/.env.*
+!**/.env.example
+
+# Art workspace: archive references plus the current editable v13 source only
+/爱莉希雅/美术/*
+!/爱莉希雅/美术/官方设定/
+!/爱莉希雅/美术/官方设定/**
+!/爱莉希雅/美术/画风参考/
+!/爱莉希雅/美术/画风参考/**
+!/爱莉希雅/美术/Live2D/
+/爱莉希雅/美术/Live2D/*
+!/爱莉希雅/美术/Live2D/官方参考/
+!/爱莉希雅/美术/Live2D/官方参考/**
+!/爱莉希雅/美术/Live2D/拆分方案/
+!/爱莉希雅/美术/Live2D/拆分方案/**
+!/爱莉希雅/美术/Live2D/拆分工作/
+/爱莉希雅/美术/Live2D/拆分工作/*
+!/爱莉希雅/美术/Live2D/拆分工作/SeeThrough-v13-原生头饰/
+!/爱莉希雅/美术/Live2D/拆分工作/SeeThrough-v13-原生头饰/**
+
+# Archives, logs, and temporary editor files
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.zip
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+

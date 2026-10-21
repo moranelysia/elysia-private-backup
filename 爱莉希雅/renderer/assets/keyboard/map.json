@@ -1,0 +1,105 @@
+{
+  "说明": "按键名 → 图片路径。页面里按下某个键就取对应的图。",
+  "映射": {
+    "1": {
+      "图标": "keys/1.png",
+      "手": "hands/1.png"
+    },
+    "2": {
+      "图标": "keys/2.png",
+      "手": "hands/2.png"
+    },
+    "3": {
+      "图标": "keys/3.png",
+      "手": "hands/3.png"
+    },
+    "4": {
+      "图标": "keys/4.png",
+      "手": "hands/4.png"
+    },
+    "5": {
+      "图标": "keys/5.png",
+      "手": "hands/5.png"
+    },
+    "Shift": {
+      "图标": "keys/Shift.png",
+      "手": "hands/Shift.png"
+    },
+    "Ctrl": {
+      "图标": "keys/Ctrl.png",
+      "手": "hands/Ctrl.png"
+    },
+    "Alt": {
+      "图标": "keys/Alt.png",
+      "手": "hands/Alt.png"
+    },
+    "Space": {
+      "图标": "keys/Space.png",
+      "手": "hands/Space.png"
+    },
+    "Enter": {
+      "图标": "keys/Enter.png",
+      "手": "hands/Enter.png"
+    },
+    "Z": {
+      "图标": "keys/Z.png",
+      "手": "hands/Z.png"
+    },
+    "X": {
+      "图标": "keys/X.png",
+      "手": "hands/X.png"
+    },
+    "C": {
+      "图标": "keys/C.png",
+      "手": "hands/C.png"
+    },
+    "V": {
+      "图标": "keys/V.png",
+      "手": "hands/V.png"
+    },
+    "B": {
+      "图标": "keys/B.png",
+      "手": "hands/B.png"
+    },
+    "A": {
+      "图标": "keys/A.png",
+      "手": "hands/A.png"
+    },
+    "S": {
+      "图标": "keys/S.png",
+      "手": "hands/S.png"
+    },
+    "D": {
+      "图标": "keys/D.png",
+      "手": "hands/D.png"
+    },
+    "F": {
+      "图标": "keys/F.png",
+      "手": "hands/F.png"
+    },
+    "G": {
+      "图标": "keys/G.png",
+      "手": "hands/G.png"
+    },
+    "Q": {
+      "图标": "keys/Q.png",
+      "手": "hands/Q.png"
+    },
+    "W": {
+      "图标": "keys/W.png",
+      "手": "hands/W.png"
+    },
+    "E": {
+      "图标": "keys/E.png",
+      "手": "hands/E.png"
+    },
+    "R": {
+      "图标": "keys/R.png",
+      "手": "hands/R.png"
+    },
+    "T": {
+      "图标": "keys/T.png",
+      "手": "hands/T.png"
+    }
+  }
+}

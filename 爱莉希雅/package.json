@@ -1,0 +1,80 @@
+{
+  "name": "elysia",
+  "version": "0.2.2",
+  "description": "Elysia - a desktop companion",
+  "author": "Local build",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:clean": "set ELYSIA_USE_USER_DATA=1&& electron .",
+    "test:diary": "node tools/测记忆日记.cjs",
+    "test:emotion": "node tools/测情感状态.cjs",
+    "test:performance": "node tools/测表现事件.cjs",
+    "test:proactive": "node tools/测主动陪伴调度.cjs && node tools/测主动陪伴生成.cjs && node tools/测主动陪伴去重.cjs && node tools/测主动陪伴接入.cjs",
+    "test:style-feedback": "node tools/测表达反馈.cjs && node tools/测表达反馈接入.cjs",
+    "test:time": "node tools/测时间意识.cjs",
+    "test:tools": "node tools/测工具可信.cjs",
+    "pack": "electron-builder --dir",
+    "dist:setup": "electron-builder --win nsis",
+    "dist:portable": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^44.4.3",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "image-size": "^2.0.4",
+    "node-global-key-listener": "^0.3.0",
+    "pixi-live2d-display": "^0.5.0-beta",
+    "pixi.js": "^7.4.3",
+    "sharp": "^0.35.4"
+  },
+  "build": {
+    "appId": "com.elysia.desktop",
+    "productName": "爱莉希雅",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "package.json",
+      "main.js",
+      "preload.js",
+      "preload-账本.js",
+      "main/**/*",
+      "renderer/**/*",
+      "脑/**/*",
+      "!脑/人格/**/*",
+      "!脑/钥匙.txt",
+      "!脑/钥匙.json",
+      "templates/elysia.clean.json",
+      "tools/bridge.cjs",
+      "tools/画图标.cjs",
+      "desktop-icon.ico",
+      "icon.ico",
+      "!node_modules/node-global-key-listener/bin/MacKeyServer",
+      "!node_modules/node-global-key-listener/bin/X11KeyServer"
+    ],
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "爱莉希雅-迁移版",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Elysia-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Elysia-Portable-${version}-${arch}.${ext}"
+    }
+  }
+}

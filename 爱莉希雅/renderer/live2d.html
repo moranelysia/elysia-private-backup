@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; img-src 'self' data: file:; style-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>爱莉希雅 Live2D</title>
+    <link rel="stylesheet" href="live2d.css" />
+  </head>
+  <body>
+    <canvas id="live2d" title="左键拖动位置，右键拖动缩放"></canvas>
+    <div id="加载状态">正在唤醒身体…</div>
+    <script src="live2d-bootstrap.js"></script>
+    <script src="lib/live2dcubismcore.min.js"></script>
+    <script src="lib/pixi.min.js"></script>
+    <script src="lib/pixi-live2d-display.min.js"></script>
+    <script src="live2d.js"></script>
+  </body>
+</html>

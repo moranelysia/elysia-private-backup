@@ -1,0 +1,2866 @@
+/* style.css —— 她的窗口长什么样
+ *
+ * 【配色】底色是很淡的粉白（不是纯白，纯白太冷）。
+ *   她的气泡和他的气泡**都是白色半透明**的，靠透明度和左右位置分开。
+ *   （2026-10-07 改的：原来是两块不透明的粉和淡紫，他要"白色半透明气泡"。）
+ *
+ * 【背景】聊天一张图、干活一张图，按模式换。文件名就是插槽，见下面 body。
+ *
+ * 为什么字号定在 15px：聊天窗口不大，字太大一次看不了几句，
+ * 太小又费眼。15px 配 1.7 的行高，一段话读下来最舒服。
+ *
+ * 类名用中文是故意的 —— 你以后打开这个文件，一眼能看出哪块管哪块。
+ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  /* 背景图**不在这儿了** —— 挪到下面 .背景层 那两条规则里去了。
+   * 为的是能做淡入淡出：两张图叠着交叉过渡，一张 body 背景是做不到的
+   * （background-image 根本不能过渡）。见 index.html 开头那段注释。
+   *
+   * 这儿只留一个 position: relative —— 给那两个背景层当"参照物"，
+   * 不然 absolute 的它们不知道该铺满谁。 */
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  color: #453542;
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  overflow: hidden;
+  /* 窗口没有系统边框了，形状全靠这里画 —— 四个角圆一点，
+   * 不然会是一个生硬的方块贴在桌面上。 */
+  border: 1px solid #f6dbe7;
+  border-radius: 8px;
+}
+
+/* 【2026-10-09 加的：界面文字默认不许选】
+ *   他提的："这个界面里的文字是可以被选中的（可以复制那种）"。
+ *   两件事逼着必须治它：
+ *     1. 顶栏是拖动区（见下面 .顶栏 的 -webkit-app-region: drag）——
+ *        在拖动区里按下鼠标，浏览器会当成"开始选文字"，
+ *        于是一拖窗口就拉出一片蓝，两边打架。
+ *     2. 一个正常窗口，界面上的字本来就不该能选（按钮、状态栏、标签）。
+ *
+ *   ⚠ 【为什么不写在 body 上 —— 同一天改的】
+ *     第一版写的是 `body { user-select: none }`，写完他报"窗口不能拖动"。
+ *     顶栏是拖动区，而它就在 body 底下 —— 按理说 user-select 不该影响
+ *     窗口拖动的判定，但那是当时唯一动过鼠标行为的地方。
+ *     所以改成**给界面部件点名**：范围小、看得见，要排查也好排查。
+ *     真凶是不是它，得等他再拖一次才知道。
+ *
+ *   ⚠ 这里加新界面时记得把容器名字补进来 —— 漏了的那块会突然能选。 */
+.顶栏,
+.侧栏,
+.小状态栏,
+.待发,
+.任务抽屉,
+.输入区,
+.更早,
+.开场 {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 这些地方的字**要**能选：输入框（不然没法编辑）、
+ * 她说的话（他可能要复制）、任务内容（他要抄作业）。
+ * 开场白不在这一列 —— 他明确说了不要能选。 */
+textarea,
+input,
+.气泡,
+.任务 {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ============ 两层背景图 ============
+ *
+ * 聊天一张、干活一张，**叠在一起**，靠透明度交叉淡入淡出。
+ * 换图不用改代码 —— 文件名就是插槽：
+ *   renderer\assets\背景\聊天.jpg
+ *   renderer\assets\背景\干活.jpg
+ *
+ * 【为什么 z-index 是 -1】
+ *   它俩是铺在底下的，得待在顶栏、侧栏、气泡**后面**。
+ *   CSS 的层叠顺序里，负 z-index 正好排在
+ *   "父元素自己的背景之上、正常内容之下" —— 就是我们要的那一格。
+ *
+ * 【为什么用 absolute 而不是 fixed】
+ *   fixed 的元素**不受父级 overflow 裁切**，四个角会捅到窗口圆角外面去。
+ *   absolute 会被 body 那圈 overflow:hidden 裁住，圆角就是圆的。
+ */
+.背景层 {
+  position: absolute;
+  inset: 0; /* 上下左右都贴 0，等于铺满 body */
+  z-index: -1;
+  border-radius: 8px;
+  background-size: cover; /* 铺满；宁可裁掉边角，也不留白边 */
+  background-repeat: no-repeat;
+  pointer-events: none; /* 纯装饰，不许挡住点击 */
+  /* 淡入淡出就靠这一行。
+     0.55 秒是手感：再短还是像硬切，再长会让人觉得界面卡了一下。 */
+  transition: opacity 0.55s ease;
+}
+
+.背景层.聊天那张 {
+  background-image: url('assets/背景/聊天.jpg');
+  background-position: center 38%;
+  background-color: #fff7fa; /* 图还没加载出来那一瞬间的底色 */
+  opacity: 1;
+}
+
+.背景层.干活那张 {
+  background-image: url('assets/背景/干活.jpg');
+  background-position: center 42%;
+  opacity: 0; /* 平时藏着，切到干活模式才浮上来 */
+}
+
+/* 学习那张是 2026-10-07 后补的（他自己挑的图：她比了个取景框的手势）。
+   它的构图跟另外两张不太一样 —— 主体偏中下，所以位置调到 50%。 */
+.背景层.学习那张 {
+  background-image: url('assets/背景/学习.jpg');
+  background-position: center 50%;
+  opacity: 0;
+}
+
+/* 下面这一组就是"切换"本身：
+   该退的退下去、该浮的浮上来 —— 同时进行，看着就是淡过去。
+
+   【为什么每种模式都要把"另外两张"显式写成 0】
+   因为 opacity 是会**累积**的：从学习切到干活时，如果只写
+   "干活那张变 1"，学习那张还停在 1 上没动 —— 两张图会叠着，
+   屏幕上是一片糊。所以每一条都得把另外两张摁下去。 */
+body.干活 .背景层.聊天那张 {
+  opacity: 0;
+}
+
+body.干活 .背景层.干活那张 {
+  opacity: 1;
+}
+
+body.干活 .背景层.学习那张 {
+  opacity: 0;
+}
+
+body.学习 .背景层.聊天那张 {
+  opacity: 0;
+}
+
+body.学习 .背景层.干活那张 {
+  opacity: 0;
+}
+
+body.学习 .背景层.学习那张 {
+  opacity: 1;
+}
+
+/* ============ Live2D 双击快聊 ============
+ * 这是同一个聊天页的精简外观，不另建对话、不另存记忆。
+ * 平时 body 没有这个类；只有从 Live2D 双击叫出时才临时启用。 */
+body.快聊模式 {
+  border-color: rgba(238, 180, 207, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 248, 252, 0.97);
+  box-shadow: 0 12px 34px rgba(108, 65, 89, 0.2);
+}
+
+body.快聊模式 .背景层 { opacity: 0 !important; }
+body.快聊模式 .侧栏,
+body.快聊模式 .学习状态板,
+body.快聊模式 .小状态栏,
+body.快聊模式 .更早,
+body.快聊模式 .任务抽屉,
+body.快聊模式 .文件抽屉,
+body.快聊模式 .工作索引抽屉 { display: none !important; }
+
+body.快聊模式 .顶栏 {
+  min-height: 42px;
+  padding: 6px 9px;
+  border-radius: 14px 14px 0 0;
+  background: rgba(255, 244, 249, 0.95);
+}
+body.快聊模式 .头像 { width: 25px; height: 25px; }
+body.快聊模式 .名字 { font-size: 13px; }
+body.快聊模式 .状态 { font-size: 10px; }
+body.快聊模式 .按钮们 > :not(#收起) { display: none; }
+body.快聊模式 #收起 { display: block; font-size: 16px; }
+
+body.快聊模式 .聊天区 {
+  padding: 10px 10px 5px;
+  gap: 7px;
+}
+body.快聊模式 .一条 {
+  max-width: 94%;
+  font-size: 13px;
+  line-height: 1.55;
+}
+body.快聊模式 .一条.她的 { padding-left: 30px; }
+body.快聊模式 .一条.她的::before { width: 23px; height: 23px; }
+body.快聊模式 .气泡 { padding: 7px 10px; border-radius: 12px; }
+body.快聊模式 .时间,
+body.快聊模式 .重播声音,
+body.快聊模式 .表达反馈按钮 { display: none !important; }
+body.快聊模式 .开场 { padding: 16px 12px; }
+body.快聊模式 .开场头像 { width: 46px; height: 46px; }
+body.快聊模式 .开场的小字 { display: none; }
+
+body.快聊模式 .输入区 {
+  gap: 6px;
+  padding: 7px 8px 8px;
+  background: rgba(255, 249, 252, 0.96);
+}
+body.快聊模式 #输入 {
+  min-height: 34px;
+  max-height: 72px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+body.快聊模式 #附件按钮,
+body.快聊模式 #通话开关,
+body.快聊模式 #麦克风,
+body.快聊模式 #上下文环 { display: none !important; }
+body.快聊模式 #发送 { width: 34px; height: 34px; }
+
+/* ============ 身子：左边一列对话，右边是聊天 ============ */
+
+/* 为什么分成两栏而不是把列表塞进顶栏：
+ *   顶栏只负责身份和全局操作，不能再塞会持续增长的内容。
+ *   而且**对话列表是会长的东西** —— 越聊越多，得有地方滚。 */
+.身子 {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0; /* 不写这句，里面那个 overflow 的滚动条不生效 */
+}
+
+/* 右边那一块：聊天区 + 输入 + 小状态栏，还是老样子竖着排 */
+.正屋 {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0; /* 不加这句，长句子会把左边那列挤扁 */
+  /* 【2026-10-08 加的】给里面那个任务抽屉当参照物。
+     抽屉是"盖在聊天区上面、但不占布局"的，所以只能绝对定位，
+     而绝对定位得有个爹 —— 就是这儿。 */
+  position: relative;
+}
+
+/* ============ 左边那一列 ============ */
+
+.侧栏 {
+  width: 158px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 7px;
+  /* 【2026-10-07】原来是不透明的 #fdf1f6，会把背景图整块挡掉。
+   * 现在改成"磨砂玻璃"：半透明 + 把背后糊掉 ——
+   * 背景图能透出来，但不会跟上面的字打架。 */
+  background: rgba(253, 241, 246, 0.66);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(246, 219, 231, 0.8);
+  overflow: hidden; /* 里面那个列表自己滚 */
+}
+
+.新对话按钮组 {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.开新对话,
+.开临时对话 {
+  min-width: 0;
+  flex: 1 1 0;
+  border: 1px dashed #f0b8d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #d873a5;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.开新对话:hover,
+.开临时对话:hover {
+  background: #fbdde9;
+  border-style: solid;
+}
+
+.开临时对话 {
+  color: #8f78b3;
+  border-color: #cbbce2;
+  background: #fbf9ff;
+}
+
+/* 点 ＋ 之后弹出来的模型选择（2026-10-04 加的）
+   它是个普通的 flex 项，不是浮层 —— 展开的时候把下面的列表往下挤一点。
+   为什么不做成浮层：侧栏才 158px 宽，浮层要么盖住列表、
+   要么飘到聊天区上面去，两种都会让他点错东西。挤一下最老实。 */
+.选模型 {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #f6dbe7;
+}
+
+.选模型.收着 {
+  display: none;
+}
+
+.选模型 .小标题 {
+  font-size: 10px;
+  color: #b98aa2;
+  padding: 0 2px 3px;
+}
+
+.选模型 button {
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #fdf1f6;
+  color: #7a5c6b;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.选模型 button:hover {
+  background: #fbdde9;
+  border-color: #f0b8d0;
+  color: #d873a5;
+}
+
+/* 她这会儿默认用的那个，标一下 —— 不标的话，他分不清"哪个是原来那个" */
+.选模型 button.默认的 {
+  color: #d873a5;
+  font-weight: 600;
+}
+
+/* 【2026-10-07 加的】新建面板里"这一段用哪种模式"的选中态。
+   跟 默认的 不一样：那个是"她一直用的脑子"，这个是"你刚点中的那个"，
+   所以它得更显眼 —— 底色加实、左边加一条竖杠。 */
+.选模型 button.选中的 {
+  background: #fbdde9;
+  border-color: #f0b8d0;
+  color: #c2548a;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 #e8619b;
+}
+
+/* 两组按钮之间的那个小标题要跟上面那组拉开一点，不然看着像一组的 */
+.选模型 .小标题.隔开的 {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid #f6dbe7;
+}
+
+.对话列表 {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.对话行 {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* 一段对话 —— 一个可以点的方块 */
+.对话 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  /* 左边那条竖线是"现在就在这一段"的记号，平时透明占着位置，
+   * 这样点亮的时候文字不会左右跳一下。 */
+  border-left: 3px solid transparent;
+  padding: 5px 7px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.对话:hover {
+  background: #fbe4ee;
+}
+
+/* 现在正说着的那一段 */
+.对话.当前 {
+  background: #fbd9e8;
+  border-left-color: #e8619b;
+}
+
+.对话.临时 {
+  border-right: 1px dashed #bca8d7;
+}
+
+.删临时 {
+  flex: 0 0 22px;
+  align-self: stretch;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b7a1c8;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.删临时:hover {
+  background: #f2e7f8;
+  color: #9a5ca5;
+}
+
+.对话.临时 .对话标题::before {
+  content: '◇ ';
+  color: #9076b5;
+}
+
+.对话标题 {
+  font-size: 12px;
+  color: #5b4350;
+  /* 标题长了就省略号 —— 他要的是"一眼认出是哪段"，不是看全句 */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.对话.当前 .对话标题 {
+  color: #b8497e;
+  font-weight: 600;
+}
+
+.对话小字 {
+  font-size: 10px;
+  color: #c3a3b3;
+}
+
+/* ============ 顶栏 ============ */
+
+/* 顶栏兼两件事：显示她是谁 + 拖窗口。
+ * 为什么能拖：窗口是无边框的（main.js 里 frame:false），系统的标题栏
+ * 没有了，所以得自己指定一片"抓这里能把窗口挪走"的区域 ——
+ * 就是下面那句 -webkit-app-region: drag。
+ * 注意：那片区域里**不能放需要点的东西**，按钮得单独标回 no-drag，
+ * 不然点它的时候会被当成拖窗口。 */
+.顶栏 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  background: rgba(255, 247, 250, 0.66);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(251, 227, 236, 0.85);
+  flex: 0 0 auto;
+  /* 【2026-10-09：两个写法都写上了】
+   *   原来只有 -webkit-app-region。
+   *   他报"窗口全都拖不动，只能缩小和放大" —— 那正是这一句失效的样子：
+   *   窗口边缘是系统给的，照样能缩放；而"移动窗口"全靠这句把顶栏标成可拖区。
+   *   新版 Chromium 认的是**标准写法** app-region，-webkit- 只是旧别名。
+   *   哪天别名不被认了，表现就是"窗口突然拖不动"，而且一声不吭。
+   *   两个都留着：谁认哪个都行，换个 Electron 版本也不会再悄悄坏掉。 */
+  app-region: drag;
+  -webkit-app-region: drag;
+  /* 窗口自己画圆角，上面两个角跟着圆 */
+  border-radius: 8px 8px 0 0;
+}
+
+.她的小名 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 名字这一侧可以压缩 —— 窗口窄的时候先挤它，不要挤那几个按钮 */
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.花 {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd3e4, #f08cb8);
+  color: #fff;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 1px 4px rgba(226, 132, 172, 0.35);
+}
+
+/* 顶栏那个小头像：她本人。
+ * 圆形裁 + 一圈淡粉描边，跟旁边那朵花的旧样式同一块地方。
+ * object-fit: cover 的意思是"填满这个圆，多出来的裁掉" ——
+ * 不写它的话人像会被压扁。 */
+.头像 {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 22%; /* 往上偏一点，正好框住脸 */
+  border: 1.5px solid #f9cfe0;
+  box-shadow: 0 1px 4px rgba(226, 132, 172, 0.3);
+  flex: 0 0 auto;
+}
+
+.竖排 {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.名字 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.状态 {
+  font-size: 11px;
+  color: #b58aa0;
+}
+
+.按钮们 {
+  display: flex;
+  gap: 3px;
+  flex: 0 0 auto;
+  /* 按钮得能点，所以从"拖拽区"里单独摘出来。
+   * 少了这一句，点按钮等于在拖窗口 —— 什么都不会发生。 */
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+/* 三个按钮，每个 24px —— 再大一点顶栏就挤了（窗口最小宽度 340px） */
+.小按钮 {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #c58aa6;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.小按钮:hover {
+  background: #fbdde9;
+}
+
+/* 「×」是退出程序（「—」只是收起来），所以给它一点警告色：
+ * 鼠标移上去才变红，平时跟别的按钮一样安静。 */
+.小按钮.退出:hover {
+  background: #f7c9c9;
+  color: #b04a4a;
+}
+
+.小按钮.开着 {
+  color: #e8619b;
+  background: #fbdde9;
+}
+
+.小按钮.加载中 {
+  color: #9b74d6;
+  background: #f0e9fb;
+  animation: 声音加载 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes 声音加载 {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+.声音提示 {
+  position: fixed;
+  z-index: 1200;
+  top: 74px;
+  left: 50%;
+  width: min(360px, calc(100vw - 36px));
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  padding: 13px 16px;
+  border: 1px solid rgba(210, 132, 172, 0.55);
+  border-radius: 12px;
+  background: rgba(255, 245, 250, 0.97);
+  color: #7b4964;
+  box-shadow: 0 10px 30px rgba(91, 49, 72, 0.22);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.声音提示.成功 {
+  border-color: rgba(132, 184, 151, 0.65);
+  background: rgba(242, 252, 246, 0.98);
+  color: #427456;
+}
+
+.声音提示.收着 {
+  opacity: 0;
+  transform: translate(-50%, -8px);
+}
+
+/* ============ 设置：API Key ============ */
+
+.设置遮罩 {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(92, 60, 82, 0.24);
+  opacity: 1;
+  transition: opacity 0.16s ease, visibility 0.16s;
+}
+
+/* 【2026-10-09 修：这一块原来把整个窗口的"能拖"给废掉了】
+ *
+ *   原来 .设置遮罩 上写着 no-drag，而它是 position:fixed + inset:0
+ *   —— **铺满整个窗口**。app-region 是 Chromium 在 hit-test 那一层打的标记，
+ *   **pointer-events 管不着它**：所以遮罩哪怕"收着"
+ *   （opacity:0 + pointer-events:none），那个 no-drag 照样生效，
+ *   把整个窗口都标成不可拖。
+ *
+ *   表现："窗口全都拖不动，只能缩小和放大"——
+ *   移动窗口靠 app-region，废了；边缘缩放走的是系统非客户区，管不到，所以还在。
+ *   （D 盘那份没有这个遮罩 —— 它是 0.2.1 加设置面板时才进来的 —— 所以一直好好的。）
+ *
+ *   两处一起改才算数：
+ *     1. no-drag 只在**打开时**加（:not(.收着)）
+ *     2. 收着时补 visibility:hidden —— opacity:0 的元素**仍然参与 hit-test**
+ */
+.设置遮罩:not(.收着) {
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+.设置遮罩.收着 {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.设置面板 {
+  width: min(390px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid #efd3e2;
+  border-radius: 16px;
+  background: #fffafd;
+  box-shadow: 0 18px 55px rgba(101, 55, 83, 0.24);
+  color: #6e4f60;
+}
+
+.设置头 {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.设置头 > div { flex: 1; }
+.设置头 h2 { margin: 0; font-size: 18px; color: #634556; }
+.设置头 p { margin: 3px 0 0; font-size: 12px; color: #ae8399; }
+
+.设置关闭 {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #b27b97;
+  font-size: 19px;
+  cursor: pointer;
+}
+.设置关闭:hover { background: #f9e2ed; }
+
+.密钥状态 {
+  min-height: 42px;
+  margin-bottom: 14px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  background: #f8edf4;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.设置标签 { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+.密钥输入行 { display: flex; gap: 6px; }
+.密钥输入行 input,
+.密钥输入行 select {
+  min-width: 0;
+  flex: 1;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e7bfd2;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #674a59;
+  font-family: Consolas, monospace;
+}
+.密钥输入行 input:focus { border-color: #e779a8; box-shadow: 0 0 0 2px rgba(231, 121, 168, 0.12); }
+.密钥输入行 button, .设置操作 button {
+  border: 1px solid #e7bfd2;
+  border-radius: 9px;
+  background: #fff;
+  color: #925f79;
+  cursor: pointer;
+}
+.密钥输入行 button { width: 52px; }
+.密钥输入行 button:hover, .设置操作 button:hover { background: #fbe9f2; }
+
+.设置说明 { margin: 8px 0 14px; font-size: 11px; line-height: 1.55; color: #af869a; }
+.设置操作 { display: flex; gap: 7px; }
+.设置操作 button { min-height: 34px; padding: 0 12px; }
+.设置操作 .主要设置按钮 { border-color: #e675a7; background: #e675a7; color: #fff; }
+.设置操作 .主要设置按钮:hover { background: #d96598; }
+.设置操作 .危险设置按钮 { margin-left: auto; color: #b45f6d; }
+.设置操作 button:disabled { opacity: 0.55; cursor: wait; }
+.设置分隔 { height: 1px; margin: 16px 0 13px; background: #efdbe5; }
+.数据设置 h3, .语音输入设置 h3, .联网搜索设置 h3, .主动陪伴设置 h3 { margin: 0 0 5px; font-size: 13px; color: #765665; }
+.数据设置 p, .语音输入设置 p, .联网搜索设置 > p, .主动陪伴设置 > p { margin: 0 0 10px; font-size: 11px; line-height: 1.55; color: #af869a; }
+.陪伴总开关 { display: flex; align-items: center; gap: 7px; margin: 2px 0 10px; font-size: 12px; font-weight: 600; }
+.陪伴设置网格 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 8px; }
+.陪伴设置网格 label { display: flex; flex-direction: column; gap: 5px; min-width: 0; font-size: 11px; color: #9a7085; }
+.陪伴设置网格 input[type="number"], .陪伴设置网格 input[type="time"] { height: 34px; min-width: 0; padding: 0 8px; border: 1px solid #e7bfd2; border-radius: 9px; outline: none; background: #fff; color: #674a59; }
+.陪伴设置网格 input:focus { border-color: #e779a8; box-shadow: 0 0 0 2px rgba(231, 121, 168, 0.12); }
+.陪伴设置网格 .安静开关 { flex-direction: row; align-items: center; align-self: end; min-height: 34px; }
+.主动陪伴标记 { margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: rgba(231, 121, 168, 0.12); color: #b5688c; font-size: 9px; }
+.主动陪伴设置 .设备状态 { white-space: pre-line; line-height: 1.55; }
+.麦克风设备行 { display: flex; gap: 7px; }
+.麦克风设备行 select {
+  min-width: 0;
+  flex: 1;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid #e7bfd2;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #674a59;
+}
+.麦克风设备行 select:focus { border-color: #e779a8; box-shadow: 0 0 0 2px rgba(231, 121, 168, 0.12); }
+.麦克风设备行 button {
+  min-width: 58px;
+  border: 1px solid #e7bfd2;
+  border-radius: 9px;
+  background: #fff;
+  color: #925f79;
+  cursor: pointer;
+}
+.麦克风设备行 button:hover { background: #fbe9f2; }
+.麦克风设备行 button:disabled { opacity: 0.55; cursor: wait; }
+.设备状态 { min-height: 17px; margin-top: 6px; font-size: 11px; color: #af869a; }
+.数据操作 { display: flex; gap: 7px; }
+.数据操作 button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #e7bfd2;
+  border-radius: 9px;
+  background: #fff;
+  color: #925f79;
+  cursor: pointer;
+}
+.数据操作 button:hover { background: #fbe9f2; }
+.数据操作 .主要设置按钮 { border-color: #e675a7; background: #e675a7; color: #fff; }
+.数据操作 .主要设置按钮:hover { background: #d96598; }
+.数据操作 button:disabled { opacity: 0.55; cursor: wait; }
+.设置结果 { min-height: 18px; margin-top: 10px; font-size: 11px; color: #9a7085; }
+
+/* ============ 左侧：当前对话状态 ============ */
+
+/* 模式、记忆、任务和目录都属于当前这段对话，跟对话列表放在一起。
+ * 顶栏只留全局操作，窗口窄时也不会挤成一团。 */
+.侧栏状态 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(238, 194, 214, 0.78);
+  border-radius: 10px;
+  background: rgba(255, 250, 252, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.侧栏状态标题 {
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 2px 2px;
+  color: #a97c92;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.侧栏状态标题 #状态详情开关 {
+  width: 24px;
+  height: 20px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b493a4;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 16px;
+  cursor: pointer;
+}
+.侧栏状态标题 #状态详情开关:hover,
+.侧栏状态标题 #状态详情开关[aria-expanded="true"] {
+  background: #f7e8ef;
+  color: #c15d8d;
+}
+
+.侧栏状态详情 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.侧栏状态详情.收着 { display: none; }
+
+/* 状态行统一样式：模式常驻，其余收进“⋯”。 */
+.侧栏状态 .模式按钮,
+.侧栏状态 .情感状态,
+.侧栏状态 .缓慢情绪,
+.侧栏状态 .记忆按钮,
+.侧栏状态 .记忆管理入口,
+.侧栏状态 .任务按钮,
+.侧栏状态 .干活目录,
+.侧栏状态 .工作索引入口 {
+  width: 100%;
+  min-width: 0;
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 7px;
+  padding: 5px 7px;
+  font-size: 10px;
+  direction: ltr;
+  text-align: right;
+}
+
+/* 上面的 display:flex 不能把原有 hidden 顶掉：任务和工作区仍按模式出现。 */
+.侧栏状态 button[hidden] { display: none; }
+
+.侧栏状态 button::before {
+  flex: 0 0 auto;
+  color: #b99aaa;
+  font-weight: 400;
+}
+.侧栏状态 .模式按钮::before { content: '模式'; }
+.侧栏状态 .情感状态::before { content: '即时反应'; }
+.侧栏状态 .缓慢情绪::before { content: '缓慢情绪'; }
+.侧栏状态 .记忆按钮::before { content: '长期记忆'; }
+.侧栏状态 .记忆管理入口::before { content: '记忆库'; }
+.侧栏状态 .任务按钮::before { content: '学习任务'; }
+.侧栏状态 .干活目录::before { content: '工作区'; }
+.侧栏状态 .工作索引入口::before { content: '工作记录'; }
+
+.侧栏状态 #工作区名 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+}
+
+/* 模式按钮：聊天是淡的，干活是亮的 —— 颜色本身就是提示 */
+.模式按钮 {
+  border: 1px solid #f0c8da;
+  background: #fff;
+  color: #b58aa0;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.15s;
+}
+
+.模式按钮:hover {
+  background: #fdeef4;
+}
+
+.情感状态 {
+  border: 1px solid #eadced;
+  background: #fff;
+  color: #8d68a1;
+  font-family: inherit;
+  cursor: pointer;
+}
+.情感状态:hover { background: #f7eef9; border-color: #d6bddd; }
+.情感状态.有反应 { border-color: #e8bfd3; background: #fff5f9; color: #ae5f87; }
+.缓慢情绪 {
+  border: 1px solid #e5deed;
+  background: #fff;
+  color: #796d93;
+  font-family: inherit;
+  cursor: pointer;
+}
+.缓慢情绪:hover { background: #f5f1fa; border-color: #d1c4e0; }
+.缓慢情绪.有情绪 { border-color: #d9c7e6; background: #faf6fd; color: #76568d; }
+
+/* 每段对话自己的长期记忆开关。关着时用虚线和灰字，避免只靠文字辨认。 */
+.记忆按钮 {
+  flex: 0 0 auto;
+  border: 1px solid #efb6ce;
+  border-radius: 999px;
+  background: #fff7fa;
+  color: #b65e87;
+  font-family: inherit;
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.记忆按钮:hover { background: #fdebf3; }
+.记忆按钮.关着 {
+  border-style: dashed;
+  border-color: #c9bec3;
+  background: #f8f6f7;
+  color: #8e8589;
+}
+.侧栏状态 .记忆按钮.关着::before { color: #94898e; }
+.记忆按钮:disabled { opacity: 0.55; cursor: wait; }
+.记忆按钮.临时锁定:disabled { opacity: 0.8; cursor: default; }
+
+.记忆管理入口 {
+  border: 1px solid #eadced;
+  background: #fff;
+  color: #8d68a1;
+  font-family: inherit;
+  cursor: pointer;
+}
+.记忆管理入口:hover { background: #f7eef9; border-color: #d6bddd; }
+
+.工作索引入口 {
+  border: 1px solid #ead8e2;
+  background: #fff;
+  color: #9b647f;
+  font-family: inherit;
+  cursor: pointer;
+}
+.工作索引入口:hover,
+.工作索引入口.开着 { background: #faeaf2; border-color: #dda9c1; }
+
+/* 干活模式：换成实心的粉，一眼看出来"她现在能动手" */
+.模式按钮.干活模式 {
+  background: linear-gradient(#f9a8cb, #ef7fb1);
+  border-color: #ef7fb1;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(226, 132, 172, 0.35);
+}
+
+/* 学习模式（2026-10-07 加的）：也是实心的，但换成偏紫的粉 ——
+   跟"干活"区别开。三个模式里有两个长得一样的话，
+   他就只能靠读字来分辨自己在哪个模式，那不如直接给个颜色。
+   （紫色是她那套配色里本来就有的：f1ecff 那一族，原来是"他的气泡"用的。） */
+.模式按钮.学习模式 {
+  background: linear-gradient(#c9b6f0, #a98ee0);
+  border-color: #a98ee0;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(150, 120, 200, 0.35);
+}
+
+/* 干活目录：只在干活模式下露出来。太长的路径省略中间 */
+.干活目录 {
+  border: 1px dashed #e8cfdc;
+  background: transparent;
+  color: #c2a0b2;
+  font-family: inherit;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl; /* 路径太长的时候留尾巴（那个才是认得出的部分） */
+  text-align: left;
+}
+
+.干活目录:hover {
+  background: #fdeef4;
+  color: #e8619b;
+}
+
+/* ============ 聊天区 ============ */
+
+.聊天区 {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 滚动条做细一点、粉一点，别抢戏 */
+.聊天区::-webkit-scrollbar {
+  width: 6px;
+}
+
+.聊天区::-webkit-scrollbar-thumb {
+  background: #f3d3e0;
+  border-radius: 3px;
+}
+
+.一条 {
+  display: flex;
+  flex-direction: column;
+  /* 【2026-10-09 加了绝对上限 —— 因为她现在能最大化了】
+   *   原来只有 88%，那是**相对**聊天区的宽度：窗口 620 宽时聊天区约 440，
+   *   88% ≈ 390，一行三十来个字，正好。
+   *   可双击顶栏能最大化之后，聊天区能到一千七百多，
+   *   88% 就成了一条横贯屏幕的长条 —— 一行一百多个字，眼睛找不到下一行开头。
+   *   min() 取两者里小的那个：小窗口时按比例，大窗口时封顶。
+   *   560px 差不多一行三十五六字，是读着最舒服的范围。 */
+  max-width: min(88%, 560px);
+  animation: 冒出来 0.18s ease-out;
+}
+
+@keyframes 冒出来 {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 她的话在左边 */
+.一条.她的 {
+  align-self: flex-start;
+  /* ---- 每条她的话旁边那个小头像（2026-10-07 加的）----
+   *
+   * 为什么用 ::before 造，而不是往 HTML 里塞个 <img>：
+   *   那样得改 chat.js 里画消息那一段。而"头像"纯粹是装饰，
+   *   画消息的逻辑不该管它 —— 用 CSS 造一个，JS 一行都不用动。
+   *
+   * 为什么要 padding-left + 绝对定位：
+   *   头像得挂在气泡左上角**外面**，不能挤着气泡。
+   *   先给整条腾出 36px 空位，再把头像绝对定位到那块空位里。
+   */
+  position: relative;
+  padding-left: 36px;
+}
+
+.一条.她的::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-image: url('assets/elysia.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 5px rgba(170, 110, 145, 0.22);
+}
+
+/* 他的话在右边，气泡颜色也不一样 */
+.一条.他的 {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.气泡 {
+  padding: 8px 12px;
+  border-radius: 14px;
+  white-space: pre-wrap; /* 她自己换的行要留着 */
+  word-break: break-word;
+  /* ---- 白色半透明气泡（2026-10-07 改的）----
+   *
+   * backdrop-filter 是"把气泡**背后**那层东西模糊掉"。
+   * 所以背景图会从气泡里透出来，但是糊的，字压在上面照样清楚；
+   * 没有它的话，半透明白底配上花花的背景图，字会跟背景打架。
+   *
+   * 两边的区别只剩"透多少"：
+   *   她的 0.86 —— 实一点，她的话是主角
+   *   他的 0.62 —— 更透，让背景里那张脸多露一点
+   */
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 2px 10px rgba(170, 110, 145, 0.13);
+}
+
+.她的 .气泡 {
+  border-top-left-radius: 4px;
+}
+
+.他的 .气泡 {
+  background: rgba(255, 255, 255, 0.62);
+  border-top-right-radius: 4px;
+}
+
+.时间 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #c9a8b8;
+  margin: 2px 4px 0;
+}
+
+.重播声音,
+.表达反馈按钮 {
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b98aa1;
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.一条.她的:hover .重播声音,
+.一条.她的:hover .表达反馈按钮,
+.重播声音:focus-visible,
+.表达反馈按钮:focus-visible,
+.表达反馈按钮.已标记,
+.重播声音.播放中 { opacity: 1; }
+.重播声音:hover, .重播声音:focus-visible,
+.表达反馈按钮:hover, .表达反馈按钮:focus-visible { background: rgba(255, 255, 255, 0.72); outline: none; }
+.重播声音.播放中 { color: #ce668f; }
+.表达反馈按钮 { font-size: 12px; }
+.表达反馈按钮.已标记 { color: #ce668f; }
+
+.表达反馈菜单 {
+  align-self: flex-start;
+  max-width: min(430px, calc(100% - 46px));
+  margin: 5px 0 0 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(221, 163, 190, 0.34);
+  border-radius: 10px;
+  background: rgba(255, 250, 253, 0.94);
+  box-shadow: 0 4px 16px rgba(144, 93, 119, 0.1);
+}
+.表达反馈菜单[hidden] { display: none; }
+.表达反馈标题 { margin-bottom: 6px; color: #9b7185; font-size: 11px; }
+.表达反馈标签区 { display: flex; flex-wrap: wrap; gap: 5px; }
+.表达反馈标签区 button {
+  padding: 4px 8px;
+  border: 1px solid rgba(211, 145, 177, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #9e7187;
+  font-size: 11px;
+  cursor: pointer;
+}
+.表达反馈标签区 button:hover,
+.表达反馈标签区 button:focus-visible { border-color: #d88eb0; outline: none; }
+.表达反馈标签区 button.选中 { border-color: #d876a3; background: rgba(232, 139, 181, 0.2); color: #ac4775; }
+
+/* ============ 去 AI 味：真实样本只读查看 ============ */
+.表达反馈遮罩 {
+  position: fixed;
+  inset: 0;
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(92, 60, 82, 0.24);
+  opacity: 1;
+  transition: opacity 0.16s ease, visibility 0.16s;
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+.表达反馈遮罩.收着 { opacity: 0; pointer-events: none; visibility: hidden; }
+.表达反馈面板 {
+  width: min(560px, 100%);
+  height: min(620px, calc(100vh - 36px));
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid #ead3df;
+  border-radius: 16px;
+  background: #fffafd;
+  box-shadow: 0 18px 55px rgba(101, 55, 83, 0.24);
+}
+.表达反馈头 { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.表达反馈头 > div { flex: 1; }
+.表达反馈头 h2 { margin: 0; color: #634556; font-size: 17px; }
+.表达反馈头 p { margin: 2px 0 0; color: #ae8399; font-size: 11px; }
+.表达反馈关闭 {
+  width: 28px; height: 28px; border: 0; border-radius: 8px;
+  background: transparent; color: #b27b97; font-size: 19px; cursor: pointer;
+}
+.表达反馈关闭:hover { background: #f9e2ed; }
+.表达反馈筛选 { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
+.表达反馈筛选 button {
+  min-height: 28px; padding: 4px 9px; border: 1px solid #ead4df; border-radius: 999px;
+  background: #fff; color: #9d7186; font-family: inherit; font-size: 10px; cursor: pointer;
+}
+.表达反馈筛选 button.选中 { border-color: #d88eb0; background: #f9e5ef; color: #a84f78; font-weight: 600; }
+.表达反馈列表 { min-height: 0; flex: 1; overflow-y: auto; padding-right: 3px; }
+.表达反馈空态 {
+  display: grid; min-height: 160px; place-items: center; padding: 20px;
+  color: #af879a; font-size: 12px; line-height: 1.7; text-align: center;
+}
+.表达反馈空态.错误 { color: #b45b70; }
+.表达反馈卡 { margin-bottom: 8px; padding: 11px; border: 1px solid #efdce5; border-radius: 11px; background: rgba(255, 255, 255, 0.76); }
+.表达反馈卡标签 { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; }
+.表达反馈卡标签 span { padding: 2px 6px; border-radius: 999px; background: #f8e3ed; color: #a6537a; font-size: 9px; }
+.表达反馈正文 { color: #624d58; font-size: 12px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.表达反馈来源 { margin-top: 7px; color: #bea0af; font-size: 9px; overflow-wrap: anywhere; }
+
+/* 她正在打字：三个小点一跳一跳 */
+.在打字 .气泡 {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-height: 20px;
+}
+
+.在打字 .点 {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e79cc0;
+  animation: 跳 1s infinite;
+}
+
+.在打字 .点:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.在打字 .点:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes 跳 {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* ============ 更早的对话 ============ */
+
+/* 顶上那个「看更早的」按钮。默认藏着（HTML 里写了 hidden），
+ * 只有真的还有更早的记录时才露出来。 */
+.更早 {
+  text-align: center;
+  padding: 2px 0 8px;
+}
+
+.更早按钮 {
+  border: 1px solid #f6d9e6;
+  background: #fff;
+  color: #c58aa6;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.更早按钮:hover {
+  background: #fdeef4;
+  color: #e8619b;
+}
+
+/* 日期分隔：换了一天就插一条「—— 9月27日 ——」，
+ * 不然昨天和今天的对话连在一起，看着像一口气说完的。 */
+.日期分隔 {
+  text-align: center;
+  font-size: 10px;
+  color: #cfb0c0;
+  margin: 6px 0 2px;
+  letter-spacing: 2px;
+}
+
+/* （这里原来有一条「新的一段」分隔线的样式。
+ *   2026-10-03 改成左边一列对话之后就用不着了 —— 段与段是分开的，
+ *   不用在同一条时间线上划线。删掉，免得以后有人以为它还有用。） */
+
+/* ============ 确认卡片 ============ */
+
+/* 她要写文件 / 跑命令之前弹的那张卡。
+ * 为什么要做得显眼：**她那边真的会停在这儿等**，
+ * 他要是没看见，她就一直等着。所以这块要比普通气泡醒目，
+ * 但也不能吵到像报错。用淡黄，跟她的粉色区分开。 */
+.确认卡 {
+  align-self: stretch;
+  max-width: 100%;
+}
+
+.确认框 {
+  background: #fffdf3;
+  border: 1px solid #f0e2b8;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 6px rgba(200, 170, 90, 0.15);
+}
+
+.确认头 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a6d2f;
+  margin-bottom: 6px;
+}
+
+.确认路径 {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  color: #6b5a33;
+  background: #fff9e6;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.确认命令 {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  color: #5a4a6b;
+  background: #f6f2ff;
+  border: 1px solid #e5dcff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.确认提示 {
+  font-size: 11px;
+  color: #a08a5a;
+  margin-bottom: 6px;
+}
+
+/* 内容预览：最多显示这么高，多了自己滚 —— 不能让它把聊天区撑爆 */
+.确认预览 {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #5f5340;
+  background: #fff;
+  border: 1px solid #f0e8d0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+.确认按钮 {
+  display: flex;
+  gap: 8px;
+  /* 【2026-10-07 从 flex-end 改成 center + 换行】
+     加了第三个按钮（"以后别问"）之后，窗口窄的时候三个会挤成一行放不下。
+     现在是：放得下就居中排一行，放不下就折到第二行去，不硬挤。 */
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.确认按钮 button {
+  border: none;
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.确认按钮 .准了 {
+  background: linear-gradient(#f9a8cb, #ef7fb1);
+  color: #fff;
+}
+
+.确认按钮 .准了:hover {
+  filter: brightness(1.05);
+}
+
+/* 第三个按钮："以后这个文件夹别问了"。
+   做成描边的浅色 —— 它不该跟"让她做"抢眼，
+   但要比"先别"更值得点（他十有八九想点它）。
+   跟"先别"的区别在**边框颜色**：这个是粉的，那个是灰的。 */
+.确认按钮 .记住了 {
+  background: #fff;
+  border: 1px solid #f0b8d0;
+  color: #d873a5;
+}
+
+.确认按钮 .记住了:hover {
+  background: #fde8f1;
+  border-color: #e8619b;
+}
+
+.确认按钮 .算了 {
+  background: #f4eef0;
+  color: #8a6b7a;
+}
+
+.确认按钮 .算了:hover {
+  background: #eae1e5;
+}
+
+/* ============ 开场那一段 ============ */
+
+.开场 {
+  margin: auto 4px;
+  text-align: center;
+  color: #a8829a;
+  animation: 冒出来 0.4s ease-out;
+}
+
+/* 开场那个大头像：她本人，64 像素。
+ * 原来的 ✿ 是个文字符号，换成真图之后这一块就"是她"了。 */
+.开场头像 {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 20%;
+  border: 2px solid #fbd9e7;
+  box-shadow: 0 2px 10px rgba(226, 132, 172, 0.35);
+  display: block;
+}
+
+.开场的话 {
+  color: #6b4d5e;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.开场的小字 {
+  font-size: 12px;
+  color: #c2a0b2;
+}
+
+/* ============ 附件（2026-10-04 加的）============ */
+
+/* 发出去之前，他带的东西先摆在这儿：在聊天区下面、输入框上面。
+   单独占一条的理由见 index.html 里那段注释。 */
+.待发 {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid rgba(251, 227, 236, 0.85);
+  background: rgba(255, 245, 249, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.待发.收着 {
+  display: none;
+}
+
+/* 一个待发的附件：图片给缩略图，别的给个图标，后面跟名字 */
+.待发 .一个 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 175px;
+  padding: 3px 3px 3px 3px;
+  border: 1px solid #f6d9e6;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 11px;
+  color: #8a6a78;
+}
+
+.待发 .一个 img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #fde8f1;
+}
+
+.待发 .一个 .图标 {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: #fde8f1;
+  font-size: 14px;
+}
+
+.待发 .一个 .名字 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 那个 ✕ 是"这一个不发了" */
+.待发 .一个 .去掉 {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  color: #c58fa8;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.待发 .一个 .去掉:hover {
+  color: #d873a5;
+}
+
+/* 聊天记录里那条消息带的附件（他发过的那些，重开之后也看得到） */
+.气泡 .附件条 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.气泡 .附件条 .一个 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 190px;
+  padding: 3px 7px 3px 3px;
+  border-radius: 7px;
+  background: #fde8f1;
+  font-size: 11px;
+  color: #8a6a78;
+  cursor: pointer;
+}
+
+.气泡 .附件条 .一个:hover {
+  background: #fbd8e8;
+}
+
+.气泡 .附件条 img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.气泡 .附件条 .图标 {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: #fff;
+  font-size: 17px;
+}
+
+/* 附件那个回形针按钮 —— 跟发送键一样大。
+   它是"次要动作"，所以用浅色，别跟发送抢眼。 */
+.附件按钮 {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #f6d9e6;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.附件按钮:hover {
+  background: #fde8f1;
+  border-color: #f0a8c8;
+}
+
+/* 有东西等着发的时候亮一下 —— 不然他挂了个附件自己忘了 */
+.附件按钮.有话要说 {
+  border-color: #f0a8c8;
+  background: #fde8f1;
+}
+
+/* ============ 学习任务（2026-10-08 加的）============ */
+
+/* 学习模式固定显示的四项状态。它跟任务清单分开：
+   这里是“学到哪了”，任务抽屉是“还要做什么”。 */
+.学习状态板 {
+  flex: 0 0 auto;
+  margin: 8px 10px 0;
+  padding: 8px 10px 9px;
+  border: 1px solid rgba(201, 182, 240, 0.72);
+  border-radius: 12px;
+  background: rgba(252, 248, 255, 0.92);
+  box-shadow: 0 4px 14px rgba(115, 91, 160, 0.08);
+}
+
+.学习状态板[hidden] {
+  display: none;
+}
+
+.学习状态头 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: #765ca8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.学习状态头 span {
+  flex: 1 1 auto;
+}
+
+.学习状态头 button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: #8a70bd;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.学习状态头 button:hover {
+  background: #eee7fb;
+}
+
+.学习状态头 button.转着 {
+  animation: 学习刷新转圈 0.7s linear infinite;
+}
+
+@keyframes 学习刷新转圈 {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.学习状态格 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.学习状态项 {
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.学习状态项 span,
+.学习状态项 strong {
+  display: block;
+}
+
+.学习状态项 span {
+  margin-bottom: 2px;
+  color: #aa91b7;
+  font-size: 10px;
+}
+
+.学习状态项 strong {
+  color: #55465f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.学习状态项 strong.空态 {
+  color: #b9acbf;
+  font-weight: 400;
+}
+
+.学习状态板.读不到 {
+  border-color: #e5c8d1;
+  background: rgba(255, 247, 249, 0.94);
+}
+
+/* 顶上那个按钮。只在学习模式露出来（chat.js 管显示）。
+   带个小计数 —— "2/5"比"任务"两个字有用得多：
+   一眼看出还剩几件，不用点开。 */
+.任务按钮 {
+  flex: 0 0 auto;
+  border: 1px dashed #c9b6f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #8a6fc0;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.任务按钮:hover {
+  background: #f3eefe;
+  border-style: solid;
+}
+
+/* 全做完了 —— 换个颜色，让他一眼看出"这门课清干净了" */
+.任务按钮.全做完 {
+  border-color: #a8d5b5;
+  color: #4e8a63;
+}
+
+.任务按钮.全做完:hover {
+  background: #eefaf1;
+}
+
+/* 抽屉本体：贴在正屋右边，盖在聊天上，不占布局。
+   为什么用 transform 滑而不是改 width：改 width 会让里面的字一路重排，
+   看着像抽搐；transform 是整体平移，顺滑得多。 */
+.任务抽屉 {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 236px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  /* 【2026-10-08 把毛玻璃撤了 —— 他报"抽屉拉进来的时候主界面会动"】
+     原来这儿是 rgba(...,0.97) + backdrop-filter: blur(14px)。
+     可背景本来就 97% 不透明，那层模糊**几乎看不出来** ——
+     代价却是：滑动的那 0.22 秒里，Chromium 得**逐帧把抽屉背后
+     整块界面重新采样一遍**。主界面于是跟着抖、跟着糊，
+     看着就像"抽屉进来的时候整个界面在动"。
+     改成实色之后观感几乎没差，但背后那块不再重绘了。 */
+  background: #fdf3f9;
+  border-left: 1px solid #f0d8e6;
+  box-shadow: -6px 0 18px rgba(170, 110, 145, 0.14);
+  /* 【2026-10-08 改的：不滑了，改成淡出】
+     他报"抽屉从右往左拉进来的时候主界面会动"，然后直接说：
+     "把出现方式从右往左改成淡出"。
+     滑进来是 transform 动画 —— 每帧都要重新合成那块区域，
+     背后跟着重算；淡出只动 opacity，背后不用动。
+     0.22 秒不变：再短像硬切，再长像卡了一下。 */
+  transition: opacity 0.22s ease;
+}
+
+.任务抽屉.收着 {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============ 她写出的文件：右侧预览栏 ============ */
+
+.文件抽屉 {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(330px, 100%);
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px;
+  background: #fff8fc;
+  border-left: 1px solid #efd7e5;
+  box-shadow: -7px 0 20px rgba(144, 92, 124, 0.16);
+  transition: opacity 0.2s ease;
+}
+
+.文件抽屉.收着 {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============ 正式工作的只读索引 ============ */
+
+.工作索引抽屉 {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(360px, 100%);
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px;
+  background: #fff8fc;
+  border-left: 1px solid #efd7e5;
+  box-shadow: -7px 0 20px rgba(144, 92, 124, 0.16);
+  transition: opacity 0.2s ease;
+}
+.工作索引抽屉.收着 { opacity: 0; pointer-events: none; }
+
+.工作索引头 { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.工作索引头 > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.工作索引头 strong { color: #745565; font-size: 14px; }
+.工作索引头 span { color: #ae879a; font-size: 10px; }
+.工作索引头按钮 {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #ead1df;
+  border-radius: 7px;
+  background: #fff;
+  color: #ad7893;
+  cursor: pointer;
+}
+.工作索引头按钮:hover { background: #f9e5ef; }
+.工作索引搜索 {
+  width: 100%;
+  min-height: 31px;
+  border: 1px solid #ead5e0;
+  border-radius: 9px;
+  padding: 6px 9px;
+  background: #fff;
+  color: #624b57;
+  font: 12px/1.4 inherit;
+  outline: none;
+}
+.工作索引搜索:focus { border-color: #d99ab8; box-shadow: 0 0 0 2px rgba(217, 154, 184, 0.15); }
+.工作索引筛选 { display: flex; gap: 5px; flex: 0 0 auto; }
+.工作索引筛选 button {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #ead6e1;
+  border-radius: 999px;
+  padding: 4px 5px;
+  background: #fff;
+  color: #a0788c;
+  font: 10px/1.2 inherit;
+  cursor: pointer;
+}
+.工作索引筛选 button.选中 { border-color: #d88faf; background: #f9e5ef; color: #a94775; }
+.工作索引列表 { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 2px; }
+.工作索引空态 { padding: 42px 12px; color: #b68fa2; font-size: 12px; text-align: center; line-height: 1.7; }
+.工作索引卡 {
+  margin-bottom: 8px;
+  padding: 10px;
+  border: 1px solid #ecd8e2;
+  border-radius: 11px;
+  background: #fff;
+}
+.工作索引卡.部分完成 { border-color: #ead5a8; background: #fffdf7; }
+.工作索引卡.失败 { border-color: #efc4ca; background: #fff9fa; }
+.工作索引卡头 { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.工作索引状态 { flex: 0 0 auto; border-radius: 999px; padding: 2px 7px; background: #eef7f1; color: #548066; font-size: 10px; }
+.工作索引卡.部分完成 .工作索引状态 { background: #fff2cf; color: #9a7124; }
+.工作索引卡.失败 .工作索引状态 { background: #fde7e9; color: #b55762; }
+.工作索引时间 { margin-left: auto; color: #b095a2; font-size: 10px; }
+.工作索引目标 { color: #5f4754; font-size: 12px; font-weight: 600; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.工作索引结果 { margin-top: 6px; color: #806875; font-size: 11px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.工作索引元信息 { margin-top: 6px; color: #ae8f9e; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.工作索引工具 { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.工作索引工具 span { border-radius: 999px; padding: 2px 6px; background: #f3edf0; color: #816c76; font-size: 9px; }
+.工作索引工具 span.失败 { background: #fbe8ea; color: #b65d66; }
+.工作索引产物 { display: flex; flex-direction: column; gap: 4px; margin-top: 7px; }
+.工作索引产物 button {
+  width: 100%;
+  border: 1px solid #ead6e1;
+  border-radius: 7px;
+  padding: 5px 7px;
+  background: #fff8fc;
+  color: #a04f78;
+  font: 10px/1.3 inherit;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.工作索引产物 button:hover { background: #f8e5ef; }
+.工作索引重试,
+.工作索引继续 {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid #dfabc2;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #fff;
+  color: #a94f79;
+  font: 11px/1.3 inherit;
+  cursor: pointer;
+}
+.工作索引重试:hover,
+.工作索引继续:hover { background: #fae7f0; }
+.工作索引继续 { border-color: #d4bddf; color: #85649a; }
+
+.小按钮.文件开着 {
+  color: #fff;
+  border-color: #d986ad;
+  background: #d986ad;
+}
+
+.小按钮.有新文件 {
+  color: #d16f9f;
+  border-color: #e4a5c3;
+  box-shadow: 0 0 0 2px rgba(228, 165, 195, 0.2);
+}
+
+.文件头 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+
+.文件标题 {
+  flex: 1 1 auto;
+  color: #765969;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.文件头按钮 {
+  width: 25px;
+  height: 25px;
+  border: 1px solid #ead1df;
+  border-radius: 7px;
+  background: #fff;
+  color: #ad7893;
+  cursor: pointer;
+}
+
+.文件头按钮:hover:not(:disabled) {
+  background: #f9e5ef;
+}
+
+.文件头按钮:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.产物列表 {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  max-height: 118px;
+  overflow-y: auto;
+  flex-direction: column;
+}
+
+.产物项 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #f0dce7;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #765969;
+  text-align: left;
+  cursor: pointer;
+}
+
+.产物项:hover,
+.产物项.选中 {
+  border-color: #dda6c1;
+  background: #fcebf3;
+}
+
+.产物名字 {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.产物目录 {
+  overflow: hidden;
+  color: #b18a9e;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.文件预览 {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 9px;
+  border: 1px solid #f0dce7;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.文件空态,
+.文件不能预览 {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #b08a9d;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.文件正文 {
+  margin: 0;
+  color: #51444b;
+  font-family: Consolas, "Microsoft YaHei UI", monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.文件图片 {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+
+.任务头 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.任务标题 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a5c6b;
+  flex: 1 1 auto;
+}
+
+.任务计数 {
+  font-size: 11px;
+  color: #b58aa0;
+}
+
+.任务收起 {
+  border: none;
+  background: none;
+  color: #c58fa8;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.任务收起:hover {
+  color: #d873a5;
+}
+
+/* 那条进度。空的时候也得看得见 —— 不然他不知道"做完了会显示成什么样" */
+.任务进度条 {
+  flex: 0 0 auto;
+  height: 5px;
+  border-radius: 999px;
+  background: #f3dce8;
+  overflow: hidden;
+}
+
+.任务进度面 {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f9a8cb, #c9b6f0);
+  transition: width 0.25s ease;
+}
+
+.任务列表 {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 0;
+}
+
+/* 一条任务 */
+.任务 {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5b4350;
+  cursor: pointer;
+}
+
+.任务:hover {
+  background: #fff;
+}
+
+/* 那条竖着的小勾选框。用 CSS 画的，不是 input[type=checkbox] ——
+   系统那个勾选框长得跟这套配色完全不是一路的。 */
+.任务 .格子 {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border: 1px solid #e8cfdc;
+  border-radius: 4px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  line-height: 1;
+}
+
+.任务.做完 .格子 {
+  background: linear-gradient(#f9a8cb, #ef7fb1);
+  border-color: #ef7fb1;
+}
+
+.任务 .字 {
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+.任务.做完 .字 {
+  color: #b58aa0;
+  text-decoration: line-through;
+}
+
+/* 那条任务右边的 ✕。平时藏着，鼠标放上去才出现 ——
+   不然整列都是 ✕，看着像随时要删东西。 */
+.任务 .删掉 {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  color: #d9bccb;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.任务:hover .删掉 {
+  opacity: 1;
+}
+
+.任务 .删掉:hover {
+  color: #d9534f;
+}
+
+.任务空空的 {
+  color: #b58aa0;
+  font-size: 11px;
+  padding: 10px 4px;
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* 底下那个加任务的框 */
+.任务加 {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.任务加 input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid #e8cfdc;
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  color: inherit;
+  outline: none;
+}
+
+.任务加 input:focus {
+  border-color: #c9b6f0;
+  box-shadow: 0 0 0 3px #f3eefe;
+}
+
+.任务加 button {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(#c9b6f0, #a98ee0);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.任务加 button:hover {
+  filter: brightness(1.05);
+}
+
+.任务加 button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ============ 输入区 ============ */
+
+.输入区 {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 8px 12px 4px;
+  border-top: 1px solid rgba(251, 227, 236, 0.85);
+  background: rgba(255, 251, 253, 0.66);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#输入 {
+  flex: 1 1 auto;
+  resize: none;
+  max-height: 96px;
+  padding: 8px 10px;
+  border: 1px solid #f6d9e6;
+  border-radius: 12px;
+  /* 输入框也跟着半透明一点 —— 整块白的会像贴了张纸在背景图上 */
+  background: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  color: inherit;
+  outline: none;
+}
+
+#输入:focus {
+  border-color: #f0a8c8;
+  box-shadow: 0 0 0 3px #fde8f1;
+}
+
+#输入::placeholder {
+  color: #d3b3c4;
+}
+
+.发送 {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(#f9a8cb, #ef7fb1);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(226, 132, 172, 0.4);
+}
+
+.发送:hover {
+  filter: brightness(1.05);
+}
+
+.发送:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.发送.停止中 {
+  background: linear-gradient(#d989a4, #ca6688);
+  font-size: 13px;
+}
+
+.麦克风,
+.通话开关 {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(229, 164, 193, 0.55);
+  border-radius: 50%;
+  background: rgba(255, 248, 252, 0.9);
+  color: #bb668e;
+  font-size: 16px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.麦克风:hover,
+.通话开关:hover { background: #fff0f7; }
+.通话开关.开着 {
+  color: #fff;
+  border-color: #d578a3;
+  background: linear-gradient(145deg, #ed91bb, #b98bdd);
+  box-shadow: 0 0 0 4px rgba(196, 132, 195, 0.15);
+}
+.麦克风.录着 {
+  color: #fff;
+  border-color: #e85f86;
+  background: #e85f86;
+  box-shadow: 0 0 0 5px rgba(232, 95, 134, 0.16);
+}
+.麦克风.识别中 { color: #8a6bc5; cursor: wait; animation: 麦克风呼吸 1.1s ease-in-out infinite; }
+
+@keyframes 麦克风呼吸 { 50% { opacity: 0.45; } }
+
+.录音状态 {
+  flex: 0 0 auto;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 12px 2px;
+  border: 1px solid rgba(232, 95, 134, 0.28);
+  border-radius: 11px;
+  background: rgba(255, 239, 246, 0.96);
+  color: #a74972;
+  font-size: 12px;
+}
+.录音状态.识别中 { border-color: rgba(139, 109, 199, 0.3); color: #7560a2; background: rgba(247, 243, 255, 0.97); }
+.录音状态.收着 { display: none; }
+.录音红点 { width: 8px; height: 8px; border-radius: 50%; background: #e85f86; animation: 麦克风呼吸 0.9s ease-in-out infinite; }
+.录音状态.识别中 .录音红点 { background: #8b6dc7; }
+
+/* ============ 上下文那个小圈 ============ */
+
+/* 摆在输入框和发送键中间 —— 那是他每次说话都会看到的位置。
+ *
+ * 为什么值得占这块地方：
+ *   上下文是**看不见的**。满了不报错，只会变慢、变贵、变糊涂。
+ *   看不见就没法管 —— 所以先让它看得见。
+ *   （DSH 界面里那个圈是同一个意思：压力 ÷ 容量。）
+ *
+ * 颜色三档，跟"线"绑在一起：
+ *   普通粉 < 60%    黄 60~80%    红 ≥ 80%（到 80% 程序就开始收拾桌子了） */
+.上下文环 {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: help;
+  display: grid;
+  place-items: center;
+}
+
+.上下文环 svg {
+  width: 26px;
+  height: 26px;
+  /* 让 0% 从正上方起画，跟时钟一样 */
+  transform: rotate(-90deg);
+}
+
+.环底,
+.环面 {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.环底 {
+  stroke: #f3e0e9;
+}
+
+/* 那一圈的长度靠 stroke-dasharray / dashoffset 控制，chat.js 里算 */
+.环面 {
+  stroke: #ef7fb1;
+  /* 圆周长 = 2π × 15.5 ≈ 97.4 */
+  stroke-dasharray: 97.4;
+  stroke-dashoffset: 97.4; /* 一开始是空的 */
+  transition: stroke-dashoffset 0.35s ease, stroke 0.35s ease;
+}
+
+.上下文环.注意 .环面 {
+  stroke: #e0a24a;
+}
+
+.上下文环.该收拾了 .环面 {
+  stroke: #d9534f;
+}
+
+.上下文环.还没说过话 .环面 {
+  stroke: #e8d3de;
+}
+
+/* ============ 底下的状态栏 ============ */
+
+.小状态栏 {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 3px 12px 7px;
+  font-size: 11px;
+  color: #bd9aae;
+  background: #fffbfd;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 网络、模型、权限、本地服务都用同一张紧凑状态条，颜色只负责区分类别。 */
+.故障条 {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 12px 6px;
+  padding: 8px 9px;
+  border: 1px solid rgba(209, 112, 145, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 248, 251, 0.96);
+  box-shadow: 0 3px 12px rgba(112, 59, 81, 0.08);
+  color: #6c4d5b;
+}
+.故障条[hidden] { display: none; }
+.故障类别 { flex: 0 0 auto; min-width: 36px; padding: 3px 6px; border-radius: 999px; background: #f1d8e4; color: #a44f75; text-align: center; font-size: 10px; }
+.故障条[data-类别='网络'] .故障类别 { background: #dcecf8; color: #3d7296; }
+.故障条[data-类别='权限'] .故障类别 { background: #f7e9c9; color: #8a681c; }
+.故障条[data-类别='服务'] .故障类别 { background: #e6e1f7; color: #67549a; }
+.故障内容 { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
+.故障内容 strong, .故障内容 span, .故障内容 small { overflow-wrap: anywhere; }
+.故障内容 strong { color: #67404f; font-size: 12px; }
+.故障内容 span { color: #8b6877; font-size: 11px; line-height: 1.35; }
+.故障内容 small { color: #ad8999; font-size: 10px; }
+.故障操作, .故障关闭 { flex: 0 0 auto; border: 0; border-radius: 7px; background: #f5dbe7; color: #9d4e72; cursor: pointer; font-family: inherit; }
+.故障操作 { padding: 5px 8px; font-size: 11px; }
+.故障关闭 { width: 24px; height: 24px; font-size: 15px; }
+
+#小状态 { min-width: 0; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+
+.工具记录入口 {
+  flex: 0 0 auto;
+  max-width: 52%;
+  overflow: hidden;
+  padding: 1px 7px;
+  border: 0;
+  border-radius: 8px;
+  background: #f9e7f0;
+  color: #b45f88;
+  font: inherit;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.工具记录入口:hover { background: #f5d7e6; color: #e05292; }
+.工具记录入口.执行中::before { content: '• '; color: #e8619b; }
+
+/* ============ 近期工具调用 ============ */
+.工具记录遮罩 {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(92, 60, 82, 0.24);
+  opacity: 1;
+  transition: opacity 0.16s ease, visibility 0.16s;
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+.工具记录遮罩.收着 { opacity: 0; pointer-events: none; visibility: hidden; }
+.工具记录面板 {
+  width: min(520px, 100%);
+  max-height: min(620px, calc(100vh - 36px));
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid #efd3e2;
+  border-radius: 16px;
+  background: #fffafd;
+  box-shadow: 0 18px 55px rgba(101, 55, 83, 0.24);
+}
+.工具记录头 { display: flex; align-items: flex-start; margin-bottom: 12px; }
+.工具记录头 > div { flex: 1; }
+.工具记录头 h2 { margin: 0; font-size: 17px; color: #634556; }
+.工具记录头 p { margin: 2px 0 0; font-size: 11px; color: #ae8399; }
+.工具记录关闭 {
+  width: 28px; height: 28px; border: 0; border-radius: 8px;
+  background: transparent; color: #b27b97; font-size: 19px; cursor: pointer;
+}
+.工具记录关闭:hover { background: #f9e2ed; }
+.工具记录列表 { min-height: 110px; overflow-y: auto; padding-right: 3px; }
+.工具记录空态 { padding: 34px 12px; text-align: center; color: #b993a7; font-size: 12px; }
+.工具记录卡 { margin-bottom: 8px; padding: 10px 11px; border: 1px solid #edd7e2; border-radius: 11px; background: #fff; }
+.工具记录卡.失败 { border-color: #efc7ca; background: #fff9f9; }
+.工具记录卡.需注意 { border-color: #ead2b8; background: #fffcf8; }
+.工具记录卡.失败.需注意 { border-color: #efc7ca; background: #fff9f9; }
+.工具记录卡头 { display: flex; align-items: baseline; gap: 10px; }
+.工具记录卡头 strong { flex: 1; color: #8e5571; font-size: 13px; }
+.工具记录卡头 time { color: #a98a9a; font-size: 10px; }
+.工具状态组 { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.工具状态 { padding: 2px 7px; border-radius: 999px; background: #f3edf1; color: #806775; font-size: 10px; line-height: 1.45; }
+.工具状态-成功, .工具状态-已验证, .工具状态-是 { background: #e8f5ed; color: #4c7a60; }
+.工具状态-部分验证, .工具状态-未知 { background: #f5f0e8; color: #8a7254; }
+.工具状态-未验证, .工具状态-部分 { background: #fff0dc; color: #a66b28; }
+.工具状态-失败, .工具状态-拒绝, .工具状态-超时, .工具状态-取消, .工具状态-否 { background: #fae4e6; color: #ae4f59; }
+.工具记录参数, .工具记录摘要 { margin-top: 5px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.工具记录参数 { color: #6f5663; font: 11px/1.5 Consolas, 'Microsoft YaHei', monospace; }
+.工具记录摘要 { color: #9b7688; font-size: 11px; line-height: 1.55; }
+.工具记录提醒 { margin-top: 7px; padding: 7px 8px; border-radius: 8px; background: #fff1e5; color: #9a5f2f; font-size: 11px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.工具记录卡.失败 .工具记录提醒 { background: #fbe8ea; color: #a34e58; }
+.工具记录详情 { margin-top: 7px; color: #9b7688; font-size: 10px; }
+.工具记录详情 summary { width: fit-content; cursor: pointer; color: #9b6680; user-select: none; }
+.工具记录来源 { margin-top: 5px; padding: 5px 7px; border-radius: 7px; background: #faf5f8; color: #856b78; font: 10px/1.45 Consolas, 'Microsoft YaHei', monospace; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+
+/* ============ 长期记忆：只读查看与来源 ============ */
+.记忆管理遮罩 {
+  position: fixed;
+  inset: 0;
+  z-index: 36;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(92, 60, 82, 0.24);
+  opacity: 1;
+  transition: opacity 0.16s ease, visibility 0.16s;
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+.记忆管理遮罩.收着 { opacity: 0; pointer-events: none; visibility: hidden; }
+.记忆管理面板 {
+  width: min(560px, 100%);
+  height: min(640px, calc(100vh - 36px));
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid #e7d4ec;
+  border-radius: 16px;
+  background: #fffafd;
+  box-shadow: 0 18px 55px rgba(101, 55, 83, 0.24);
+}
+.记忆管理头 { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.记忆管理头 > div { flex: 1; }
+.记忆管理头 h2 { margin: 0; font-size: 17px; color: #634556; }
+.记忆管理头 p { margin: 2px 0 0; font-size: 11px; color: #ae8399; }
+.记忆管理头操作 { display: flex; flex: 0 0 auto !important; align-items: center; gap: 5px; }
+.临时记忆新增,
+.记忆导出,
+.记忆清空 {
+  min-height: 28px; padding: 4px 9px; border: 1px solid #dfc7e5; border-radius: 8px;
+  background: #fff; color: #896693; font-family: inherit; font-size: 10px; cursor: pointer;
+}
+.临时记忆新增:hover,
+.记忆导出:hover { background: #f5eaf8; }
+.记忆清空 { color: #a65f71; border-color: #e8c8d1; }
+.记忆清空:hover { background: #fff0f3; }
+.记忆导出:disabled,
+.记忆清空:disabled { opacity: 0.58; cursor: wait; }
+.记忆管理关闭 {
+  width: 28px; height: 28px; border: 0; border-radius: 8px;
+  background: transparent; color: #9b78ad; font-size: 19px; cursor: pointer;
+}
+.记忆管理关闭:hover { background: #f2e7f7; }
+.记忆层切换 {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px;
+  padding: 3px; border-radius: 10px; background: #f5edf5;
+}
+.记忆层切换 button {
+  min-height: 29px; border: 0; border-radius: 8px; background: transparent;
+  color: #a17f99; font-family: inherit; font-size: 11px; cursor: pointer;
+}
+.记忆层切换 button.选中 { background: #fff; color: #80568f; font-weight: 600; box-shadow: 0 1px 4px rgba(91, 52, 80, 0.09); }
+.记忆筛选 { display: flex; gap: 5px; margin-bottom: 8px; }
+.记忆筛选.收着 { display: none; }
+.记忆筛选 button {
+  flex: 1 1 0; min-width: 0; padding: 5px 4px; border: 1px solid #ead9ee;
+  border-radius: 8px; background: #fff; color: #9a789f; font-family: inherit; font-size: 11px; cursor: pointer;
+}
+.记忆筛选 button.选中 { border-color: #c79fd2; background: #f3e7f7; color: #80568f; font-weight: 600; }
+.临时记忆筛选 { display: grid; grid-template-columns: 1.25fr 0.9fr 1.1fr; gap: 5px; margin-bottom: 8px; }
+.临时记忆筛选.收着 { display: none; }
+.临时记忆筛选 select,
+.临时记忆编辑字段 select,
+.临时记忆编辑字段 input {
+  min-width: 0; min-height: 30px; padding: 4px 7px; border: 1px solid #ead9ee; border-radius: 8px;
+  outline: none; background: #fff; color: #806478; font-family: inherit; font-size: 10px;
+}
+.记忆搜索 {
+  width: 100%; min-height: 34px; margin-bottom: 10px; padding: 7px 10px;
+  border: 1px solid #ead8e6; border-radius: 9px; outline: none; background: #fff; color: #654c59; font-family: inherit;
+}
+.记忆搜索:focus { border-color: #d38ab0; box-shadow: 0 0 0 2px rgba(211, 138, 176, 0.12); }
+.记忆管理列表 { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 3px; }
+.记忆管理空态 { padding: 48px 12px; text-align: center; color: #b993a7; font-size: 12px; }
+.记忆卡 { margin-bottom: 8px; padding: 10px 11px; border: 1px solid #eadce8; border-radius: 11px; background: #fff; }
+.记忆卡头 { display: flex; align-items: baseline; gap: 10px; }
+.记忆卡头 strong { flex: 1; color: #8b5b91; font-size: 11px; }
+.记忆卡头 time { color: #b298a6; font-size: 10px; }
+.临时记忆状态组 { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.临时状态 { padding: 2px 6px; border-radius: 999px; background: #f3edf4; color: #92768a; font-size: 9px; }
+.临时状态.有效, .临时状态.已确认 { background: #ecf6f1; color: #5f8b77; }
+.临时状态.待确认 { background: #fff4df; color: #a27637; }
+.临时状态.已归档, .临时状态.已晋升 { background: #f0edf4; color: #7d7089; }
+.临时状态.重要性-0 { background: #f1f0f2; color: #8f8790; }
+.临时状态.重要性-1 { background: #f2edf5; color: #806f8b; }
+.临时状态.重要性-2 { background: #f9ebf2; color: #a05f80; }
+.临时状态.重要性-3 { background: #f7dfe9; color: #9b3f6b; font-weight: 600; }
+.临时状态.关系-待处理 { background: #fff0d9; color: #986126; font-weight: 600; }
+.临时状态.关系-已被替代 { background: #efedf2; color: #786f7d; }
+.临时状态.关系-当前 { background: #e9f5ef; color: #4f816a; }
+.临时记忆关系 { margin-top: 8px; padding: 8px 10px; border-radius: 10px; font-size: 11px; line-height: 1.6; }
+.临时记忆关系.关系-待处理 { background: #fff9ed; border: 1px solid #efd7ad; color: #79552d; }
+.临时记忆关系.关系-已被替代 { background: #f5f3f6; border: 1px solid #dfd8e2; color: #706675; }
+.临时记忆关系.关系-当前 { background: #f0f8f4; border: 1px solid #cfe5da; color: #4f7463; }
+.记忆内容 { margin-top: 6px; color: #5f4855; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.临时记忆标签 { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.临时记忆标签 span { padding: 2px 6px; border-radius: 999px; background: #f8eef4; color: #9d748a; font-size: 9px; }
+.记忆来源 { margin-top: 7px; padding-top: 6px; border-top: 1px solid #f3e8ef; color: #a68596; font-size: 10px; overflow-wrap: anywhere; }
+.记忆操作 { display: flex; justify-content: flex-end; gap: 5px; margin-top: 7px; }
+.记忆操作 button, .记忆编辑按钮 button {
+  min-width: 48px; padding: 4px 9px; border: 1px solid #ead7e4; border-radius: 7px;
+  background: #fff; color: #8c687b; font-family: inherit; font-size: 10px; cursor: pointer;
+}
+.记忆操作 select {
+  min-width: 66px; padding: 4px 6px; border: 1px solid #ead7e4; border-radius: 7px;
+  background: #fff; color: #8c687b; font-family: inherit; font-size: 10px;
+}
+.记忆操作 button:hover, .记忆编辑按钮 button:hover { background: #f9eaf2; }
+.记忆操作 .遗忘记忆 { color: #b35f6f; }
+.记忆操作 span { color: #ae8c9d; font-size: 10px; }
+.记忆编辑区 { margin-top: 7px; }
+.临时记忆编辑字段 { display: grid; grid-template-columns: 0.9fr 0.72fr 1.1fr 1.45fr; gap: 5px; margin-bottom: 6px; }
+.记忆编辑区 textarea {
+  box-sizing: border-box; width: 100%; min-height: 76px; max-height: 180px; resize: vertical;
+  padding: 8px 9px; border: 1px solid #d9bad0; border-radius: 8px; outline: none;
+  background: #fff; color: #5f4855; font-family: inherit; font-size: 12px; line-height: 1.5;
+}
+.记忆编辑区 textarea:focus { border-color: #c87fa6; box-shadow: 0 0 0 2px rgba(200, 127, 166, 0.12); }
+.记忆编辑按钮 { display: flex; justify-content: flex-end; gap: 5px; margin-top: 6px; }
+.记忆编辑按钮 .记忆保存 { border-color: #c790b1; background: #f6e6ef; color: #995a7c; }
+.记忆操作 button:disabled, .记忆编辑按钮 button:disabled { opacity: 0.55; cursor: wait; }
+.记忆操作提示 { margin-top: 6px; color: #8d7280; font-size: 10px; }
+.记忆操作提示.失败 { color: #bd5965; }
+
+/* 日记时间轴：内容与来源都由 textContent 绘制。 */
+.日记卡 { position: relative; margin-left: 10px; border-left: 2px solid #e8cce0; }
+.日记卡::before {
+  content: ''; position: absolute; left: -7px; top: 15px; width: 10px; height: 10px;
+  border: 2px solid #fffafd; border-radius: 50%; background: #ca8caf; box-shadow: 0 0 0 1px #dfb9d0;
+}
+.日记卡头 { align-items: flex-start; }
+.日记卡头 > div { flex: 1 1 auto; min-width: 0; }
+.日记卡头 strong { display: block; color: #7e5079; font-size: 13px; overflow-wrap: anywhere; }
+.日记周期 { margin-top: 2px; color: #aa899b; font-size: 9px; }
+.日记状态 { flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: #f1edf3; color: #847589; font-size: 9px; }
+.日记状态.已完成 { background: #eaf5ef; color: #5d826e; }
+.日记状态.无内容 { background: #f3f0f4; color: #8c7e91; }
+.日记状态.失败待重试, .日记状态.读取失败 { background: #fff0e4; color: #a16c3e; }
+.日记模块 { margin-top: 9px; padding-top: 8px; border-top: 1px solid #f1e6ed; }
+.日记模块 h3 { margin: 0 0 4px; color: #9b6b89; font-size: 11px; }
+.日记正文 { color: #5f4855; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.日记来源详情 { margin-top: 6px; color: #9c7a8d; font-size: 10px; }
+.日记来源详情 summary { width: fit-content; cursor: pointer; color: #9a6683; user-select: none; }
+.日记来源条 { margin-top: 5px; padding: 6px 7px; border-radius: 7px; background: #faf5f8; overflow-wrap: anywhere; }
+.日记来源条 strong { display: block; color: #826575; font-size: 9px; }
+.日记来源条 p { margin: 3px 0 0; color: #765d6a; font-size: 10px; line-height: 1.45; white-space: pre-wrap; user-select: text; -webkit-user-select: text; }
+.日记空周期 { margin-top: 8px; color: #9b7e8d; font-size: 11px; line-height: 1.5; }
+.日记操作 { border-top: 1px solid #f1e6ed; padding-top: 7px; }
+.日记编辑区 { padding-top: 9px; border-top: 1px solid #f1e6ed; }
+.日记编辑区 > input {
+  box-sizing: border-box; width: 100%; padding: 7px 9px; border: 1px solid #d9bad0; border-radius: 8px;
+  background: #fff; color: #5f4855; font-family: inherit; font-size: 12px; outline: none;
+}
+.日记编辑区 > input:focus { border-color: #c87fa6; box-shadow: 0 0 0 2px rgba(200, 127, 166, 0.12); }
+.日记编辑模块 { display: block; margin-top: 8px; color: #9b6b89; font-size: 10px; }
+.日记编辑模块 textarea { margin-top: 4px; }
+
+@media (max-width: 560px) {
+  .记忆管理面板 { padding: 13px; }
+  .记忆管理头 { gap: 6px; }
+  .记忆管理头操作 { flex-wrap: wrap; justify-content: flex-end; }
+  .临时记忆筛选, .临时记忆编辑字段 { grid-template-columns: 1fr; }
+  .记忆操作 { flex-wrap: wrap; }
+}
+
+.小状态栏:hover {
+  color: #e8619b;
+}
+
+/* ============ 工作模式任务卡 ============ */
+
+.工作任务卡 {
+  justify-content: center;
+
+  /* 【2026-10-09 加的：任务卡该比聊天气泡宽】
+   *   `.一条` 上有 max-width: min(88%, 560px) —— 那是给对话气泡定的：
+   *   一行三十来个字，读着最舒服。可任务卡是**一张表**（五个字段 + 两个按钮），
+   *   88% 在窄窗口下会把它压到两百出头：
+   *   主窗口最小 460 宽，减掉 158 的侧栏还剩 302，88% 就是 266，
+   *   再扣 padding 和 68px 的字段名 —— 一段长目录能折成六七行。
+   *   所以单独放宽：窄窗口下几乎用满，宽窗口下封在 620（不跟气泡一样拉成长带）。 */
+  max-width: min(96%, 620px);
+}
+
+.工作任务框 {
+  width: min(520px, calc(100% - 24px));
+  padding: 14px 16px;
+  border: 1px solid #efb4ce;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fffafd, #fff1f7);
+  box-shadow: 0 6px 18px rgba(189, 92, 137, 0.12);
+}
+
+.工作任务标题 {
+  color: #a94373;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.工作任务状态 {
+  display: inline-block;
+  margin: 5px 0 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f7dce8;
+  color: #a04a72;
+  font-size: 11px;
+}
+
+.工作任务字段 {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.工作任务字段名 {
+  color: #aa6d88;
+}
+
+.工作任务字段值 {
+  color: #58434d;
+  overflow-wrap: anywhere;
+}
+
+.工作任务按钮 {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.工作任务按钮 button {
+  padding: 6px 15px;
+  border: 1px solid #e5a6c2;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.工作任务按钮 .开始任务 {
+  color: #fff;
+  background: #df6fa3;
+}
+
+.工作任务按钮 .取消任务 {
+  color: #9a5574;
+  background: #fff;
+}
+
+.工作任务按钮 button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.工作任务卡[data-状态='已完成'] .工作任务状态 {
+  color: #397a58;
+  background: #dff1e7;
+}
+
+.工作任务卡[data-状态='部分完成'] .工作任务状态 {
+  color: #8a5a12;
+  background: #fbeccd;
+}
+
+/* 【2026-10-09 加的：把这两个状态区分开】
+ *   原来只有"已完成 / 失败 / 已取消"有专属颜色，中间三档（待确认、执行中、等待权限）
+ *   全用默认的粉色，长得一模一样。可它们对他意味着完全不同的事：
+ *     · 待确认   —— 等他决定要不要开始
+ *     · 执行中   —— 她在动，不用管
+ *     · 等待权限 —— **卡在他身上**：他不点，她就停在那儿
+ *   最后这一档最容易看漏（它跟另外两个同色），偏偏最需要他动。
+ *   所以给"等待权限"一个扎眼的琥珀色，"执行中"一个安静的蓝色 —— 一眼分得清谁在等谁。 */
+.工作任务卡[data-状态='等待权限'] .工作任务状态 {
+  color: #8a5a12;
+  background: #fbeccd;
+}
+
+.工作任务卡[data-状态='执行中'] .工作任务状态 {
+  color: #2f6b86;
+  background: #dceef6;
+}
+
+.工作任务卡[data-状态='失败'] .工作任务状态,
+.工作任务卡[data-状态='已取消'] .工作任务状态 {
+  color: #9b5260;
+  background: #f3dfe4;
+}

@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      这一行是安全设置：只允许页面加载自己带的文件，
+      不许从网上偷偷拉脚本进来。空白窗口最容易被这种事坑。
+      img-src 里那个 file: 是给她那张照片用的（本地文件，不走网络）。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:; media-src 'self' blob: file:"
+    />
+    <title>爱莉希雅</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!--
+      ============ 三层背景图（2026-10-07 加的）============
+
+      为什么要放三个 div、而不是直接在 body 上换 background-image：
+        因为 CSS 里 **background-image 是不能过渡的** ——
+        换图就是硬切，写多少 transition 都没用。
+        想让三种模式之间"淡过去"，只能让三张图**同时存在、叠在一起**，
+        切换的时候该退的退、该浮的浮。
+
+      谁控制它们：chat.js 给 body 这个标签加上或拿掉「干活」「学习」这两个类名，
+      下面 style.css 里那几条规定谁该透明、谁该实。
+      这一层是纯装饰，pointer-events 关掉了，不会挡住任何点击。
+
+      （注释里别写带尖括号的标签名 —— tools\测多对话.cjs 靠数标签个数
+        判断有没有漏闭合，注释里混一个进去它会当成真标签，报"开2闭1"。）
+    -->
+    <div class="背景层 聊天那张"></div>
+    <div class="背景层 干活那张"></div>
+    <div class="背景层 学习那张"></div>
+
+    <!-- ============ 顶栏 ============ -->
+    <header class="顶栏">
+      <div class="她的小名">
+        <!--
+          这儿放的是她本人的头像。
+          为什么放这儿而不是放托盘：托盘上的图标系统只给 16 像素，
+          这张图缩到 16 会糊成一团粉。窗口里这个头像是 32 像素、
+          下面开场那个是 64 像素 —— 那两个尺寸够看清楚她了。
+        -->
+        <img class="头像" src="assets/elysia.jpg" alt="爱莉希雅" />
+        <div class="竖排">
+          <span class="名字">爱莉希雅</span>
+          <span class="状态" id="状态">在的</span>
+        </div>
+      </div>
+
+      <div class="按钮们">
+        <button id="桌宠开关" class="小按钮" title="桌宠：收起 Live2D">✦</button>
+        <button id="文件开关" class="小按钮" title="文件：查看她写出的内容">▤</button>
+        <button id="设置开关" class="小按钮" title="设置 API Key">⚙</button>
+        <button
+          id="账本开关"
+          class="小按钮"
+          title="账本：看她花了多少 token、多少钱"
+        >
+          ¥
+        </button>
+        <button
+          id="喇叭"
+          class="小按钮"
+          title="声音没开时点一下启动；在线后点一下静音"
+        >
+          ♪
+        </button>
+        <!--
+          窗口没有系统标题栏了（main.js 里 frame:false），所以这两个按钮
+          得自己摆上来。它们**不是一回事**（2026-10-03 改的）：
+
+            「—」收起来 —— 窗口藏起来，她还在托盘上，点一下就回来，声音照旧。
+            「×」全部关掉 —— 她 + 桌宠 + 声音服务，一个不留。
+                             会先问一句（关掉容易，回来要两分半）。
+
+          以前这两个按钮干的是同一件事（都是收起来），他提了才发现重复。
+        -->
+        <button id="收起" class="小按钮" title="收起来（她还在托盘上 · 也可以按 Esc）">—</button>
+        <button id="退出" class="小按钮 退出" title="全部关掉 —— 连声音和桌宠一起收（下次要重新加载两分半）">×</button>
+      </div>
+    </header>
+
+    <!-- ============ 左边那一列：一段一段对话 ============ -->
+    <!--
+      为什么要有这一列：
+        她跟他的说话是**一段一段**的 —— 这一段聊星星，下一段聊选课。
+        每一段只记得自己那几句，段与段之间互不干扰。
+        但**长期记忆是共用的**（关于你的事实、你们一起经历的、她的小本子），
+        所以换一段她不会忘了你是谁。
+      跟 DSH 网页里左边那个对话列表是一回事。
+    -->
+    <div class="身子">
+      <aside class="侧栏">
+        <div class="新对话按钮组">
+          <button id="开新对话" class="开新对话" title="开一段会保存的新对话">＋ 新对话</button>
+          <button id="开临时对话" class="开临时对话" title="临时对话：本次运行内可切换，关闭程序后消失">◇ 临时</button>
+        </div>
+
+        <!--
+          这一组原来挤在顶栏中间。状态越来越多后，顶栏既难拖动也难扫一眼；
+          现在统一放到对话列表旁边，因为模式、记忆、任务和目录都属于“当前这一段”。
+          按钮仍然是原来的 id 和行为，只改摆放位置。
+        -->
+        <section class="侧栏状态" aria-label="当前对话状态">
+          <div class="侧栏状态标题">
+            <span>当前对话</span>
+            <button id="状态详情开关" type="button" aria-expanded="false" title="显示长期记忆、记忆库、任务和工作区以及即时反应">⋯</button>
+          </div>
+          <button id="模式开关" class="模式按钮" title="点一下换模式：聊天 / 干活">聊天</button>
+          <div id="状态详情" class="侧栏状态详情 收着">
+            <button id="情感状态" class="情感状态" title="当前即时反应；点击恢复平静">平静</button>
+            <button id="缓慢情绪" class="缓慢情绪" title="近期多轮形成的轻微基调；点击恢复平稳">平稳</button>
+            <button id="记忆开关" class="记忆按钮" title="会从这段对话新增长期记忆；聊天记录也会保存">开启</button>
+            <button id="记忆管理入口" class="记忆管理入口" title="查看她保存的长期记忆和来源">查看</button>
+            <button id="任务开关" class="任务按钮" title="学习任务：接下来要做什么" hidden>
+              <span id="任务角标">任务</span>
+            </button>
+            <button id="工作区按钮" class="干活目录" title="选她这次在哪个文件夹里干活" hidden>
+              <span id="工作区名">默认</span>
+            </button>
+            <button id="工作索引入口" class="工作索引入口" title="查看已经确认执行的正式工作" hidden>查看</button>
+          </div>
+        </section>
+        <!--
+          点 ＋ 之后弹出来的模型选择。
+          为什么要有这一步（2026-10-04 他提的）：
+            他要的是"像 DSH 那样，开对话的时候能选模型" ——
+            聊天的对话用她说话最像的那个，要看图的对话换成能看图的。
+          平时收着（.收着），点 ＋ 才展开；选完、或者点别处就收回去。
+          里面的按钮是 chat.js 按"这把钥匙上真有哪些模型"当场画出来的 ——
+          **名单不写死在这儿**，它真的会变。
+        -->
+        <div id="选模型" class="选模型 收着"></div>
+        <div id="对话列表" class="对话列表">
+          <!-- 一段长这样（下面这行是模板，不会被显示）：
+                 <button class="对话" data-编号="d1a2b3">
+                   <span class="对话标题">在吗</span>
+                   <span class="对话小字">9月26日 · 120 条 · flash</span>
+                 </button> -->
+        </div>
+      </aside>
+
+      <div class="正屋">
+    <!-- 学习模式固定露出的四项状态。内容来自学习区进度.md，不从聊天里猜。 -->
+    <section id="学习状态板" class="学习状态板" aria-label="学习进度" aria-live="polite" hidden>
+      <div class="学习状态头">
+        <span>学习进度</span>
+        <button id="学习状态刷新" title="重新读取进度.md">↻</button>
+      </div>
+      <div class="学习状态格">
+        <div class="学习状态项"><span>课程</span><strong id="学习课程">还没定</strong></div>
+        <div class="学习状态项"><span>当前章节</span><strong id="学习章节">还没定</strong></div>
+        <div class="学习状态项"><span>下一步</span><strong id="学习下一步">还没定</strong></div>
+        <div class="学习状态项"><span>复习时间</span><strong id="学习复习时间">还没定</strong></div>
+      </div>
+    </section>
+    <main id="聊天区" class="聊天区">
+      <!-- 一条消息长这样（下面这行是模板，不会被显示）：
+
+           <div class="一条 她的">
+             <div class="气泡">她的话</div>
+             <div class="时间">21:10</div>
+           </div>
+
+           类名用中文，是为了你以后打开这个文件能一眼看懂哪块是哪块。
+      -->
+
+      <!-- 上次的对话从这里开始显示。
+           一开始是空的、而且藏着的；窗口一打开，主进程会把聊天记录送过来，
+           chat.js 再把它填进去。所以关掉窗口、明天再打开，
+           上次聊的还在这儿，不会白茫茫一片。 -->
+      <div class="更早" id="更早" hidden>
+        <button id="看更早" class="更早按钮">
+          看更早的（还有 <span id="更早条数">0</span> 条）
+        </button>
+      </div>
+
+      <!-- 还没说话的时候，摆一句她的话在这儿。
+           这两句会跟着模式换（台词在 chat.js 的 模式表 里）——
+           聊天、干活、学习各一套。不换的话，切了模式开场白还是那句
+           "今天要不要讲点什么呢"，看着就像"换了但没换"。 -->
+      <div class="开场" id="开场">
+        <img class="开场头像" src="assets/elysia.jpg" alt="爱莉希雅" />
+        <p class="开场的话" id="开场白">
+          呀，你来了♪ 我刚刚还在想，今天要不要讲点什么呢。
+        </p>
+        <p class="开场的小字" id="开场小字">想说什么就说吧，我在这儿呢。</p>
+      </div>
+    </main>
+
+    <!-- ============ 底下的输入 ============ -->
+    <!--
+      发出去之前，他带的东西先摆在这儿：图片给缩略图，别的给文件名。
+      为什么单独占一条、不塞进输入框：
+        输入框是打字的地方，文件名混进去会碍事；而且单独一条才好一个个删掉。
+      没有附件的时候整条收着（.收着），一点都不占地方。
+    -->
+    <div id="待发" class="待发 收着"></div>
+
+    <!-- 四类故障共用一张状态条；内容只来自主进程整理后的短说明。 -->
+    <section id="故障条" class="故障条" aria-live="assertive" hidden>
+      <span id="故障类别" class="故障类别">模型</span>
+      <div class="故障内容">
+        <strong id="故障标题">这次没有成功</strong>
+        <span id="故障说明"></span>
+        <small id="故障建议"></small>
+      </div>
+      <button id="故障操作" class="故障操作" type="button" hidden></button>
+      <button id="故障关闭" class="故障关闭" type="button" title="收起">×</button>
+    </section>
+
+    <div id="录音状态" class="录音状态 收着" role="status" aria-live="assertive">
+      <span class="录音红点" aria-hidden="true"></span>
+      <span id="录音状态字">正在听 · 松开后识别，移出或按 Esc 取消</span>
+    </div>
+
+    <footer class="输入区">
+      <textarea
+        id="输入"
+        rows="1"
+        placeholder="跟她说点什么……（回车发送；图片可以直接粘贴）"
+        autocomplete="off"
+      ></textarea>
+      <!-- 选文件用的真身。藏起来是因为它长得丑（系统自带那个按钮），
+           让他点旁边那个 📎 去点它就行。 -->
+      <input id="选文件" type="file" multiple hidden />
+      <button
+        id="附件按钮"
+        class="附件按钮"
+        title="发个图片或文件给她（也可以直接把图片粘进来、或者把文件拖到窗口里）"
+      >
+        📎
+      </button>
+      <button id="通话开关" class="通话开关" type="button" title="通话模式：松开麦克风后直接发送" aria-label="切换通话模式" aria-pressed="false">☎</button>
+      <button id="麦克风" class="麦克风" type="button" title="按住说话，松开后识别" aria-label="按住说话">🎙</button>
+      <!--
+        这个圈 = 现在上下文有多满。
+        为什么要有它：上下文是**看不见的** —— 满了不会报错，
+        只会变慢、变贵、变糊涂。看不见就没法管。
+        （跟 DSH 界面里那个是一个意思，都是"压力 ÷ 容量"。）
+        平时是空心的；她干活的时候会一边发请求一边涨 —— 危险就在那几下。
+      -->
+      <button id="上下文环" class="上下文环" title="上下文：还没说过话">
+        <svg viewBox="0 0 36 36" aria-hidden="true">
+          <circle class="环底" cx="18" cy="18" r="15.5" />
+          <circle id="环面" class="环面" cx="18" cy="18" r="15.5" />
+        </svg>
+      </button>
+      <button id="发送" class="发送" title="发送（回车）">↵</button>
+    </footer>
+
+    <!--
+      ============ 学习任务抽屉（2026-10-08 加的）============
+
+      为什么做成"从右边滑出来的抽屉"，不做成昔涟那种常驻浮窗：
+        我们这个窗口只有 620 宽（她那边是整屏）。浮窗会一直压着聊天区，
+        而聊天区才是他大部分时间在看的地方。
+        抽屉平时收着，点顶上那个按钮才出来，出来的时候盖在聊天上 ——
+        看完点一下就走，不留痕迹。
+
+      里面的东西：进度条 + 清单 + 底下一个加任务的输入框。
+      清单存的是配置中学习区的 `任务.md`，**他随时能自己打开改**
+      （就是普通的 markdown 勾选框）—— 这个抽屉只是它的一个界面，
+      不是它的家。
+    -->
+    <aside id="任务抽屉" class="任务抽屉 收着">
+      <div class="任务头">
+        <span class="任务标题">学习任务</span>
+        <span class="任务计数" id="任务计数">0/0</span>
+        <button id="任务收起" class="任务收起" title="收起来">×</button>
+      </div>
+      <div class="任务进度条"><div class="任务进度面" id="任务进度面"></div></div>
+      <div class="任务列表" id="任务列表"></div>
+      <div class="任务加">
+        <input id="任务输入" type="text" placeholder="加一条要做的……" />
+        <button id="任务添加" title="加进清单（也可以按回车）">＋</button>
+      </div>
+    </aside>
+
+    <!-- 她成功写出的文件。列表和预览都由主进程校验后提供，网页不能直接读硬盘。 -->
+    <aside id="文件抽屉" class="文件抽屉 收着" aria-label="文件">
+      <div class="文件头">
+        <span class="文件标题">文件</span>
+        <button id="文件刷新" class="文件头按钮" title="重新读取文件列表">↻</button>
+        <button id="文件系统打开" class="文件头按钮" title="用系统程序打开" disabled>↗</button>
+        <button id="文件收起" class="文件头按钮" title="收起来">×</button>
+      </div>
+      <div id="产物列表" class="产物列表"></div>
+      <div id="文件预览" class="文件预览">
+        <div class="文件空态">她写出的文件会出现在这里。</div>
+      </div>
+    </aside>
+
+    <!-- 已确认正式工作的只读记录。数据由主进程裁剪后提供，renderer 不直接读取 JSON。 -->
+    <aside id="工作索引抽屉" class="工作索引抽屉 收着" aria-label="工作记录">
+      <div class="工作索引头">
+        <div>
+          <strong>工作记录</strong>
+          <span id="工作索引统计">读取中……</span>
+        </div>
+        <button id="工作索引刷新" class="工作索引头按钮" title="重新读取工作索引">↻</button>
+        <button id="工作索引收起" class="工作索引头按钮" title="收起来">×</button>
+      </div>
+      <input id="工作索引搜索" class="工作索引搜索" type="search" placeholder="搜索目标、结果或产物……" />
+      <div id="工作索引筛选" class="工作索引筛选" aria-label="按状态筛选">
+        <button type="button" data-状态="" class="选中">全部</button>
+        <button type="button" data-状态="已完成">已完成</button>
+        <button type="button" data-状态="部分完成">部分</button>
+        <button type="button" data-状态="失败">失败</button>
+      </div>
+      <div id="工作索引列表" class="工作索引列表">
+        <div class="工作索引空态">还没有正式工作记录。</div>
+      </div>
+    </aside>
+
+    <!-- ============ 底下那行小状态 ============ -->
+    <div class="小状态栏" id="小状态栏">
+      <span id="小状态">点这儿看她的情况</span>
+      <button id="工具记录入口" class="工具记录入口" type="button" hidden>工具调用</button>
+    </div>
+      </div>
+    </div>
+
+    <!-- 工具记录只保留本次运行内最近 30 条；这里展示摘要，不塞整篇文件或命令输出。 -->
+    <div id="工具记录遮罩" class="工具记录遮罩 收着" aria-hidden="true">
+      <section class="工具记录面板" role="dialog" aria-modal="true" aria-labelledby="工具记录标题">
+        <div class="工具记录头">
+          <div>
+            <h2 id="工具记录标题">近期工具调用</h2>
+            <p>本次运行内最近 30 条</p>
+          </div>
+          <button id="工具记录关闭" class="工具记录关闭" title="关闭">×</button>
+        </div>
+        <div id="工具记录列表" class="工具记录列表">
+          <div class="工具记录空态">还没有调用过工具。</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="上下文遮罩" class="工具记录遮罩 收着" aria-hidden="true">
+      <section class="工具记录面板" role="dialog" aria-modal="true" aria-labelledby="上下文标题">
+        <div class="工具记录头">
+          <div><h2 id="上下文标题">本轮上下文</h2><p id="上下文统计"></p></div>
+          <button id="上下文关闭" class="工具记录关闭" aria-label="关闭上下文">×</button>
+        </div>
+        <div id="上下文记录" class="工具记录列表"></div>
+      </section>
+    </div>
+
+    <!-- 分层记忆管理：长期层、临时层和不进上下文的日记档案保持清楚边界。 -->
+    <div id="记忆管理遮罩" class="记忆管理遮罩 收着" aria-hidden="true">
+      <section class="记忆管理面板" role="dialog" aria-modal="true" aria-labelledby="记忆管理标题">
+        <div class="记忆管理头">
+          <div>
+            <h2 id="记忆管理标题">记忆库</h2>
+            <p id="记忆管理统计">读取中……</p>
+          </div>
+          <div class="记忆管理头操作">
+            <button id="临时记忆新增" class="临时记忆新增" title="手动写一条短期记忆" hidden>新增</button>
+            <button id="记忆导出" class="记忆导出" title="导出全部长期记忆">导出全部</button>
+            <button id="记忆清空" class="记忆清空" title="清空事实、共同经历和小本子">清空…</button>
+            <button id="记忆管理关闭" class="记忆管理关闭" title="关闭">×</button>
+          </div>
+        </div>
+        <div class="记忆层切换" role="tablist" aria-label="记忆层级">
+          <button class="选中" data-记忆层="长期" role="tab" aria-selected="true">长期记忆</button>
+          <button data-记忆层="临时" role="tab" aria-selected="false">临时记忆</button>
+          <button data-记忆层="日记" role="tab" aria-selected="false">日记</button>
+        </div>
+        <div id="长期记忆筛选" class="记忆筛选" role="group" aria-label="长期记忆类别">
+          <button class="选中" data-类别="">全部</button>
+          <button data-类别="事实">事实</button>
+          <button data-类别="经历">经历</button>
+          <button data-类别="小本子">小本子</button>
+        </div>
+        <div id="临时记忆筛选" class="临时记忆筛选 收着" aria-label="临时记忆筛选">
+          <select id="临时记忆分类" aria-label="临时记忆分类">
+            <option value="">全部分类</option>
+            <option>近期状态</option><option>近期计划</option><option>未完话题</option>
+            <option>候选偏好</option><option>近期事件</option><option>关系语境</option>
+          </select>
+          <select id="临时记忆生命周期" aria-label="临时记忆生命周期">
+            <option value="有效">有效</option><option value="已归档">已归档</option><option value="已晋升">已晋升</option>
+          </select>
+          <select id="临时记忆确认状态" aria-label="临时记忆确认状态">
+            <option value="">全部确认状态</option><option value="待确认">待确认</option><option value="已确认">已确认</option>
+          </select>
+        </div>
+        <div id="日记筛选" class="记忆筛选 收着" role="group" aria-label="日记周期筛选">
+          <button class="选中" data-日记类型="">全部</button>
+          <button data-日记类型="日">日记</button>
+          <button data-日记类型="周">周记</button>
+        </div>
+        <input id="记忆搜索" class="记忆搜索" type="search" maxlength="80" placeholder="搜索内容、来源或会话……" />
+        <div id="记忆管理列表" class="记忆管理列表">
+          <div class="记忆管理空态">正在读取记忆……</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- API Key 只在这里输入一次。页面拿不到已经保存的完整值。 -->
+    <div id="设置遮罩" class="设置遮罩 收着" aria-hidden="true">
+      <section class="设置面板" role="dialog" aria-modal="true" aria-labelledby="设置标题">
+        <div class="设置头">
+          <div>
+            <h2 id="设置标题">设置</h2>
+            <p>模型、搜索、语音与陪伴</p>
+          </div>
+          <button id="设置关闭" class="设置关闭" title="关闭设置">×</button>
+        </div>
+
+        <div id="密钥状态" class="密钥状态">正在读取……</div>
+        <label class="设置标签" for="密钥输入">填写或更换 Key</label>
+        <div class="密钥输入行">
+          <input id="密钥输入" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false" />
+          <button id="显示密钥" type="button" title="显示或隐藏刚输入的内容">显示</button>
+        </div>
+        <p class="设置说明">保存后由 Windows 加密，只供这台电脑上的当前用户使用。界面不会读回完整 Key。</p>
+
+        <div class="设置操作">
+          <button id="保存密钥" class="主要设置按钮">保存</button>
+          <button id="测试密钥">测试连接</button>
+          <button id="清除密钥" class="危险设置按钮">清除</button>
+        </div>
+
+        <div class="设置分隔"></div>
+        <div class="联网搜索设置">
+          <h3>联网搜索</h3>
+          <p>搜索公开网页。两套后端可选，切换后立刻生效，不用重启。</p>
+
+          <label class="设置标签" for="搜索供应商">搜索后端</label>
+          <div class="密钥输入行">
+            <select id="搜索供应商">
+              <option value="deepseek">DeepSeek 原生搜索（与聊天共用同一把钥匙）</option>
+              <option value="serpapi">SerpAPI Google Search（需要单独的 Key）</option>
+            </select>
+          </div>
+          <div id="搜索供应商状态" class="密钥状态">正在读取……</div>
+
+          <p class="设置说明">下面这把 SerpAPI Key 只在上面的后端选到 SerpAPI 时才会用到。测试连接会执行一次 Google Search；命中缓存时免费，否则通常计 1 次搜索。</p>
+          <div id="搜索密钥状态" class="密钥状态">正在读取……</div>
+          <label class="设置标签" for="搜索密钥输入">填写或更换 SerpAPI Key</label>
+          <div class="密钥输入行">
+            <input id="搜索密钥输入" type="password" placeholder="SerpAPI Key" autocomplete="off" spellcheck="false" />
+            <button id="显示搜索密钥" type="button" title="显示或隐藏刚输入的内容">显示</button>
+          </div>
+          <p class="设置说明">只在本机用 Windows 加密保存。搜索时仅发送一行公开检索词，不发送聊天历史、记忆或文件正文。</p>
+          <div class="设置操作">
+            <button id="保存搜索密钥" class="主要设置按钮">保存</button>
+            <button id="测试搜索密钥">测试搜索</button>
+            <button id="清除搜索密钥" class="危险设置按钮">清除</button>
+          </div>
+        </div>
+
+        <div class="设置分隔"></div>
+        <div class="语音输入设置">
+          <h3>语音输入</h3>
+          <p>指定要使用的麦克风；设备断开时可在这里改回系统默认。</p>
+          <label class="设置标签" for="麦克风设备">麦克风</label>
+          <div class="麦克风设备行">
+            <select id="麦克风设备" aria-label="选择麦克风">
+              <option value="">系统默认</option>
+            </select>
+            <button id="刷新麦克风" type="button">刷新</button>
+          </div>
+          <div id="麦克风设备状态" class="设备状态" aria-live="polite"></div>
+        </div>
+
+        <div class="设置分隔"></div>
+        <div class="主动陪伴设置">
+          <h3>主动陪伴</h3>
+          <p>在你空闲一段时间后尝试发一条文字；安静时段和每日上限由本机强制执行。</p>
+          <label class="陪伴总开关"><input id="主动陪伴开启" type="checkbox" /> 允许主动陪伴</label>
+          <div class="陪伴设置网格">
+            <label>最短等待（分钟）<input id="陪伴最短" type="number" min="5" max="720" step="1" /></label>
+            <label>最长等待（分钟）<input id="陪伴最长" type="number" min="5" max="720" step="1" /></label>
+            <label>安静开始<input id="安静开始" type="time" /></label>
+            <label>安静结束<input id="安静结束" type="time" /></label>
+            <label>每日上限（条）<input id="陪伴每日上限" type="number" min="1" max="12" step="1" /></label>
+            <label class="安静开关"><input id="安静时段开启" type="checkbox" /> 启用安静时段</label>
+          </div>
+          <div id="主动陪伴状态" class="设备状态" aria-live="polite">正在读取……</div>
+          <div class="设置操作">
+            <button id="保存主动陪伴" class="主要设置按钮">保存陪伴设置</button>
+            <button id="测试主动陪伴" type="button" title="会实际调用一次模型并把消息写进当前正式对话">测试发一条</button>
+          </div>
+        </div>
+
+        <div class="设置分隔"></div>
+        <div class="数据设置">
+          <h3>数据与备份</h3>
+          <p>导出人格、记忆、聊天、附件和学习资料。备份不含 API Key，也没有密码。</p>
+          <div class="数据操作">
+            <button id="打开数据目录">打开数据目录</button>
+            <button id="查看表达反馈">表达反馈</button>
+            <button id="导出备份" class="主要设置按钮">导出备份</button>
+          </div>
+        </div>
+        <div id="设置结果" class="设置结果" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- 人工表达评测与记忆完全分开；这里只读展示已标记的真实回复。 -->
+    <div id="表达反馈遮罩" class="表达反馈遮罩 收着" aria-hidden="true">
+      <section class="表达反馈面板" role="dialog" aria-modal="true" aria-labelledby="表达反馈标题">
+        <div class="表达反馈头">
+          <div>
+            <h2 id="表达反馈标题">表达反馈</h2>
+            <p id="表达反馈统计">读取中……</p>
+          </div>
+          <button id="表达反馈关闭" class="表达反馈关闭" title="关闭">×</button>
+        </div>
+        <div id="表达反馈筛选" class="表达反馈筛选" role="group" aria-label="表达问题筛选">
+          <button class="选中" data-表达标签="">全部</button>
+          <button data-表达标签="讨好腔">讨好腔</button>
+          <button data-表达标签="套路句式">套路句式</button>
+          <button data-表达标签="空洞">空洞</button>
+          <button data-表达标签="莫名其妙">莫名其妙</button>
+          <button data-表达标签="不像爱莉希雅">不像她</button>
+        </div>
+        <div id="表达反馈列表" class="表达反馈列表">
+          <div class="表达反馈空态">正在读取反馈……</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 声音服务加载较久，用一个醒目但不挡操作的短提示告诉他已经点成功。 -->
+    <div id="声音提示" class="声音提示 收着" role="status" aria-live="polite"></div>
+
+    <script src="流式语音.js"></script>
+    <script src="语音输入.js"></script>
+    <script src="chat.js"></script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "seethrough_blink.moc3",
+		"Textures": [
+			"seethrough_blink.4096/texture_00.png"
+		],
+		"Physics": "seethrough_blink.physics3.json",
+		"DisplayInfo": "seethrough_blink.cdi3.json",
+		"Motions": {
+			"Idle": [
+				{
+					"File": "seethrough_blink.idle.motion3.json"
+				}
+			],
+			"Blink": [
+				{
+					"File": "seethrough_blink.blink.motion3.json"
+				}
+			],
+			"Nod": [
+				{
+					"File": "seethrough_blink.nod.motion3.json"
+				}
+			],
+			"Shake": [
+				{
+					"File": "seethrough_blink.shake.motion3.json"
+				}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": [
+				"ParamMouthOpenY"
+			]
+		}
+	]
+}

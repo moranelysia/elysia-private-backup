@@ -1,0 +1,16 @@
+* text=auto
+*.cmd text eol=crlf
+*.cjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Editable art sources belong in Git LFS.
+*.psd2live filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.psb filter=lfs diff=lfs merge=lfs -text
+*.clip filter=lfs diff=lfs merge=lfs -text
+
+# The local backup filter removes credential-shaped strings from the shared work log before Git stores it.
+爱莉希雅/共同协作.md filter=elysia-redact
+

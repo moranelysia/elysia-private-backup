@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>账本</title>
+    <link rel="stylesheet" href="账本.css" />
+  </head>
+  <body>
+    <!--
+      「账本」—— 贴在聊天窗口旁边的一小块，告诉你她花了多少 token、多少钱。
+
+      为什么值得单独做个窗口：她说话走的是 DeepSeek 的接口，
+      花的是当前使用者自己的 token。花钱的事得看得见，
+      不然只能等月底看账单 —— 那时候已经晚了。
+    -->
+
+    <header class="顶">
+      <span class="标题">账本</span>
+      <button id="收起" class="关" title="收起来">×</button>
+    </header>
+
+    <div class="大数">
+      <div class="这一句的钱" id="这次钱">—</div>
+      <div class="这一句的字" id="这次字">还没说话</div>
+    </div>
+
+    <div class="两组">
+      <div class="组">
+        <div class="组名">今天</div>
+        <div class="组钱" id="今天钱">0.00</div>
+        <div class="组次" id="今天次">0 次</div>
+      </div>
+      <div class="组">
+        <div class="组名">一共</div>
+        <div class="组钱" id="总共钱">0.00</div>
+        <div class="组次" id="总共次">0 次</div>
+      </div>
+    </div>
+
+    <div class="明细">
+      <div class="行">
+        <span class="键">输入</span>
+        <span class="值" id="输入">0</span>
+      </div>
+      <div class="行 命中行">
+        <span class="键">其中命中缓存</span>
+        <span class="值 命中" id="命中">0</span>
+      </div>
+      <div class="行">
+        <span class="键">输出</span>
+        <span class="值" id="输出">0</span>
+      </div>
+    </div>
+
+    <div class="底">
+      <span id="命中率">缓存命中率 —</span>
+      <button id="看流水" class="小字按钮" title="用记事本打开流水账（一行一次对话）">
+        流水
+      </button>
+    </div>
+
+    <script src="账本.js"></script>
+  </body>
+</html>
