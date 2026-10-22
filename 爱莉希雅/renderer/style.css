@@ -68,7 +68,8 @@ body {
 .任务抽屉,
 .输入区,
 .更早,
-.开场 {
+.开场,
+.记忆管理面板 {
   user-select: none;
   -webkit-user-select: none;
 }
@@ -2656,6 +2657,8 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
   width: 100%; min-height: 34px; margin-bottom: 10px; padding: 7px 10px;
   border: 1px solid #ead8e6; border-radius: 9px; outline: none; background: #fff; color: #654c59; font-family: inherit;
 }
+.记忆搜索:placeholder-shown { user-select: none; -webkit-user-select: none; }
+.记忆搜索:not(:placeholder-shown) { user-select: text; -webkit-user-select: text; }
 .记忆搜索:focus { border-color: #d38ab0; box-shadow: 0 0 0 2px rgba(211, 138, 176, 0.12); }
 .记忆管理列表 { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 3px; }
 .记忆管理空态 { padding: 48px 12px; text-align: center; color: #b993a7; font-size: 12px; }
@@ -2682,7 +2685,7 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 .记忆内容 { margin-top: 6px; color: #5f4855; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
 .临时记忆标签 { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
 .临时记忆标签 span { padding: 2px 6px; border-radius: 999px; background: #f8eef4; color: #9d748a; font-size: 9px; }
-.记忆来源 { margin-top: 7px; padding-top: 6px; border-top: 1px solid #f3e8ef; color: #a68596; font-size: 10px; overflow-wrap: anywhere; }
+.记忆来源 { margin-top: 7px; padding-top: 6px; border-top: 1px solid #f3e8ef; color: #a68596; font-size: 10px; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
 .记忆操作 { display: flex; justify-content: flex-end; gap: 5px; margin-top: 7px; }
 .记忆操作 button, .记忆编辑按钮 button {
   min-width: 48px; padding: 4px 9px; border: 1px solid #ead7e4; border-radius: 7px;

@@ -76,6 +76,7 @@ async function main() {
   检查('前端用 textContent 画记忆内容', 前端.includes("内容.textContent = 一.内容 || ''"))
   检查('Esc 和遮罩都能关闭记忆页', 前端.includes('关记忆管理()') && 前端.includes('事件.target === 记忆管理遮罩'))
   检查('记忆页样式不会撑出窗口', css.includes('height: min(640px, calc(100vh - 36px))') && css.includes('overflow-y: auto'))
+  检查('固定界面文字不可选择但记忆正文和搜索输入仍可复制编辑', css.includes('.记忆管理面板 {\n  user-select: none;') && css.includes('.记忆搜索:placeholder-shown { user-select: none;') && css.includes('.记忆搜索:not(:placeholder-shown) { user-select: text;') && css.includes('.记忆内容') && css.includes('user-select: text; -webkit-user-select: text;'))
   检查('模型写记忆时会带上会话编号', fs.readFileSync(path.join(项目根, '脑', '对话.cjs'), 'utf8').includes('const 来源上下文 = { 对话: 选项.对话编号 }'))
 
   console.log(`\n记忆查看：${通过}/${总数} 通过`)
