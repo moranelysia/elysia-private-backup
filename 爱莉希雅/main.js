@@ -70,6 +70,7 @@ const 声音启动器 = 创建声音启动器({
 })
 const 记忆 = require(path.join(脑, '记忆.cjs'))
 const 记忆关系图 = require(path.join(脑, '记忆关系图.cjs'))
+const 记忆关系整理 = require(path.join(脑, '记忆关系整理.cjs'))
 const 记忆日记 = require(path.join(脑, '记忆日记.cjs'))
 const 临时记忆 = require(path.join(脑, '临时记忆.cjs'))
 const { 晋升到长期 } = require(path.join(脑, '临时记忆晋升.cjs'))
@@ -87,6 +88,8 @@ const 表达反馈 = require(path.join(脑, '表达反馈.cjs'))
 const 确认 = require(path.join(脑, '确认.cjs'))
 let 日记首次计时器 = null
 let 日记检查计时器 = null
+let 关系整理首次计时器 = null
+let 关系整理检查计时器 = null
 
 /** 日记只在后台整理已结束的周期；任何失败都不能挡住启动或聊天。 */
 function 唤醒记忆日记() {
@@ -2323,6 +2326,7 @@ function 接对讲机() {
     if (选择.response !== 1) return { 好: false, 取消了: true }
     try {
       const 果 = 记忆.清空全部长期记忆()
+      if (!果.没变化) 记忆关系整理.排队({ 原因: '用户清空长期记忆' })
       return { 好: true, 条数: 果.条数, 没变化: !!果.没变化, 已备份: !!果.备份文件 }
     } catch (错误) {
       console.log('⚠ 长期记忆清空失败：' + 错误.message)
@@ -2340,6 +2344,7 @@ function 接对讲机() {
     if (内容.trim().length > 2000) return { 好: false, 说明: '记忆内容不能超过 2000 字' }
     try {
       const 果 = 记忆.改一条(类别, 编号, 内容)
+      if (果.好 && !果.没变化) 记忆关系整理.排队({ 原因: '用户修改长期记忆' })
       return 果.好 ? { 好: true, 没变化: !!果.没变化 } : 果
     } catch (错误) {
       console.log('⚠ 修改长期记忆失败：' + 错误.message)
@@ -2354,6 +2359,7 @@ function 接对讲机() {
     if (!编号) return { 好: false, 说明: '这条记忆没有编号，不能安全遗忘' }
     try {
       const 删了 = 记忆.删一条(类别, 编号)
+      if (删了) 记忆关系整理.排队({ 原因: '用户遗忘长期记忆' })
       return 删了 ? { 好: true } : { 好: false, 说明: '没找到这条记忆，可能已经被改动或遗忘' }
     } catch (错误) {
       console.log('⚠ 遗忘长期记忆失败：' + 错误.message)
@@ -2657,7 +2663,9 @@ function 接对讲机() {
     if (!编号) return { 好: false, 说明: '临时记忆编号不能为空' }
     if (!['事实', '经历', '小本子'].includes(去向)) return { 好: false, 说明: '晋升去向不对' }
     try {
-      return 晋升到长期({ 临时库: 临时记忆, 长期库: 记忆, 编号, 去向 })
+      const 果 = 晋升到长期({ 临时库: 临时记忆, 长期库: 记忆, 编号, 去向 })
+      if (果.好 && !果.没变化) 记忆关系整理.排队({ 原因: '用户将临时记忆晋升到长期层' })
+      return 果
     } catch (错误) {
       console.log('⚠ 晋升临时记忆失败：' + 错误.message)
       return { 好: false, 说明: '临时记忆没有晋升成功，可安全重试' }
@@ -3409,6 +3417,13 @@ if (!app.requestSingleInstanceLock()) {
     if (日记首次计时器.unref) 日记首次计时器.unref()
     if (日记检查计时器.unref) 日记检查计时器.unref()
 
+    // 关系整理只做本地计算：启动后检查一次，之后每 30 分钟核对输入指纹。
+    // 同一份记忆不会重复整理；新增或修改时另有 45 秒防抖和 10 分钟最小间隔。
+    关系整理首次计时器 = setTimeout(() => 记忆关系整理.排队({ 原因: '启动后检查', 立即: true }), 30000)
+    关系整理检查计时器 = setInterval(() => 记忆关系整理.排队({ 原因: '定期自我检索', 立即: true }), 30 * 60 * 1000)
+    if (关系整理首次计时器.unref) 关系整理首次计时器.unref()
+    if (关系整理检查计时器.unref) 关系整理检查计时器.unref()
+
     建窗口()
     接对讲机()
     建账本窗() // 先把面板建出来（藏着），这样点开关的时候是立刻就出来
@@ -3471,6 +3486,9 @@ if (!app.requestSingleInstanceLock()) {
     app.isQuitting = true
     if (日记首次计时器) clearTimeout(日记首次计时器)
     if (日记检查计时器) clearInterval(日记检查计时器)
+    if (关系整理首次计时器) clearTimeout(关系整理首次计时器)
+    if (关系整理检查计时器) clearInterval(关系整理检查计时器)
+    记忆关系整理.取消()
     if (主动陪伴调度) 主动陪伴调度.停止()
     取消主动陪伴生成()
     for (const 控制器 of 语音识别请求.values()) 控制器.abort()

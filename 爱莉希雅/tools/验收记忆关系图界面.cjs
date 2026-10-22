@@ -11,6 +11,7 @@ const { app, BrowserWindow } = require('electron')
 
 const 项目根 = path.resolve(__dirname, '..')
 const 临时根 = fs.mkdtempSync(path.join(os.tmpdir(), 'elysia-memory-graph-visual-'))
+const 自动关系夹具 = process.env.ELYSIA_AUTO_RELATION_FIXTURE === '1'
 const 日志文件 = path.join(项目根, '.cache', '验收-长期记忆关系图.log')
 fs.mkdirSync(path.dirname(日志文件), { recursive: true })
 fs.writeFileSync(日志文件, '开始\n', 'utf8')
@@ -40,11 +41,12 @@ app.whenReady().then(async () => {
       await new Promise(r => setTimeout(r, 500))
       document.querySelector('[data-长期视图="关系图"]').click()
       await new Promise(r => setTimeout(r, 1200))
-      const firstLine = document.querySelector('.关系图连线')
+      const firstLine = document.querySelector('${自动关系夹具 ? '.关系图连线:not(.候选)' : '.关系图连线'}')
       const focusKey = firstLine && firstLine.dataset.从键
       const focusCard = focusKey && [...document.querySelectorAll('.关系图卡片')].find(card => card.dataset.键 === focusKey)
       if (focusCard) focusCard.click()
       await new Promise(r => setTimeout(r, 800))
+      ${自动关系夹具 ? `document.querySelector('.关系图连线:not(.候选) text')?.dispatchEvent(new MouseEvent('click', { bubbles: true })); await new Promise(r => setTimeout(r, 120))` : ''}
       const cards = document.querySelectorAll('.关系图卡片').length
       const lines = document.querySelectorAll('.关系图连线').length
       const panel = document.querySelector('.记忆管理面板')
@@ -61,6 +63,7 @@ app.whenReady().then(async () => {
       ) : 9999
       const cardStyle = selected && getComputedStyle(selected)
       const worldTransform = document.querySelector('.关系图世界')?.style.transform || ''
+      const editorText = document.querySelector('.关系图编辑器')?.textContent || ''
       const mask = document.getElementById('记忆管理遮罩')
       return {
         cards, lines, related, focusedLines, dimmed, selected: !!selected,
@@ -68,13 +71,14 @@ app.whenReady().then(async () => {
         cardHeight: selectedRect ? Math.round(selectedRect.height) : 0,
         glassBlur: cardStyle ? cardStyle.backdropFilter || cardStyle.webkitBackdropFilter : '',
         worldTransform, hasScale: worldTransform.includes('scale('), zoomButtons: [...document.querySelectorAll('.关系图工具栏 button')].filter(b => /放大|缩小/.test(b.title + b.textContent)).length,
+        autoEditor: editorText.includes('自动整理的关系') && editorText.includes('置信度 96%') && editorText.includes('确认并保存'),
         graphMode: panel.classList.contains('图谱模式'), panelWidth: Math.round(panel.getBoundingClientRect().width),
         viewportHeight: viewport ? Math.round(viewport.getBoundingClientRect().height) : 0,
         maskHidden: mask.classList.contains('收着'), maskOpacity: getComputedStyle(mask).opacity, hasPainter: typeof 画长期记忆关系图 === 'function'
       }
     })()`)
     日志('界面状态：' + JSON.stringify(状态))
-    if (!状态.graphMode || 状态.cards < 1 || 状态.lines < 1 || !状态.selected || 状态.related < 1 || 状态.focusedLines < 1 || 状态.centerDistance > 4 || 状态.cardWidth !== 260 || 状态.cardHeight !== 132 || !状态.glassBlur.includes('blur') || 状态.hasScale || 状态.zoomButtons || 状态.panelWidth < 700 || 状态.viewportHeight < 300 || 状态.maskHidden || 状态.maskOpacity !== '1') throw new Error('图谱没有正确展开或聚焦：' + JSON.stringify(状态))
+    if (!状态.graphMode || 状态.cards < 1 || 状态.lines < 1 || !状态.selected || 状态.related < 1 || 状态.focusedLines < 1 || 状态.centerDistance > 4 || 状态.cardWidth !== 260 || 状态.cardHeight !== 132 || !状态.glassBlur.includes('blur') || 状态.hasScale || 状态.zoomButtons || (自动关系夹具 && !状态.autoEditor) || 状态.panelWidth < 700 || 状态.viewportHeight < 300 || 状态.maskHidden || 状态.maskOpacity !== '1') throw new Error('图谱没有正确展开或聚焦：' + JSON.stringify(状态))
     const 图 = await 窗口.webContents.capturePage()
     const 输出 = path.join(项目根, '.cache', '验收-长期记忆关系图.png')
     fs.mkdirSync(path.dirname(输出), { recursive: true })

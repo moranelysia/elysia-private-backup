@@ -1613,7 +1613,7 @@ function 画长期记忆关系图(果) {
   const 节点们 = Array.isArray(果.节点) ? 果.节点 : []
   const 关系们 = Array.isArray(果.关系) ? 果.关系 : []
   const 候选关系 = Array.isArray(果.候选关系) ? 果.候选关系 : []
-  记忆管理统计.textContent = `${节点们.length} 张卡片 · ${关系们.length} 条关系${候选关系.length ? ` · ${候选关系.length} 条待确认建议` : ''}${果.失效关系数 ? ` · ${果.失效关系数} 条失效关系未显示` : ''}`
+  记忆管理统计.textContent = `${节点们.length} 张卡片 · ${关系们.length} 条关系${果.自动关系总数 ? `（${果.自动关系总数} 条自动整理）` : ''}${候选关系.length ? ` · ${候选关系.length} 条待确认建议` : ''}${果.失效关系数 ? ` · ${果.失效关系数} 条失效关系未显示` : ''}`
   if (!节点们.length) {
     const 空 = document.createElement('div'); 空.className = '记忆管理空态'; 空.textContent = 记忆搜索.value.trim() || 当前记忆类别 ? '没有符合条件的记忆卡片。' : '还没有长期记忆。'; 记忆管理列表.appendChild(空)
     return
@@ -1697,7 +1697,7 @@ function 画长期记忆关系图(果) {
       const 标签 = 卡.querySelector('.关系图关联标签')
       if (!标签) continue
       const 这张的关系 = 相关关系(焦点键).filter((一) => 关系另一端(一, 焦点键) === 键)
-      标签.textContent = 这张的关系.map((一) => `${一.类型}${一.候选 ? ' · 建议' : ''}`).join(' / ')
+      标签.textContent = 这张的关系.map((一) => `${一.类型}${一.候选 ? ' · 建议' : 一.来源 === '自动整理' ? ' · 自动' : ''}`).join(' / ')
       标签.hidden = !这张的关系.length
     }
   }
@@ -1751,13 +1751,14 @@ function 画长期记忆关系图(果) {
     if (!从 || !到) return
     编辑器 = document.createElement('aside'); 编辑器.className = '关系图编辑器'
     const 头 = document.createElement('div'); 头.className = '关系图编辑器头'
-    const 标题 = document.createElement('strong'); 标题.textContent = 是候选 ? '关系建议' : '编辑关系'
+    const 是自动 = !是候选 && 关系.来源 === '自动整理'
+    const 标题 = document.createElement('strong'); 标题.textContent = 是候选 ? '关系建议' : 是自动 ? '自动整理的关系' : '编辑关系'
     const 关闭 = document.createElement('button'); 关闭.textContent = '×'; 关闭.setAttribute('aria-label', '关闭关系编辑器'); 关闭.addEventListener('click', 关编辑器)
     头.append(标题, 关闭)
     const 摘要 = document.createElement('p'); 摘要.textContent = `${从.内容.slice(0, 42)}${从.内容.length > 42 ? '…' : ''}  →  ${到.内容.slice(0, 42)}${到.内容.length > 42 ? '…' : ''}`
     const 选择 = 类型选择.cloneNode(true); 选择.value = 关系.类型
     const 操作 = document.createElement('div'); 操作.className = '关系图编辑操作'
-    const 保存 = document.createElement('button'); 保存.className = '主要'; 保存.textContent = 是候选 ? '采纳建议' : '保存修改'
+    const 保存 = document.createElement('button'); 保存.className = '主要'; 保存.textContent = 是候选 ? '采纳建议' : 是自动 ? '确认并保存' : '保存修改'
     保存.addEventListener('click', async () => {
       保存.disabled = true
       const 请求 = 是候选
@@ -1780,7 +1781,13 @@ function 画长期记忆关系图(果) {
     } else {
       const 依据 = document.createElement('small'); 依据.textContent = `仅供确认：${关系.依据 || '本地规则发现内容可能相关'}`; 编辑器.append(头, 摘要, 选择, 依据, 操作); 壳.appendChild(编辑器); return
     }
-    编辑器.append(头, 摘要, 选择, 操作); 壳.appendChild(编辑器)
+    if (是自动) {
+      const 依据 = document.createElement('small')
+      const 自动 = 关系.自动依据 || {}
+      依据.textContent = `本地规则自动整理 · 置信度 ${Math.round(Number(自动.置信度 || 0) * 100)}% · ${自动.依据 || '高置信关系'}`
+      编辑器.append(头, 摘要, 选择, 依据, 操作)
+    } else 编辑器.append(头, 摘要, 选择, 操作)
+    壳.appendChild(编辑器)
   }
 
   function 画线() {
@@ -1809,7 +1816,7 @@ function 画长期记忆关系图(果) {
       if (焦点键) 组.classList.add(一.从键 === 焦点键 || 一.到键 === 焦点键 ? '焦点关系' : '淡出关系')
       const 线 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 线.setAttribute('d', 路径值); 线.setAttribute('stroke', 关系图关系颜色(一.类型)); 线.setAttribute('marker-end', 'url(#记忆关系箭头)')
       const 命中 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 命中.setAttribute('d', 路径值); 命中.classList.add('关系图连线命中')
-      const 标签 = document.createElementNS('http://www.w3.org/2000/svg', 'text'); 标签.setAttribute('x', String((x1 + x2) / 2)); 标签.setAttribute('y', String((y1 + y2) / 2 + 偏移 * 0.75 - 7)); 标签.textContent = 一.候选 ? `${一.类型} · 建议` : 一.类型
+      const 标签 = document.createElementNS('http://www.w3.org/2000/svg', 'text'); 标签.setAttribute('x', String((x1 + x2) / 2)); 标签.setAttribute('y', String((y1 + y2) / 2 + 偏移 * 0.75 - 7)); 标签.textContent = 一.候选 ? `${一.类型} · 建议` : 一.来源 === '自动整理' ? `${一.类型} · 自动` : 一.类型
       命中.addEventListener('click', (事件) => { 事件.stopPropagation(); 显示关系编辑器(一, !!一.候选) })
       标签.addEventListener('click', (事件) => { 事件.stopPropagation(); 显示关系编辑器(一, !!一.候选) })
       组.append(线, 命中, 标签); 连线层.appendChild(组)

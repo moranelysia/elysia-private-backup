@@ -12,6 +12,7 @@ const 记忆结构 = require('./记忆结构.cjs')
 const 长期记忆 = require('./记忆.cjs')
 const { 晋升到长期 } = require('./临时记忆晋升.cjs')
 const 自主评估 = require('./临时记忆自主评估.cjs')
+const 记忆关系整理 = require('./记忆关系整理.cjs')
 
 const 最大排队数 = 20
 const 最大候选数 = 4
@@ -262,6 +263,9 @@ function 创建提取器({
       const 处理 = 尝试自主处理(旧条, 轮次们, 已有.filter((一) => 一.编号 !== 旧条.编号), 旧条.评估账本 ? 0 : 1, 对话)
       if (处理.复活) 复活编号.add(旧条.编号)
       if (处理.处理) 自主处理.push({ 编号: 旧条.编号, ...处理 })
+    }
+    if (自主处理.some((一) => 一.晋升 && 一.晋升.好 && !一.晋升.没变化) && process.versions.electron) {
+      记忆关系整理.排队({ 原因: '临时记忆自主晋升到长期层' })
     }
     return { 好: true, 批次轮数: 轮次们.length, 候选数: 候选.length, 新增数: 新增.length, 新增,
       复活数: 复活编号.size, 复活编号: [...复活编号], 自主处理数: 自主处理.length, 自主处理 }
