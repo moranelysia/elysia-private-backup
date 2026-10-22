@@ -78,6 +78,7 @@ async function main() {
   检查('图谱界面和卡片使用固定尺寸', css.includes('width: 980px; height: 720px') && css.includes('width: 260px; height: 132px'))
   检查('卡片使用粉色液态玻璃质感与聚焦状态', css.includes('backdrop-filter: blur(22px) saturate(1.42)') && css.includes('.关系图卡片.选中记忆') && css.includes('.关系图聚焦条'))
   检查('透明卡片层不会挡住连线点击且卡片仍可交互', css.includes('.关系图卡片层 { z-index: 2; pointer-events: none; }') && css.includes('padding: 13px 14px 11px; pointer-events: auto;'))
+  检查('删除关系使用应用内液态玻璃确认卡而非系统弹窗', js.includes('function 问关系图确认') && !js.includes("window.confirm('删除这条记忆关系？") && css.includes('.关系图确认遮罩') && css.includes('backdrop-filter: blur(26px) saturate(1.38)'))
 
   console.log(`\n记忆关系图：${通过}/${总数} 通过`)
 }

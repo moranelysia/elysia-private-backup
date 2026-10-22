@@ -52,7 +52,9 @@ app.whenReady().then(async () => {
       const realHit = lineRect && document.elementFromPoint(lineRect.left + lineRect.width / 2, lineRect.top + lineRect.height / 2)
       linePointerHit = !!(realHit && realHit.closest && realHit.closest('.关系图连线'))
       if (linePointerHit) realHit.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-      await new Promise(r => setTimeout(r, 120))` : ''}
+      await new Promise(r => setTimeout(r, 120))
+      document.querySelector('.关系图编辑操作 .危险')?.click()
+      await new Promise(r => setTimeout(r, 180))` : ''}
       const cards = document.querySelectorAll('.关系图卡片').length
       const lines = document.querySelectorAll('.关系图连线').length
       const panel = document.querySelector('.记忆管理面板')
@@ -70,6 +72,8 @@ app.whenReady().then(async () => {
       const cardStyle = selected && getComputedStyle(selected)
       const worldTransform = document.querySelector('.关系图世界')?.style.transform || ''
       const editorText = document.querySelector('.关系图编辑器')?.textContent || ''
+      const confirmCard = document.querySelector('.关系图确认卡')
+      const confirmStyle = confirmCard && getComputedStyle(confirmCard)
       const mask = document.getElementById('记忆管理遮罩')
       return {
         cards, lines, related, focusedLines, dimmed, selected: !!selected,
@@ -78,13 +82,15 @@ app.whenReady().then(async () => {
         glassBlur: cardStyle ? cardStyle.backdropFilter || cardStyle.webkitBackdropFilter : '',
         worldTransform, hasScale: worldTransform.includes('scale('), zoomButtons: [...document.querySelectorAll('.关系图工具栏 button')].filter(b => /放大|缩小/.test(b.title + b.textContent)).length,
         linePointerHit, autoEditor: editorText.includes('自动整理的关系') && editorText.includes('置信度 96%') && editorText.includes('确认并保存'),
+        customConfirm: !!confirmCard && confirmCard.textContent.includes('删除这条记忆关系？') && confirmCard.textContent.includes('只会移除两张卡片之间的连接') && confirmCard.textContent.includes('先保留') && confirmCard.textContent.includes('删除连接'),
+        confirmBlur: confirmStyle ? confirmStyle.backdropFilter || confirmStyle.webkitBackdropFilter : '',
         graphMode: panel.classList.contains('图谱模式'), panelWidth: Math.round(panel.getBoundingClientRect().width),
         viewportHeight: viewport ? Math.round(viewport.getBoundingClientRect().height) : 0,
         maskHidden: mask.classList.contains('收着'), maskOpacity: getComputedStyle(mask).opacity, hasPainter: typeof 画长期记忆关系图 === 'function'
       }
     })()`)
     日志('界面状态：' + JSON.stringify(状态))
-    if (!状态.graphMode || 状态.cards < 1 || 状态.lines < 1 || !状态.selected || 状态.related < 1 || 状态.focusedLines < 1 || 状态.centerDistance > 4 || 状态.cardWidth !== 260 || 状态.cardHeight !== 132 || !状态.glassBlur.includes('blur') || 状态.hasScale || 状态.zoomButtons || (自动关系夹具 && (!状态.linePointerHit || !状态.autoEditor)) || 状态.panelWidth < 700 || 状态.viewportHeight < 300 || 状态.maskHidden || 状态.maskOpacity !== '1') throw new Error('图谱没有正确展开或聚焦：' + JSON.stringify(状态))
+    if (!状态.graphMode || 状态.cards < 1 || 状态.lines < 1 || !状态.selected || 状态.related < 1 || 状态.focusedLines < 1 || 状态.centerDistance > 4 || 状态.cardWidth !== 260 || 状态.cardHeight !== 132 || !状态.glassBlur.includes('blur') || 状态.hasScale || 状态.zoomButtons || (自动关系夹具 && (!状态.linePointerHit || !状态.autoEditor || !状态.customConfirm || !状态.confirmBlur.includes('blur'))) || 状态.panelWidth < 700 || 状态.viewportHeight < 300 || 状态.maskHidden || 状态.maskOpacity !== '1') throw new Error('图谱没有正确展开或聚焦：' + JSON.stringify(状态))
     const 图 = await 窗口.webContents.capturePage()
     const 输出 = path.join(项目根, '.cache', '验收-长期记忆关系图.png')
     fs.mkdirSync(path.dirname(输出), { recursive: true })

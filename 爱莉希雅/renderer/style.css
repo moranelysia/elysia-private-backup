@@ -2836,6 +2836,37 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 .关系图编辑操作 button { min-height: 27px; padding: 4px 8px; border: 1px solid #dfc8d7; border-radius: 8px; background: #fff; color: #89677c; font-family: inherit; font-size: 10px; cursor: pointer; }
 .关系图编辑操作 .主要 { border-color: #d2a4bd; background: #f7e8f0; color: #995c7b; }
 .关系图编辑操作 .危险 { color: #b25e6f; }
+.关系图确认遮罩 {
+  position: absolute; z-index: 12; inset: 0; display: grid; place-items: center; padding: 24px;
+  background: rgba(105, 65, 91, 0.14); backdrop-filter: blur(7px) saturate(1.1); -webkit-backdrop-filter: blur(7px) saturate(1.1);
+  animation: 关系确认淡入 150ms ease-out;
+}
+.关系图确认卡 {
+  box-sizing: border-box; width: min(350px, calc(100% - 32px)); padding: 22px 22px 18px; text-align: center;
+  border: 1px solid rgba(223, 145, 192, 0.72); border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,.98), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,.9), rgba(250,216,237,.82));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.98), 0 24px 64px rgba(94, 49, 78, .26);
+  backdrop-filter: blur(26px) saturate(1.38); -webkit-backdrop-filter: blur(26px) saturate(1.38);
+  animation: 关系确认出现 180ms cubic-bezier(.2,.86,.32,1.08);
+}
+.关系图确认图标 {
+  display: grid; place-items: center; width: 42px; height: 42px; margin: 0 auto 10px;
+  border: 1px solid rgba(213, 114, 170, .58); border-radius: 50%; background: rgba(255,255,255,.64);
+  box-shadow: inset 0 1px 0 #fff, 0 8px 20px rgba(181, 91, 143, .16); color: #bd6b98; font-size: 24px;
+}
+.关系图确认卡 strong { display: block; color: #754d67; font-size: 15px; letter-spacing: .02em; }
+.关系图确认卡 p { margin: 9px 0 17px; color: #896a7c; font-size: 11px; line-height: 1.65; }
+.关系图确认操作 { display: flex; justify-content: center; gap: 9px; }
+.关系图确认操作 button {
+  min-width: 92px; min-height: 34px; padding: 6px 14px; border: 1px solid rgba(218, 164, 197, .76); border-radius: 12px;
+  background: rgba(255,255,255,.72); box-shadow: inset 0 1px 0 rgba(255,255,255,.96); color: #8a667c; font-family: inherit; font-size: 11px; cursor: pointer;
+}
+.关系图确认操作 button:hover, .关系图确认操作 button:focus-visible { border-color: rgba(198, 99, 155, .82); outline: none; box-shadow: inset 0 1px 0 #fff, 0 0 0 3px rgba(211, 112, 169, .13); }
+.关系图确认操作 .危险 { border-color: rgba(211, 105, 133, .72); background: linear-gradient(145deg, #d57892, #c85f7d); color: #fff; }
+@keyframes 关系确认淡入 { from { opacity: 0; } to { opacity: 1; } }
+@keyframes 关系确认出现 { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
 
 /* 日记时间轴：内容与来源都由 textContent 绘制。 */
 .日记卡 { position: relative; margin-left: 10px; border-left: 2px solid #e8cce0; }

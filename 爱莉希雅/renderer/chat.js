@@ -1656,7 +1656,7 @@ function 画长期记忆关系图(果) {
   const 卡宽 = 260, 卡高 = 132
   const 卡片映射 = new Map(), 节点映射 = new Map(节点们.map((一) => [一.键, 一]))
   const 全部关系 = [...候选关系.map((一) => ({ ...一, 候选: true })), ...关系们]
-  let 连接起点 = null, 正在连接 = false, 编辑器 = null, 焦点键 = '', 聚焦前视图 = null
+  let 连接起点 = null, 正在连接 = false, 编辑器 = null, 确认遮罩 = null, 焦点键 = '', 聚焦前视图 = null
 
   function 应用视图() {
     世界.style.transform = `translate(${视图.x}px, ${视图.y}px)`
@@ -1666,6 +1666,30 @@ function 画长期记忆关系图(果) {
     关系图保存计时 = setTimeout(() => void window.爱莉.保存长期记忆图布局({ 节点: {}, 视图: { x: 视图.x, y: 视图.y, 缩放: 1 } }).catch(() => {}), 350)
   }
   function 关编辑器() { if (编辑器) 编辑器.remove(); 编辑器 = null }
+
+  function 问关系图确认({ 标题, 正文, 确认文字 = '确认', 取消文字 = '取消' }) {
+    return new Promise((完成) => {
+      if (确认遮罩) 确认遮罩.remove()
+      const 遮罩 = document.createElement('div'); 遮罩.className = '关系图确认遮罩'; 确认遮罩 = 遮罩
+      const 卡 = document.createElement('section'); 卡.className = '关系图确认卡'; 卡.setAttribute('role', 'alertdialog'); 卡.setAttribute('aria-modal', 'true')
+      const 图标 = document.createElement('div'); 图标.className = '关系图确认图标'; 图标.textContent = '◇'; 图标.setAttribute('aria-hidden', 'true')
+      const 标题节点 = document.createElement('strong'); 标题节点.textContent = 标题
+      const 正文节点 = document.createElement('p'); 正文节点.textContent = 正文
+      const 操作 = document.createElement('div'); 操作.className = '关系图确认操作'
+      const 取消 = document.createElement('button'); 取消.textContent = 取消文字
+      const 确认 = document.createElement('button'); 确认.className = '危险'; 确认.textContent = 确认文字
+      操作.append(取消, 确认); 卡.append(图标, 标题节点, 正文节点, 操作); 遮罩.appendChild(卡); 壳.appendChild(遮罩)
+      const 收起 = (答案) => {
+        if (确认遮罩 === 遮罩) 确认遮罩 = null
+        遮罩.remove(); document.removeEventListener('keydown', 按键, true); 完成(答案)
+      }
+      const 按键 = (事件) => { if (事件.key === 'Escape') { 事件.preventDefault(); 收起(false) } }
+      遮罩.addEventListener('click', (事件) => { if (事件.target === 遮罩) 收起(false) })
+      取消.addEventListener('click', () => 收起(false)); 确认.addEventListener('click', () => 收起(true))
+      document.addEventListener('keydown', 按键, true)
+      requestAnimationFrame(() => 取消.focus({ preventScroll: true }))
+    })
+  }
 
   function 相关关系(键) { return 全部关系.filter((一) => 一.从键 === 键 || 一.到键 === 键) }
   function 关系另一端(关系, 键) { return 关系.从键 === 键 ? 关系.到键 : 关系.从键 }
@@ -1772,10 +1796,12 @@ function 画长期记忆关系图(果) {
     if (!是候选) {
       const 删除 = document.createElement('button'); 删除.className = '危险'; 删除.textContent = '删除连接'
       删除.addEventListener('click', async () => {
-        if (!window.confirm('删除这条记忆关系？\n记忆卡片和正文都会保留。')) return
+        const 要删除 = await 问关系图确认({ 标题: '删除这条记忆关系？', 正文: '只会移除两张卡片之间的连接，记忆卡片和正文都会保留。', 确认文字: '删除连接', 取消文字: '先保留' })
+        if (!要删除) return
+        删除.disabled = true
         const 结果 = await window.爱莉.删除长期记忆关系(关系.编号).catch((错误) => ({ 好: false, 说明: 错误.message }))
         if (结果 && 结果.好) { 提示('关系已删除'); await 刷新长期记忆关系图() }
-        else 提示((结果 && 结果.说明) || '关系没有删除成功', '#c9779d')
+        else { 提示((结果 && 结果.说明) || '关系没有删除成功', '#c9779d'); 删除.disabled = false }
       })
       操作.appendChild(删除)
     } else {
