@@ -3360,6 +3360,71 @@ let 当前是临时对话 = false
 /** 这把钥匙上真有哪些模型（**运行时问来的，不是写死的**）+ 她默认用哪个 */
 let 模型名单 = []
 let 默认模型 = ''
+let 模型名单说明 = ''
+let 模型名单请求 = null
+let 模型名单更新时间 = 0
+
+// 模型名单是环境事实，仍会在后台向主进程刷新；但新建面板不能每次都等网络。
+// 上一次成功结果只作“先画出来”的短缓存，随后由本次运行的真实名单覆盖。
+const 模型名单缓存键 = 'elysia:model-list:v1'
+try {
+  const 缓存 = JSON.parse(localStorage.getItem(模型名单缓存键) || 'null')
+  if (缓存 && Array.isArray(缓存.名单) && 缓存.名单.length) {
+    模型名单 = [...new Set(缓存.名单.map((一) => String(一 || '')).filter(Boolean))]
+    默认模型 = String(缓存.默认 || '')
+    模型名单更新时间 = Number(缓存.时间) || 0
+  }
+} catch {
+  // 缓存坏了就当没有；真实名单仍会在后台重取。
+}
+
+function 收起新建面板() {
+  选模型面板.classList.add('收着')
+  选模型面板.setAttribute('aria-hidden', 'true')
+  开新对话按钮.setAttribute('aria-expanded', 'false')
+}
+
+function 记下模型名单(果) {
+  const 名单 = [...new Set(((果 && 果.名单) || []).map((一) => String(一 || '').trim()).filter(Boolean))]
+  模型名单说明 = String((果 && 果.说明) || '')
+  if (!名单.length) return false
+  模型名单 = 名单
+  默认模型 = String((果 && 果.现在用的) || 默认模型 || '')
+  模型名单更新时间 = Date.now()
+  if (果 && 果.好) {
+    try {
+      localStorage.setItem(模型名单缓存键, JSON.stringify({ 名单: 模型名单, 默认: 默认模型, 时间: 模型名单更新时间 }))
+    } catch {
+      // localStorage 不可用不影响新建对话。
+    }
+  }
+  return true
+}
+
+/** 同一时刻只问一次；界面始终先用缓存画，不把网络等待塞进点击手势。 */
+function 刷新可用模型({ 强制 = false } = {}) {
+  const 仍新鲜 = 模型名单.length && Date.now() - 模型名单更新时间 < 10 * 60 * 1000
+  if (!强制 && 仍新鲜) return Promise.resolve({ 好: true, 名单: 模型名单, 现在用的: 默认模型 })
+  if (模型名单请求) return 模型名单请求
+
+  模型名单请求 = window.爱莉
+    .有哪些模型()
+    .then((果) => {
+      记下模型名单(果)
+      if (!选模型面板.classList.contains('收着')) 画新建面板()
+      if (最后一次的对话们) 画对话们(最后一次的对话们)
+      return 果
+    })
+    .catch((错误) => {
+      模型名单说明 = '暂时没读到模型：' + 错误.message
+      if (!选模型面板.classList.contains('收着')) 画新建面板()
+      return null
+    })
+    .finally(() => {
+      模型名单请求 = null
+    })
+  return 模型名单请求
+}
 
 /** 最后一次收到的对话列表 —— 模型名单晚一步回来时，要拿它把列表重画一遍 */
 let 最后一次的对话们 = null
@@ -3389,6 +3454,11 @@ function 画对话们(数据) {
   最后一次的对话们 = 数据 || null
 
   const 当前项 = 列表.find((一) => 一.编号 === 当前对话编号)
+  // 第一次启动若网络名单还在路上，先拿历史对话里真实用过的模型兜底，
+  // 面板仍可立即选择；后台结果回来后会无缝换成完整名单。
+  if (!模型名单.length) {
+    模型名单 = [...new Set(列表.map((一) => String(一.模型 || '').trim()).filter(Boolean))]
+  }
   当前是临时对话 = !!(当前项 && 当前项.临时)
   if (当前项) 摆长期记忆(当前项.写长期记忆 !== false)
   记忆开关.disabled = 当前是临时对话
@@ -3505,42 +3575,32 @@ function 短日期(时间) {
   }
 })
 
-// ---- 点 ＋ → 先让他挑这一段用哪个脑子，再建 ----
+// ---- 点 ＋ → 只挑这一段用哪个脑子，再建 ----
 //
 // 【为什么不让 ＋ 直接建】
 //   他 2026-10-04 要的是"像 DSH 一样，可以在对话开始时调模型"。
 //   先建再改的话，还得在别处再开一个入口；而"这一段用哪个脑子"
 //   本来就是**建的时候**定最自然 —— 跟 DSH 新建对话时选模型是一回事。
 //
-// 【为什么点了 ＋ 还要去问主进程一趟】
-//   名单是运行时问来的（模型名字真的会变：`deepseek-chat` 现在就不在
-//   名单里了，只是还能用）。问不出来的时候也照样弹面板 ——
-//   至少把她默认那个列出来，不然他会以为按钮坏了。
-开新对话按钮.addEventListener('click', async () => {
+// 【为什么不再让点击等主进程】
+//   名单仍是运行时问来的，但请求在启动时后台完成并留下短缓存。
+//   点击只负责立即展开；需要刷新时也在面板已经出现后悄悄刷新。
+开新对话按钮.setAttribute('aria-haspopup', 'dialog')
+开新对话按钮.setAttribute('aria-expanded', 'false')
+选模型面板.setAttribute('aria-hidden', 'true')
+开新对话按钮.addEventListener('click', () => {
   // 已经开着 → 再点一下就收起来
   if (!选模型面板.classList.contains('收着')) {
-    选模型面板.classList.add('收着')
+    收起新建面板()
     return
   }
 
-  开新对话按钮.disabled = true
-  try {
-    const 果 = await window.爱莉.有哪些模型()
-    模型名单 = (果 && 果.名单) || []
-    默认模型 = (果 && 果.现在用的) || ''
-    if (!模型名单.length) {
-      提示('问不出能用哪些模型 —— 看一眼网和钥匙', '#c9779d')
-      return
-    }
-    // 默认跟**当前这一段**同模式 —— 连着建两段学习用的对话时不用每次重选
-    待建的模式 = 当前模式
-    画新建面板()
-    选模型面板.classList.remove('收着')
-  } catch (错误) {
-    提示('问模型名单出错：' + 错误.message, '#c9779d')
-  } finally {
-    开新对话按钮.disabled = false
-  }
+  画新建面板()
+  选模型面板.classList.remove('收着')
+  选模型面板.setAttribute('aria-hidden', 'false')
+  开新对话按钮.setAttribute('aria-expanded', 'true')
+  requestAnimationFrame(() => (选模型面板.querySelector('button[data-模型], button[data-关闭模型]') || 选模型面板).focus?.({ preventScroll: true }))
+  void 刷新可用模型()
 })
 
 // 临时对话继承当前模式和模型，点一下立即进入，不必先等模型名单。
@@ -3562,81 +3622,87 @@ function 短日期(时间) {
 })
 
 /**
- * 新建面板里"这一段用哪种模式"。
- * 默认跟**当前这一段**一样 —— 他连着建两段学习用的，不用每次重选。
- */
-let 待建的模式 = 'chat'
-
-/**
  * 画"新建一段对话"那个面板。
  *
- * 【为什么是两组按钮，而不是点一下就全定】
- *   上面一组选模式（点了只切换选中，不建），下面一组选模型（点了才真的建）。
- *   这样只想换脑子的人点一下、想连模式一起换的人点两下，
- *   没有更省的做法了 —— 除非把模式写死在别处，那就失去了"建的时候选"。
+ * 【为什么只剩模型】
+ *   模式本来就属于当前对话状态，主界面上已有独立入口；新对话直接继承
+ *   当前模式，不在这个小面板里再做一套容易误解、还会拖慢操作的选择器。
  *
  * 【为什么按钮是当场画的，不写死在页面里】
  *   模型名单是运行时问来的（真的会变），画死的那份过一阵就是假的。
  */
 function 画新建面板() {
   选模型面板.innerHTML = ''
+  选模型面板.setAttribute('role', 'dialog')
+  选模型面板.setAttribute('aria-label', '选择新对话模型')
 
-  const 标题一 = document.createElement('div')
-  标题一.className = '小标题'
-  标题一.textContent = '这一段用来干嘛？'
-  选模型面板.appendChild(标题一)
+  const 头 = document.createElement('div')
+  头.className = '选模型头'
+  const 标题 = document.createElement('strong')
+  标题.textContent = '选择模型'
+  const 关闭 = document.createElement('button')
+  关闭.type = 'button'
+  关闭.className = '选模型关闭'
+  关闭.dataset.关闭模型 = '1'
+  关闭.title = '收起'
+  关闭.setAttribute('aria-label', '收起模型选择')
+  关闭.textContent = '×'
+  头.append(标题, 关闭)
 
-  for (const 名 of 模式顺序) {
-    const 钮 = document.createElement('button')
-    钮.dataset.模式 = 名
-    钮.title = 模式表[名].小字
-    if (名 === 待建的模式) 钮.className = '选中的'
-    钮.textContent = 模式表[名].中文
-    选模型面板.appendChild(钮)
+  const 说明 = document.createElement('div')
+  说明.className = '选模型说明'
+  说明.textContent = `新对话沿用当前的${模式表[当前模式].中文}模式`
+  选模型面板.append(头, 说明)
+
+  if (!模型名单.length) {
+    const 空 = document.createElement('div')
+    空.className = '模型加载'
+    空.textContent = 模型名单说明 || '正在读取可用模型…'
+    选模型面板.appendChild(空)
+    return
   }
-
-  const 标题二 = document.createElement('div')
-  标题二.className = '小标题 隔开的'
-  标题二.textContent = '用哪个脑子？'
-  选模型面板.appendChild(标题二)
 
   for (const 名 of 模型名单) {
     const 钮 = document.createElement('button')
+    钮.type = 'button'
+    钮.className = '模型选项' + (名 === 默认模型 ? ' 默认的' : '')
     钮.dataset.模型 = 名
     钮.title = 名
-    // 默认那个标一下 —— 不标的话他分不清哪个是"原来那个"
-    if (名 === 默认模型) 钮.className = '默认的'
-    钮.textContent = 短模型名(名) + (名 === 默认模型 ? '（一直用的）' : '')
+    const 名字 = document.createElement('span')
+    名字.textContent = 短模型名(名)
+    钮.appendChild(名字)
+    if (名 === 默认模型) {
+      const 默认 = document.createElement('small')
+      默认.textContent = '默认'
+      钮.appendChild(默认)
+    }
     选模型面板.appendChild(钮)
   }
 }
 
-// 面板里点了东西：点模式只切换选中，点模型才真的建
+// 面板里只剩模型：点一下就按当前模式建新对话。
 选模型面板.addEventListener('click', async (事件) => {
-  // ---- 点了模式：只换选中，不建 ----
-  const 模式钮 = 事件.target.closest('button[data-模式]')
-  if (模式钮) {
-    待建的模式 = 模式钮.dataset.模式
-    画新建面板()
+  if (事件.target.closest('button[data-关闭模型]')) {
+    收起新建面板()
+    开新对话按钮.focus({ preventScroll: true })
     return
   }
 
-  // ---- 点了模型：用"选中的模式 + 这个模型"建一段 ----
   const 按钮 = 事件.target.closest('button[data-模型]')
   if (!按钮) return
   const 模型 = 按钮.dataset.模型
-  const 模式 = 待建的模式
+  const 继承模式 = 当前模式
 
-  选模型面板.classList.add('收着')
+  收起新建面板()
   开新对话按钮.disabled = true
   try {
-    const 果 = await window.爱莉.开新对话(模型, 模式)
+    const 果 = await window.爱莉.开新对话(模型)
     if (!果 || !果.好) {
       提示('没能开新对话 —— 她的记忆文件夹写不进去？', '#c9779d')
       return
     }
     提示(
-      `新的一段（${模式表[模式].中文} · ${短模型名(模型)}）—— 刚才聊的她不带过来了，人她还是记得的`,
+      `新的一段（${模式表[继承模式].中文} · ${短模型名(模型)}）—— 刚才聊的她不带过来了，人她还是记得的`,
     )
     输入.focus()
   } catch (错误) {
@@ -3654,7 +3720,7 @@ function 画新建面板() {
 document.addEventListener('click', (事件) => {
   if (选模型面板.classList.contains('收着')) return
   if (事件.target.closest('#选模型') || 事件.target.closest('#开新对话')) return
-  选模型面板.classList.add('收着')
+  收起新建面板()
 })
 
 // 主进程推过来的列表（启动、开新的、换段之后都会来一条）
@@ -3662,19 +3728,8 @@ window.爱莉.对话们(画对话们)
 window.爱莉.情感状态变了(摆情感状态)
 setInterval(() => void 刷新情感状态(), 30000)
 
-// 开机问一次"有哪些模型" —— 只是为了知道默认是哪个，
-// 好在每一段的小字里把"没选过"的那些也标出名字来。
-// 回来得晚一点没关系：拿到了就把列表重画一遍。
-window.爱莉
-  .有哪些模型()
-  .then((果) => {
-    模型名单 = (果 && 果.名单) || []
-    默认模型 = (果 && 果.现在用的) || ''
-    if (最后一次的对话们) 画对话们(最后一次的对话们)
-  })
-  .catch(() => {
-    /* 问不出来就算了，小字里少一段而已 */
-  })
+// 开机后台刷新一次。点击“新对话”只读现有缓存，不再被这条网络请求卡住。
+void 刷新可用模型({ 强制: true })
 
 // 【注意】要全部记录回来的时候，主进程会重新发一条"聊天记录"，
 // 里面是全量的。这时候窗口里已经有后 40 条了，直接再画一遍就重复了。
@@ -4569,12 +4624,12 @@ function 关设置() {
 //   挡一下的成本是一秒钟，不挡的成本是两分半。
 const 退出按钮 = document.getElementById('退出')
 退出按钮.addEventListener('click', async () => {
-  const 准了 = await 问一句('全部关掉？连声音和桌宠一起收。下次找我要重新加载两分半。', '关掉', '算了')
+  const 准了 = await 问一句('爱莉希雅、桌宠和声音服务会一起退出。下次启动声音需要约两分半。', '全部关掉', '继续运行')
   if (准了) window.爱莉.全部关掉()
 })
 
 /**
- * 在聊天区底下弹一张小卡片问一句，等他点。
+ * 在窗口中央弹一张小卡片问一句，等他点。
  *
  * 【为什么不复用工具审批那套（弹确认卡片）】
  *   那套是"她要动手、要他点头"，带着编号、结果要递给工具那边。
@@ -4586,28 +4641,60 @@ const 退出按钮 = document.getElementById('退出')
  */
 function 问一句(问题, 准了的字, 算了的字) {
   return new Promise((完成) => {
-    收开场()
+    const 先前焦点 = document.activeElement
+    const 遮罩 = document.createElement('div')
+    遮罩.className = '退出确认遮罩'
+    const 卡 = document.createElement('section')
+    卡.className = '退出确认卡'
+    卡.setAttribute('role', 'alertdialog')
+    卡.setAttribute('aria-modal', 'true')
+    卡.setAttribute('aria-labelledby', '退出确认标题')
+    卡.setAttribute('aria-describedby', '退出确认说明')
+    const 图标 = document.createElement('div')
+    图标.className = '退出确认图标'
+    图标.setAttribute('aria-hidden', 'true')
+    图标.textContent = '◇'
+    const 标题 = document.createElement('strong')
+    标题.id = '退出确认标题'
+    标题.textContent = '要全部关掉吗？'
+    const 说明 = document.createElement('p')
+    说明.id = '退出确认说明'
+    说明.textContent = 问题
+    const 操作 = document.createElement('div')
+    操作.className = '退出确认操作'
+    const 算了 = document.createElement('button')
+    算了.type = 'button'
+    算了.className = '继续运行'
+    算了.textContent = 算了的字
+    const 准了 = document.createElement('button')
+    准了.type = 'button'
+    准了.className = '全部关掉'
+    准了.textContent = 准了的字
+    操作.append(算了, 准了)
+    卡.append(图标, 标题, 说明, 操作)
+    遮罩.appendChild(卡)
 
-    const 条 = document.createElement('div')
-    条.className = '一条 确认卡'
-    条.innerHTML = `
-      <div class="确认框">
-        <div class="确认头">${转义(问题)}</div>
-        <div class="确认按钮">
-          <button class="准了">${转义(准了的字)}</button>
-          <button class="算了">${转义(算了的字)}</button>
-        </div>
-      </div>
-    `
     const 收 = (答复) => {
-      条.remove()
+      document.removeEventListener('keydown', 按键, true)
+      遮罩.remove()
+      if (!答复 && 先前焦点 && typeof 先前焦点.focus === 'function') 先前焦点.focus({ preventScroll: true })
       完成(答复)
     }
-    条.querySelector('.准了').addEventListener('click', () => 收(true))
-    条.querySelector('.算了').addEventListener('click', () => 收(false))
+    const 按键 = (事件) => {
+      if (事件.key !== 'Escape') return
+      事件.preventDefault()
+      事件.stopImmediatePropagation()
+      收(false)
+    }
+    遮罩.addEventListener('click', (事件) => {
+      if (事件.target === 遮罩) 收(false)
+    })
+    准了.addEventListener('click', () => 收(true))
+    算了.addEventListener('click', () => 收(false))
+    document.addEventListener('keydown', 按键, true)
 
-    聊天区.appendChild(条)
-    滚到底()
+    document.body.appendChild(遮罩)
+    算了.focus({ preventScroll: true })
   })
 }
 
@@ -4660,6 +4747,10 @@ document.addEventListener('keydown', (事件) => {
     if (语音输入状态 !== '空闲') {
       事件.preventDefault()
       取消语音输入()
+    } else if (!选模型面板.classList.contains('收着')) {
+      事件.preventDefault()
+      收起新建面板()
+      开新对话按钮.focus({ preventScroll: true })
     } else if (!表达反馈遮罩.classList.contains('收着')) 关表达反馈页()
     else if (!设置遮罩.classList.contains('收着')) 关设置()
     else if (!记忆管理遮罩.classList.contains('收着')) 关记忆管理()

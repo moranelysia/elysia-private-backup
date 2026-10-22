@@ -255,14 +255,273 @@
   transform: scale(0.96);
 }
 
+/* 新建对话只选模型：改成不参与布局的轻量浮层，点击后立即出现，不再把列表整体往下推。 */
+.侧栏 {
+  position: relative;
+}
+
+.选模型 {
+  position: absolute;
+  z-index: 14;
+  top: 49px;
+  left: 7px;
+  right: 7px;
+  box-sizing: border-box;
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(224, 151, 190, 0.58);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.98), transparent 42%),
+    linear-gradient(150deg, rgba(255, 251, 253, 0.98), rgba(255, 229, 243, 0.96) 66%, rgba(245, 237, 255, 0.95));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 16px 34px rgba(105, 48, 82, 0.2);
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transform-origin: 24px 0;
+  transition:
+    opacity var(--动效-普通) ease,
+    transform var(--动效-普通) var(--缓动-响应),
+    visibility 0s;
+}
+
+.选模型.收着 {
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-5px) scale(0.985);
+  transition:
+    opacity var(--动效-快) ease,
+    transform var(--动效-快) ease,
+    visibility 0s linear var(--动效-快);
+}
+
+.选模型头 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.选模型头 strong {
+  flex: 1;
+  min-width: 0;
+  color: #754c66;
+  font-size: 12px;
+}
+
+.选模型 .选模型关闭 {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.52);
+  color: #a87391;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.选模型 .选模型关闭:hover {
+  background: rgba(238, 126, 178, 0.13);
+  border-color: rgba(218, 132, 178, 0.32);
+  color: #c45d91;
+}
+
+.选模型说明 {
+  color: #a27b92;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.选模型 .模型选项 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border-color: rgba(225, 166, 198, 0.28);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 239, 247, 0.7));
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.9);
+  color: #76556a;
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-普通) ease,
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.选模型 .模型选项:hover,
+.选模型 .模型选项:focus-visible {
+  outline: none;
+  background: linear-gradient(145deg, #fff, rgba(255, 226, 241, 0.9));
+  border-color: rgba(214, 120, 170, 0.54);
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    0 5px 13px rgba(113, 50, 85, 0.11);
+  color: #bd5688;
+}
+
+.选模型 .模型选项:active,
+.选模型 .选模型关闭:active {
+  transform: scale(0.96);
+}
+
+.选模型 .模型选项 small {
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: rgba(230, 126, 180, 0.12);
+  color: #bd6a96;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.模型加载 {
+  padding: 10px 8px;
+  border: 1px dashed rgba(220, 151, 188, 0.48);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.46);
+  color: #9f7d91;
+  text-align: center;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* 退出属于窗口操作，不应伪装成一条聊天消息；独立小卡也避免在宽窗口中横向拉满。 */
+.退出确认遮罩 {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(89, 52, 74, 0.18);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  user-select: none;
+  animation: 退出遮罩出现 var(--动效-快) ease-out;
+}
+
+.退出确认卡 {
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 44px));
+  padding: 22px 22px 18px;
+  border: 1px solid rgba(222, 143, 186, 0.7);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.98), transparent 43%),
+    linear-gradient(148deg, rgba(255, 252, 254, 0.99), rgba(250, 220, 238, 0.97) 68%, rgba(241, 233, 253, 0.97));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    0 24px 64px rgba(91, 43, 72, 0.27);
+  text-align: center;
+  animation: 退出卡出现 var(--动效-弹层) var(--缓动-响应);
+}
+
+.退出确认图标 {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 10px;
+  border: 1px solid rgba(213, 114, 170, 0.58);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.67);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 8px 20px rgba(181, 91, 143, 0.15);
+  color: #bd6b98;
+  font-size: 23px;
+}
+
+.退出确认卡 strong {
+  display: block;
+  color: #70475f;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.退出确认卡 p {
+  margin: 9px 0 18px;
+  color: #876779;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.退出确认操作 {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+}
+
+.退出确认操作 button {
+  min-width: 104px;
+  min-height: 35px;
+  padding: 6px 14px;
+  border: 1px solid rgba(218, 164, 197, 0.74);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  color: #89677b;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    background-color var(--动效-普通) ease,
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.退出确认操作 button:hover,
+.退出确认操作 button:focus-visible {
+  outline: none;
+  border-color: rgba(198, 99, 155, 0.78);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 3px rgba(211, 112, 169, 0.13);
+}
+
+.退出确认操作 button:active {
+  transform: scale(0.96);
+}
+
+.退出确认操作 .全部关掉 {
+  border-color: rgba(204, 88, 124, 0.72);
+  background: linear-gradient(145deg, #d87796, #c85c7d);
+  color: #fff;
+}
+
 @keyframes 内容浮现 {
   from { opacity: 0; transform: translateY(4px) scale(0.985); }
   to { opacity: 1; transform: none; }
 }
 
+@keyframes 退出遮罩出现 {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes 退出卡出现 {
+  from { opacity: 0; transform: translateY(7px) scale(0.975); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .一条,
-  .开场 {
+  .开场,
+  .退出确认遮罩,
+  .退出确认卡 {
     animation: none;
   }
 
@@ -277,7 +536,10 @@
   .任务 .删掉,
   .任务加 input,
   .任务加 button,
-  .工具记录入口 {
+  .工具记录入口,
+  .选模型,
+  .选模型 button,
+  .退出确认操作 button {
     transition-duration: 1ms;
   }
 
@@ -290,7 +552,9 @@
   .任务收起:active,
   .任务 .删掉:active,
   .任务加 button:active,
-  .工具记录入口:active {
+  .工具记录入口:active,
+  .选模型 button:active,
+  .退出确认操作 button:active {
     transform: none;
   }
 }

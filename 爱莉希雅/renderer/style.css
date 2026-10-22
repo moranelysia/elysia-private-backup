@@ -307,10 +307,9 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
   background: #fbf9ff;
 }
 
-/* 点 ＋ 之后弹出来的模型选择（2026-10-04 加的）
-   它是个普通的 flex 项，不是浮层 —— 展开的时候把下面的列表往下挤一点。
-   为什么不做成浮层：侧栏才 158px 宽，浮层要么盖住列表、
-   要么飘到聊天区上面去，两种都会让他点错东西。挤一下最老实。 */
+/* 点 ＋ 之后弹出来的模型选择（基础兜底样式）。
+   正式的紧凑浮层、开合动画和玻璃材质在粉色玻璃-内容.css；
+   这里留最小样式，视觉覆盖层没加载时仍然能选模型。 */
 .选模型 {
   flex: 0 0 auto;
   display: flex;
@@ -324,12 +323,6 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 
 .选模型.收着 {
   display: none;
-}
-
-.选模型 .小标题 {
-  font-size: 10px;
-  color: #b98aa2;
-  padding: 0 2px 3px;
 }
 
 .选模型 button {
@@ -354,24 +347,6 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 .选模型 button.默认的 {
   color: #d873a5;
   font-weight: 600;
-}
-
-/* 【2026-10-07 加的】新建面板里"这一段用哪种模式"的选中态。
-   跟 默认的 不一样：那个是"她一直用的脑子"，这个是"你刚点中的那个"，
-   所以它得更显眼 —— 底色加实、左边加一条竖杠。 */
-.选模型 button.选中的 {
-  background: #fbdde9;
-  border-color: #f0b8d0;
-  color: #c2548a;
-  font-weight: 600;
-  box-shadow: inset 3px 0 0 #e8619b;
-}
-
-/* 两组按钮之间的那个小标题要跟上面那组拉开一点，不然看着像一组的 */
-.选模型 .小标题.隔开的 {
-  margin-top: 6px;
-  padding-top: 5px;
-  border-top: 1px solid #f6dbe7;
 }
 
 .对话列表 {
