@@ -1,0 +1,296 @@
+/*
+ * 粉色玻璃-内容.css —— 阶段 2：主聊天内容层
+ *
+ * 不改尺寸、间距、定位与交互逻辑；只覆盖对话列表、开场、气泡、待发、任务抽屉和底部状态的材质与反馈。
+ */
+
+/* 左侧对话：保留原来的三像素当前标记，只增加轻量层次和按压反馈。 */
+.对话 {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0);
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    background-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease,
+    border-color var(--动效-普通) ease;
+}
+
+.对话:hover {
+  background: rgba(255, 231, 242, 0.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 11px rgba(126, 61, 96, 0.08);
+}
+
+.对话.当前 {
+  background: linear-gradient(135deg, rgba(255, 239, 247, 0.92), rgba(247, 226, 242, 0.78));
+  border-left-color: #dd659c;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 -1px 0 rgba(208, 119, 164, 0.08),
+    0 5px 14px rgba(123, 57, 93, 0.1);
+}
+
+.对话:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+.对话:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 0 0 3px var(--交互-聚焦);
+}
+
+/* 开场卡不改变原有盒模型，只用背景、内高光和阴影给中央内容一个落点。 */
+.开场 {
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 4%, rgba(255, 255, 255, 0.88), transparent 46%),
+    linear-gradient(145deg, rgba(255, 252, 254, 0.53), rgba(255, 224, 240, 0.37) 65%, rgba(242, 231, 255, 0.32));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.92),
+    inset -1px -1px 0 rgba(205, 116, 165, 0.08),
+    0 15px 40px rgba(107, 50, 84, 0.09);
+  animation: 内容浮现 var(--动效-弹层) var(--缓动-响应);
+}
+
+.开场头像 {
+  border-color: rgba(245, 177, 211, 0.88);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.68),
+    0 9px 24px rgba(174, 74, 127, 0.22);
+}
+
+/* 双方仍是白色半透明气泡；粉色和淡紫只出现在边缘反光中。 */
+.一条 {
+  animation: 内容浮现 180ms var(--缓动-响应);
+}
+
+.一条.她的::before {
+  border-color: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 0 0 2px rgba(238, 174, 206, 0.36),
+    0 5px 14px rgba(132, 61, 100, 0.16);
+}
+
+.气泡 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.91), rgba(255, 247, 251, 0.82));
+  border-color: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    inset -1px -1px 0 rgba(215, 132, 174, 0.08),
+    0 7px 22px rgba(113, 54, 88, 0.12);
+  backdrop-filter: blur(8px) saturate(1.08);
+  -webkit-backdrop-filter: blur(8px) saturate(1.08);
+}
+
+.他的 .气泡 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(246, 238, 255, 0.57));
+  border-color: rgba(242, 225, 255, 0.72);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset -1px -1px 0 rgba(155, 118, 201, 0.09),
+    0 7px 22px rgba(103, 65, 126, 0.1);
+}
+
+.重播声音,
+.表达反馈按钮,
+.更早按钮 {
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    opacity var(--动效-快) ease,
+    color var(--动效-快) ease,
+    background-color var(--动效-普通) ease,
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.重播声音:not(:disabled):active,
+.表达反馈按钮:not(:disabled):active,
+.更早按钮:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+.更早按钮 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(255, 233, 244, 0.72));
+  border-color: rgba(225, 151, 187, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 5px 14px rgba(120, 56, 91, 0.08);
+}
+
+/* 待发区与输入区相邻但不重复模糊：同一底部玻璃带只采样一次背景。 */
+.待发 {
+  background: linear-gradient(105deg, rgba(255, 251, 253, 0.78), rgba(255, 229, 242, 0.65), rgba(246, 237, 255, 0.58));
+  border-top-color: rgba(229, 157, 193, 0.48);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.待发 .一个 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 239, 247, 0.75));
+  border-color: rgba(220, 142, 181, 0.42);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 5px 14px rgba(113, 52, 87, 0.09);
+}
+
+.待发 .一个 .去掉 {
+  border-radius: 5px;
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-快) ease;
+}
+
+.待发 .一个 .去掉:hover {
+  background: rgba(238, 127, 176, 0.12);
+}
+
+.待发 .一个 .去掉:active {
+  transform: scale(0.9);
+}
+
+/* 任务抽屉保持无背景模糊：它出现时只淡入，避免重新采样整个聊天区。 */
+.任务抽屉 {
+  background:
+    linear-gradient(160deg, rgba(255, 253, 254, 0.98), rgba(255, 233, 245, 0.97) 60%, rgba(244, 236, 255, 0.96));
+  border-left-color: rgba(222, 143, 183, 0.52);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.9),
+    -12px 0 34px rgba(108, 50, 85, 0.16);
+  transition: opacity var(--动效-弹层) var(--缓动-响应);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.任务收起,
+.任务,
+.任务 .删掉,
+.任务加 button {
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-普通) ease,
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease,
+    opacity var(--动效-快) ease;
+}
+
+.任务 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(255, 242, 248, 0.72));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 4px 12px rgba(108, 51, 84, 0.07);
+}
+
+.任务:hover {
+  background: linear-gradient(145deg, #fff, rgba(255, 233, 244, 0.88));
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    0 7px 17px rgba(121, 55, 92, 0.12);
+}
+
+.任务:not(.做完):active {
+  transform: scale(0.985);
+}
+
+.任务加 input {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 243, 249, 0.78));
+  border-color: rgba(219, 145, 182, 0.46);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.96);
+  transition:
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.任务加 input:focus {
+  border-color: rgba(175, 128, 213, 0.7);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 0 0 3px rgba(179, 139, 217, 0.16);
+}
+
+.任务加 button:hover {
+  filter: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.48),
+    0 6px 15px rgba(131, 91, 178, 0.22);
+}
+
+.任务收起:active,
+.任务 .删掉:active,
+.任务加 button:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+.任务收起:focus-visible,
+.任务:focus-visible,
+.任务 .删掉:focus-visible,
+.任务加 input:focus-visible,
+.任务加 button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--交互-聚焦);
+}
+
+/* 底部状态与上面的输入玻璃带自然衔接，不再像一张单独贴上的白纸。 */
+.小状态栏 {
+  background: linear-gradient(100deg, rgba(255, 250, 253, 0.9), rgba(255, 236, 246, 0.82), rgba(246, 239, 255, 0.8));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.工具记录入口 {
+  background: rgba(255, 229, 242, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.工具记录入口:active {
+  transform: scale(0.96);
+}
+
+@keyframes 内容浮现 {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .一条,
+  .开场 {
+    animation: none;
+  }
+
+  .对话,
+  .重播声音,
+  .表达反馈按钮,
+  .更早按钮,
+  .待发 .一个 .去掉,
+  .任务抽屉,
+  .任务收起,
+  .任务,
+  .任务 .删掉,
+  .任务加 input,
+  .任务加 button,
+  .工具记录入口 {
+    transition-duration: 1ms;
+  }
+
+  .对话:active,
+  .重播声音:active,
+  .表达反馈按钮:active,
+  .更早按钮:active,
+  .待发 .一个 .去掉:active,
+  .任务:active,
+  .任务收起:active,
+  .任务 .删掉:active,
+  .任务加 button:active,
+  .工具记录入口:active {
+    transform: none;
+  }
+}
