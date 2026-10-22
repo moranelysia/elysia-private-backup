@@ -1,5 +1,5 @@
 /**
- * 用真实 Electron 主窗口做只读视觉验收：打开记忆库并切到关系图，然后截图。
+ * 用真实 Electron 主窗口做只读视觉验收：打开关系图、聚焦一张有连接的卡片并截图。
  * 关系数据来自当前数据目录；测试不拖动画布、不建立关系，所以不会写关系或布局。
  */
 'use strict'
@@ -40,21 +40,47 @@ app.whenReady().then(async () => {
       await new Promise(r => setTimeout(r, 500))
       document.querySelector('[data-长期视图="关系图"]').click()
       await new Promise(r => setTimeout(r, 1200))
+      const firstLine = document.querySelector('.关系图连线')
+      const focusKey = firstLine && firstLine.dataset.从键
+      const focusCard = focusKey && [...document.querySelectorAll('.关系图卡片')].find(card => card.dataset.键 === focusKey)
+      if (focusCard) focusCard.click()
+      await new Promise(r => setTimeout(r, 800))
       const cards = document.querySelectorAll('.关系图卡片').length
       const lines = document.querySelectorAll('.关系图连线').length
       const panel = document.querySelector('.记忆管理面板')
       const viewport = document.querySelector('.关系图视口')
+      const selected = document.querySelector('.关系图卡片.选中记忆')
+      const related = document.querySelectorAll('.关系图卡片.关联记忆').length
+      const focusedLines = document.querySelectorAll('.关系图连线.焦点关系').length
+      const dimmed = document.querySelectorAll('.关系图卡片.非关联记忆').length
+      const selectedRect = selected && selected.getBoundingClientRect()
+      const viewportRect = viewport && viewport.getBoundingClientRect()
+      const centerDistance = selectedRect && viewportRect ? Math.hypot(
+        selectedRect.left + selectedRect.width / 2 - (viewportRect.left + viewportRect.width / 2),
+        selectedRect.top + selectedRect.height / 2 - (viewportRect.top + viewportRect.height / 2)
+      ) : 9999
+      const cardStyle = selected && getComputedStyle(selected)
+      const worldTransform = document.querySelector('.关系图世界')?.style.transform || ''
       const mask = document.getElementById('记忆管理遮罩')
-      return { cards, lines, graphMode: panel.classList.contains('图谱模式'), panelWidth: Math.round(panel.getBoundingClientRect().width), viewportHeight: viewport ? Math.round(viewport.getBoundingClientRect().height) : 0, maskHidden: mask.classList.contains('收着'), maskOpacity: getComputedStyle(mask).opacity, hasPainter: typeof 画长期记忆关系图 === 'function' }
+      return {
+        cards, lines, related, focusedLines, dimmed, selected: !!selected,
+        centerDistance: Math.round(centerDistance), cardWidth: selectedRect ? Math.round(selectedRect.width) : 0,
+        cardHeight: selectedRect ? Math.round(selectedRect.height) : 0,
+        glassBlur: cardStyle ? cardStyle.backdropFilter || cardStyle.webkitBackdropFilter : '',
+        worldTransform, hasScale: worldTransform.includes('scale('), zoomButtons: [...document.querySelectorAll('.关系图工具栏 button')].filter(b => /放大|缩小/.test(b.title + b.textContent)).length,
+        graphMode: panel.classList.contains('图谱模式'), panelWidth: Math.round(panel.getBoundingClientRect().width),
+        viewportHeight: viewport ? Math.round(viewport.getBoundingClientRect().height) : 0,
+        maskHidden: mask.classList.contains('收着'), maskOpacity: getComputedStyle(mask).opacity, hasPainter: typeof 画长期记忆关系图 === 'function'
+      }
     })()`)
     日志('界面状态：' + JSON.stringify(状态))
-    if (!状态.graphMode || 状态.cards < 1 || 状态.panelWidth < 700 || 状态.viewportHeight < 300 || 状态.maskHidden || 状态.maskOpacity !== '1') throw new Error('图谱没有正确展开：' + JSON.stringify(状态))
+    if (!状态.graphMode || 状态.cards < 1 || 状态.lines < 1 || !状态.selected || 状态.related < 1 || 状态.focusedLines < 1 || 状态.centerDistance > 4 || 状态.cardWidth !== 260 || 状态.cardHeight !== 132 || !状态.glassBlur.includes('blur') || 状态.hasScale || 状态.zoomButtons || 状态.panelWidth < 700 || 状态.viewportHeight < 300 || 状态.maskHidden || 状态.maskOpacity !== '1') throw new Error('图谱没有正确展开或聚焦：' + JSON.stringify(状态))
     const 图 = await 窗口.webContents.capturePage()
     const 输出 = path.join(项目根, '.cache', '验收-长期记忆关系图.png')
     fs.mkdirSync(path.dirname(输出), { recursive: true })
     fs.writeFileSync(输出, 图.toPNG())
     日志('截图完成：' + 输出)
-    console.log('✓ Electron 关系图界面已展开：' + JSON.stringify(状态))
+    console.log('✓ Electron 关系图已聚焦关联记忆：' + JSON.stringify(状态))
     console.log('✓ 截图：' + 输出)
   } catch (错误) {
     日志('失败：' + (错误.stack || 错误.message))

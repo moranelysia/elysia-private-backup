@@ -71,9 +71,12 @@ async function main() {
   检查('主进程提供查询、新增、修改、删除与布局接口', ['问长期记忆关系图', '新增长期记忆关系', '修改长期记忆关系', '删除长期记忆关系', '保存长期记忆图布局'].every((名) => main.includes(`ipcMain.handle('${名}'`)))
   检查('预载层裁剪图谱写入字段', preload.includes('问长期记忆关系图:') && preload.includes('新增长期记忆关系:') && preload.includes('保存长期记忆图布局:'))
   检查('长期记忆内有列表与关系图切换', html.includes('data-长期视图="列表"') && html.includes('data-长期视图="关系图"'))
-  检查('图谱支持拖动、缩放、建立和编辑连线', js.includes('画长期记忆关系图') && js.includes("addEventListener('wheel'") && js.includes('保存关系图布局') && js.includes('建立连接'))
+  检查('图谱固定缩放并只允许平移浏览', js.includes("addEventListener('wheel'") && js.includes('视图.缩放 = 1') && js.includes('世界.style.transform = `translate(') && !js.includes('function 调整缩放'))
+  检查('选中卡片会自动居中并突出直接关联记忆', js.includes('function 聚焦记忆') && js.includes('function 居中到') && js.includes("classList.toggle('关联记忆'") && js.includes("classList.toggle('非关联记忆'"))
+  检查('图谱保留建立和编辑连线能力', js.includes('保存关系图布局') && js.includes('建立连接') && js.includes('显示关系编辑器'))
   检查('候选关系必须人工采纳', js.includes('采纳建议') && js.includes('候选关系'))
-  检查('图谱使用卡片和 SVG 连线并有窄窗口布局', css.includes('.关系图卡片') && css.includes('.关系图连线') && css.includes('.记忆管理面板.图谱模式'))
+  检查('图谱界面和卡片使用固定尺寸', css.includes('width: 980px; height: 720px') && css.includes('width: 260px; height: 132px'))
+  检查('卡片使用粉色液态玻璃质感与聚焦状态', css.includes('backdrop-filter: blur(22px) saturate(1.42)') && css.includes('.关系图卡片.选中记忆') && css.includes('.关系图聚焦条'))
 
   console.log(`\n记忆关系图：${通过}/${总数} 通过`)
 }

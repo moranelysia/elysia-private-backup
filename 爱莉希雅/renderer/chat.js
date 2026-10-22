@@ -1624,40 +1624,126 @@ function 画长期记忆关系图(果) {
   const 类型选择 = document.createElement('select'); 类型选择.setAttribute('aria-label', '新关系类型')
   for (const 名 of 记忆关系类型们) { const 项 = document.createElement('option'); 项.value = 名; 项.textContent = 名; 类型选择.appendChild(项) }
   const 建立 = document.createElement('button'); 建立.textContent = '建立连接'; 建立.title = '再依次选择起点和终点卡片'
-  const 归位 = document.createElement('button'); 归位.textContent = '自动排列'
-  const 缩小 = document.createElement('button'); 缩小.textContent = '−'; 缩小.title = '缩小'
-  const 放大 = document.createElement('button'); 放大.textContent = '+'; 放大.title = '放大'
-  const 比例 = document.createElement('span'); 比例.className = '关系图比例'
-  const 帮助 = document.createElement('span'); 帮助.className = '关系图帮助'; 帮助.textContent = '拖动卡片调整位置 · 拖动空白移动画布 · 滚轮缩放'
-  工具.append(类型选择, 建立, 归位, 缩小, 放大, 比例, 帮助)
+  const 全图 = document.createElement('button'); 全图.textContent = '回到全图'; 全图.title = '退出单张记忆聚焦并回到全图'
+  const 帮助 = document.createElement('span'); 帮助.className = '关系图帮助'; 帮助.textContent = '点击卡片聚焦关联 · 拖动空白或滚轮滑动画布'
+  工具.append(类型选择, 建立, 全图, 帮助)
   const 视口 = document.createElement('div'); 视口.className = '关系图视口'
   const 世界 = document.createElement('div'); 世界.className = '关系图世界'
-  const 连线层 = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); 连线层.classList.add('关系图连线层'); 连线层.setAttribute('width', '2400'); 连线层.setAttribute('height', '6000'); 连线层.setAttribute('viewBox', '0 0 2400 6000')
+  const 连线层 = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); 连线层.classList.add('关系图连线层'); 连线层.setAttribute('width', '2800'); 连线层.setAttribute('height', '6200'); 连线层.setAttribute('viewBox', '0 0 2800 6200')
   const 卡片层 = document.createElement('div'); 卡片层.className = '关系图卡片层'
-  世界.append(连线层, 卡片层); 视口.appendChild(世界); 壳.append(工具, 视口); 记忆管理列表.appendChild(壳)
+  const 聚焦条 = document.createElement('div'); 聚焦条.className = '关系图聚焦条'; 聚焦条.hidden = true
+  const 聚焦文字 = document.createElement('div'); 聚焦文字.className = '关系图聚焦文字'
+  const 聚焦标题 = document.createElement('strong')
+  const 聚焦说明 = document.createElement('span')
+  聚焦文字.append(聚焦标题, 聚焦说明)
+  const 退出聚焦按钮 = document.createElement('button'); 退出聚焦按钮.textContent = '×'; 退出聚焦按钮.setAttribute('aria-label', '退出记忆聚焦')
+  聚焦条.append(聚焦文字, 退出聚焦按钮)
+  世界.append(连线层, 卡片层); 视口.append(世界, 聚焦条); 壳.append(工具, 视口); 记忆管理列表.appendChild(壳)
 
   const 默认位置 = 默认关系图位置(节点们)
-  const 已存位置 = 果.布局 && 果.布局.节点 || {}
   const 已存视图 = 果.布局 && 果.布局.视图 || {}
   const 位置 = {}
-  for (const 一 of 节点们) 位置[一.键] = 已存位置[一.键] ? { x: Number(已存位置[一.键].x), y: Number(已存位置[一.键].y) } : 默认位置[一.键]
+  const 展示位置 = {}
+  for (const 一 of 节点们) {
+    位置[一.键] = { ...默认位置[一.键] }
+    展示位置[一.键] = { ...默认位置[一.键] }
+  }
   const 视图 = {
     x: Number.isFinite(Number(已存视图.x)) ? Number(已存视图.x) : 18,
     y: Number.isFinite(Number(已存视图.y)) ? Number(已存视图.y) : 18,
-    缩放: Math.max(0.35, Math.min(2, Number.isFinite(Number(已存视图.缩放)) ? Number(已存视图.缩放) : 0.82)),
+    缩放: 1,
   }
+  const 卡宽 = 260, 卡高 = 132
   const 卡片映射 = new Map(), 节点映射 = new Map(节点们.map((一) => [一.键, 一]))
-  let 连接起点 = null, 正在连接 = false, 编辑器 = null
+  const 全部关系 = [...候选关系.map((一) => ({ ...一, 候选: true })), ...关系们]
+  let 连接起点 = null, 正在连接 = false, 编辑器 = null, 焦点键 = '', 聚焦前视图 = null
 
   function 应用视图() {
-    世界.style.transform = `translate(${视图.x}px, ${视图.y}px) scale(${视图.缩放})`
-    比例.textContent = `${Math.round(视图.缩放 * 100)}%`
+    世界.style.transform = `translate(${视图.x}px, ${视图.y}px)`
   }
   function 保存关系图布局() {
     clearTimeout(关系图保存计时)
-    关系图保存计时 = setTimeout(() => void window.爱莉.保存长期记忆图布局({ 节点: 位置, 视图 }).catch(() => {}), 350)
+    关系图保存计时 = setTimeout(() => void window.爱莉.保存长期记忆图布局({ 节点: {}, 视图: { x: 视图.x, y: 视图.y, 缩放: 1 } }).catch(() => {}), 350)
   }
   function 关编辑器() { if (编辑器) 编辑器.remove(); 编辑器 = null }
+
+  function 相关关系(键) { return 全部关系.filter((一) => 一.从键 === 键 || 一.到键 === 键) }
+  function 关系另一端(关系, 键) { return 关系.从键 === 键 ? 关系.到键 : 关系.从键 }
+  function 摆卡片(键) {
+    const 卡 = 卡片映射.get(键), 点 = 展示位置[键]
+    if (!卡 || !点) return
+    卡.style.left = `${点.x}px`; 卡.style.top = `${点.y}px`
+  }
+  function 重置展示位置() {
+    for (const 一 of 节点们) { 展示位置[一.键] = { ...位置[一.键] }; 摆卡片(一.键) }
+  }
+
+  function 居中到(键, 平滑 = true) {
+    const 点 = 展示位置[键]
+    if (!点) return
+    世界.classList.toggle('平滑移动', 平滑)
+    视图.x = 视口.clientWidth / 2 - 点.x - 卡宽 / 2
+    视图.y = 视口.clientHeight / 2 - 点.y - 卡高 / 2
+    应用视图()
+    if (平滑) setTimeout(() => 世界.classList.remove('平滑移动'), 480)
+  }
+
+  function 设置卡片状态() {
+    const 关联键 = new Set(相关关系(焦点键).map((一) => 关系另一端(一, 焦点键)))
+    for (const [键, 卡] of 卡片映射) {
+      卡.classList.toggle('选中记忆', !!焦点键 && 键 === 焦点键)
+      卡.classList.toggle('关联记忆', !!焦点键 && 关联键.has(键))
+      卡.classList.toggle('非关联记忆', !!焦点键 && 键 !== 焦点键 && !关联键.has(键))
+      const 标签 = 卡.querySelector('.关系图关联标签')
+      if (!标签) continue
+      const 这张的关系 = 相关关系(焦点键).filter((一) => 关系另一端(一, 焦点键) === 键)
+      标签.textContent = 这张的关系.map((一) => `${一.类型}${一.候选 ? ' · 建议' : ''}`).join(' / ')
+      标签.hidden = !这张的关系.length
+    }
+  }
+
+  function 聚焦记忆(节点) {
+    if (!节点 || 正在连接) return
+    if (!焦点键) 聚焦前视图 = { x: 视图.x, y: 视图.y }
+    焦点键 = 节点.键
+    重置展示位置()
+    const 关系 = 相关关系(焦点键)
+    const 关联键们 = [...new Set(关系.map((一) => 关系另一端(一, 焦点键)).filter((键) => 节点映射.has(键)))]
+    const 中心 = { x: 1280, y: 760 }
+    展示位置[焦点键] = { ...中心 }
+    const 数量 = 关联键们.length
+    关联键们.forEach((键, i) => {
+      let x, y
+      if (数量 === 1) { x = 中心.x + 420; y = 中心.y }
+      else if (数量 === 2) { x = 中心.x + (i === 0 ? -430 : 430); y = 中心.y }
+      else {
+        const 圈 = Math.floor(i / 8), 圈内数量 = Math.min(8, 数量 - 圈 * 8), 圈内序号 = i % 8
+        const 角度 = -Math.PI / 2 + 圈内序号 * Math.PI * 2 / 圈内数量
+        x = 中心.x + Math.cos(角度) * (430 + 圈 * 300)
+        y = 中心.y + Math.sin(角度) * (245 + 圈 * 190)
+      }
+      展示位置[键] = { x, y }
+    })
+    for (const 一 of 节点们) 摆卡片(一.键)
+    设置卡片状态()
+    聚焦标题.textContent = String(节点.内容 || '').replace(/\s+/g, ' ').slice(0, 34) + (String(节点.内容 || '').length > 34 ? '…' : '')
+    聚焦说明.textContent = 关联键们.length ? `${关联键们.length} 张直接关联记忆环绕显示` : '暂时没有直接关联，可使用“建立连接”补充'
+    聚焦条.hidden = false
+    壳.classList.add('聚焦模式')
+    画线()
+    requestAnimationFrame(() => 居中到(焦点键, true))
+  }
+
+  function 退出聚焦(恢复视图 = true) {
+    if (!焦点键) return
+    焦点键 = ''
+    重置展示位置(); 设置卡片状态(); 聚焦条.hidden = true; 壳.classList.remove('聚焦模式'); 画线()
+    if (恢复视图 && 聚焦前视图) {
+      世界.classList.add('平滑移动'); 视图.x = 聚焦前视图.x; 视图.y = 聚焦前视图.y; 应用视图()
+      setTimeout(() => 世界.classList.remove('平滑移动'), 480)
+    }
+    聚焦前视图 = null
+  }
 
   function 显示关系编辑器(关系, 是候选 = false) {
     关编辑器()
@@ -1704,22 +1790,23 @@ function 画长期记忆关系图(果) {
     箭头.setAttribute('id', '记忆关系箭头'); 箭头.setAttribute('markerWidth', '7'); 箭头.setAttribute('markerHeight', '7'); 箭头.setAttribute('refX', '6'); 箭头.setAttribute('refY', '3.5'); 箭头.setAttribute('orient', 'auto'); 箭头.setAttribute('markerUnits', 'strokeWidth')
     const 箭形 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 箭形.setAttribute('d', 'M 0 0 L 7 3.5 L 0 7 z'); 箭形.setAttribute('fill', 'context-stroke')
     箭头.appendChild(箭形); 定义.appendChild(箭头); 连线层.appendChild(定义)
-    const 全部线 = [...候选关系.map((一) => ({ ...一, 候选: true })), ...关系们]
     const 成对总数 = new Map(), 成对序号 = new Map()
-    for (const 一 of 全部线) {
+    for (const 一 of 全部关系) {
       const 对 = [一.从键, 一.到键].sort().join('|')
       成对总数.set(对, (成对总数.get(对) || 0) + 1)
     }
-    for (const 一 of 全部线) {
-      const 起 = 位置[一.从键], 终 = 位置[一.到键]
+    for (const 一 of 全部关系) {
+      const 起 = 展示位置[一.从键], 终 = 展示位置[一.到键]
       if (!起 || !终) continue
-      const x1 = 起.x + 126, y1 = 起.y + 55, x2 = 终.x + 126, y2 = 终.y + 55
+      const x1 = 起.x + 卡宽 / 2, y1 = 起.y + 卡高 / 2, x2 = 终.x + 卡宽 / 2, y2 = 终.y + 卡高 / 2
       const 弯 = Math.max(50, Math.abs(x2 - x1) * 0.38)
       const 对 = [一.从键, 一.到键].sort().join('|'), 序号 = 成对序号.get(对) || 0
       成对序号.set(对, 序号 + 1)
       const 偏移 = (序号 - (成对总数.get(对) - 1) / 2) * 34
       const 路径值 = `M ${x1} ${y1} C ${x1 + (x2 >= x1 ? 弯 : -弯)} ${y1 + 偏移}, ${x2 - (x2 >= x1 ? 弯 : -弯)} ${y2 + 偏移}, ${x2} ${y2}`
       const 组 = document.createElementNS('http://www.w3.org/2000/svg', 'g'); 组.classList.add('关系图连线'); if (一.候选) 组.classList.add('候选')
+      组.dataset.从键 = 一.从键; 组.dataset.到键 = 一.到键
+      if (焦点键) 组.classList.add(一.从键 === 焦点键 || 一.到键 === 焦点键 ? '焦点关系' : '淡出关系')
       const 线 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 线.setAttribute('d', 路径值); 线.setAttribute('stroke', 关系图关系颜色(一.类型)); 线.setAttribute('marker-end', 'url(#记忆关系箭头)')
       const 命中 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 命中.setAttribute('d', 路径值); 命中.classList.add('关系图连线命中')
       const 标签 = document.createElementNS('http://www.w3.org/2000/svg', 'text'); 标签.setAttribute('x', String((x1 + x2) / 2)); 标签.setAttribute('y', String((y1 + y2) / 2 + 偏移 * 0.75 - 7)); 标签.textContent = 一.候选 ? `${一.类型} · 建议` : 一.类型
@@ -1752,51 +1839,45 @@ function 画长期记忆关系图(果) {
     头.append(类别, 时间)
     const 正文 = document.createElement('p'); 正文.textContent = 节点.内容
     const 脚 = document.createElement('footer'); 脚.textContent = `${记忆类型名字[节点.记忆类型] || '记忆'}${节点.人物 ? ` · ${节点.人物}` : ''}`
-    卡.append(头, 正文, 脚); 卡片层.appendChild(卡); 卡片映射.set(节点.键, 卡)
-    const 摆 = () => { 卡.style.left = `${位置[节点.键].x}px`; 卡.style.top = `${位置[节点.键].y}px` }
-    摆()
-    卡.addEventListener('click', (事件) => { 事件.stopPropagation(); if (卡.dataset.拖过 === '1') { 卡.dataset.拖过 = ''; return } void 选择连接卡片(节点, 卡) })
-    卡.addEventListener('pointerdown', (事件) => {
-      if (事件.button !== 0) return
-      事件.stopPropagation(); 卡.setPointerCapture(事件.pointerId)
-      const 起鼠标 = { x: 事件.clientX, y: 事件.clientY }, 起位置 = { ...位置[节点.键] }; let 动了 = false
-      const 移动 = (e) => {
-        const dx = (e.clientX - 起鼠标.x) / 视图.缩放, dy = (e.clientY - 起鼠标.y) / 视图.缩放
-        if (Math.abs(dx) + Math.abs(dy) > 3) 动了 = true
-        if (!动了) return
-        位置[节点.键] = { x: 起位置.x + dx, y: 起位置.y + dy }; 摆(); 画线()
-      }
-      const 放开 = () => { 卡.removeEventListener('pointermove', 移动); 卡.removeEventListener('pointerup', 放开); 卡.removeEventListener('pointercancel', 放开); if (动了) { 卡.dataset.拖过 = '1'; 保存关系图布局() } }
-      卡.addEventListener('pointermove', 移动); 卡.addEventListener('pointerup', 放开); 卡.addEventListener('pointercancel', 放开)
+    const 关联标签 = document.createElement('div'); 关联标签.className = '关系图关联标签'; 关联标签.hidden = true
+    卡.append(头, 正文, 脚, 关联标签); 卡片层.appendChild(卡); 卡片映射.set(节点.键, 卡); 摆卡片(节点.键)
+    卡.addEventListener('click', (事件) => {
+      事件.stopPropagation()
+      if (正在连接) void 选择连接卡片(节点, 卡)
+      else if (焦点键 === 节点.键) 退出聚焦(true)
+      else 聚焦记忆(节点)
     })
   }
 
-  function 调整缩放(新值, 中心X = 视口.clientWidth / 2, 中心Y = 视口.clientHeight / 2) {
-    const 旧 = 视图.缩放, 新 = Math.max(0.35, Math.min(2, 新值))
-    const 世界X = (中心X - 视图.x) / 旧, 世界Y = (中心Y - 视图.y) / 旧
-    视图.x = 中心X - 世界X * 新; 视图.y = 中心Y - 世界Y * 新; 视图.缩放 = 新; 应用视图(); 保存关系图布局()
-  }
   视口.addEventListener('wheel', (事件) => {
-    事件.preventDefault(); const 框 = 视口.getBoundingClientRect(); 调整缩放(视图.缩放 * (事件.deltaY > 0 ? 0.9 : 1.1), 事件.clientX - 框.left, 事件.clientY - 框.top)
+    事件.preventDefault()
+    if (事件.shiftKey) 视图.x -= 事件.deltaY || 事件.deltaX
+    else { 视图.x -= 事件.deltaX; 视图.y -= 事件.deltaY }
+    世界.classList.remove('平滑移动'); 应用视图(); 保存关系图布局()
   }, { passive: false })
   视口.addEventListener('pointerdown', (事件) => {
     if (事件.button !== 0 || 事件.target.closest('.关系图卡片') || 事件.target.closest('.关系图连线')) return
     关编辑器(); 视口.setPointerCapture(事件.pointerId)
-    const 起 = { x: 事件.clientX, y: 事件.clientY, vx: 视图.x, vy: 视图.y }
-    const 移动 = (e) => { 视图.x = 起.vx + e.clientX - 起.x; 视图.y = 起.vy + e.clientY - 起.y; 应用视图() }
-    const 放开 = () => { 视口.removeEventListener('pointermove', 移动); 视口.removeEventListener('pointerup', 放开); 视口.removeEventListener('pointercancel', 放开); 保存关系图布局() }
+    世界.classList.remove('平滑移动')
+    const 起 = { x: 事件.clientX, y: 事件.clientY, vx: 视图.x, vy: 视图.y }; let 动了 = false
+    const 移动 = (e) => { if (Math.abs(e.clientX - 起.x) + Math.abs(e.clientY - 起.y) > 3) 动了 = true; 视图.x = 起.vx + e.clientX - 起.x; 视图.y = 起.vy + e.clientY - 起.y; 应用视图() }
+    const 放开 = () => { 视口.removeEventListener('pointermove', 移动); 视口.removeEventListener('pointerup', 放开); 视口.removeEventListener('pointercancel', 放开); if (!动了 && 焦点键) 退出聚焦(true); else 保存关系图布局() }
     视口.addEventListener('pointermove', 移动); 视口.addEventListener('pointerup', 放开); 视口.addEventListener('pointercancel', 放开)
   })
   建立.addEventListener('click', () => {
-    正在连接 = !正在连接; 连接起点 = null; 建立.disabled = false; 建立.classList.toggle('选中', 正在连接); 建立.textContent = 正在连接 ? '请选择起点' : '建立连接'
+    if (焦点键) {
+      退出聚焦(false)
+      视图.x = 18; 视图.y = 18; 应用视图()
+    }
+    正在连接 = !正在连接; 连接起点 = null; 建立.disabled = false; 建立.classList.toggle('选中', 正在连接); 建立.textContent = 正在连接 ? '请选择起点' : '建立连接'; 壳.classList.toggle('连接模式', 正在连接)
     for (const 卡 of 卡片映射.values()) 卡.classList.remove('连接起点')
   })
-  归位.addEventListener('click', () => {
-    const 新位置 = 默认关系图位置(节点们); for (const 一 of 节点们) { 位置[一.键] = 新位置[一.键]; const 卡 = 卡片映射.get(一.键); 卡.style.left = `${位置[一.键].x}px`; 卡.style.top = `${位置[一.键].y}px` }
-    视图.x = 18; 视图.y = 18; 视图.缩放 = 0.82; 应用视图(); 画线(); 保存关系图布局()
+  全图.addEventListener('click', () => {
+    if (焦点键) 退出聚焦(false)
+    世界.classList.add('平滑移动'); 视图.x = 18; 视图.y = 18; 视图.缩放 = 1; 应用视图(); 保存关系图布局()
+    setTimeout(() => 世界.classList.remove('平滑移动'), 480)
   })
-  缩小.addEventListener('click', () => 调整缩放(视图.缩放 / 1.15))
-  放大.addEventListener('click', () => 调整缩放(视图.缩放 * 1.15))
+  退出聚焦按钮.addEventListener('click', (事件) => { 事件.stopPropagation(); 退出聚焦(true) })
   应用视图(); 画线()
 }
 

@@ -2709,59 +2709,119 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 .记忆操作提示 { margin-top: 6px; color: #8d7280; font-size: 10px; }
 .记忆操作提示.失败 { color: #bd5965; }
 
-/* 长期记忆关系图：卡片位置只进缓存，连线才代表人工确认的语义关系。 */
-.记忆管理面板.图谱模式 { width: min(980px, calc(100vw - 36px)); height: min(720px, calc(100vh - 36px)); }
-.记忆管理面板.图谱模式 .记忆管理列表 { overflow: hidden; padding: 0; border: 1px solid #eadce8; border-radius: 13px; background: #fbf7fa; }
+/* 长期记忆关系图：固定大小、只平移；点击卡片进入以直接关系为中心的图谱。 */
+.记忆管理面板.图谱模式 {
+  width: 980px; height: 720px; max-width: calc(100vw - 36px); max-height: calc(100vh - 36px);
+}
+.记忆管理面板.图谱模式 .记忆管理列表 {
+  overflow: hidden; padding: 0; border: 1px solid rgba(228, 176, 209, 0.68); border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 250, 253, 0.96), rgba(250, 236, 246, 0.91));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 18px 50px rgba(133, 71, 110, 0.12);
+}
 .记忆关系图 { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
 .关系图工具栏 {
-  position: relative; z-index: 4; display: flex; align-items: center; gap: 5px; min-height: 38px; padding: 5px 7px;
-  border-bottom: 1px solid #eadce8; background: rgba(255, 251, 253, 0.95); backdrop-filter: blur(8px);
+  position: relative; z-index: 6; display: flex; align-items: center; gap: 7px; min-height: 42px; padding: 7px 10px;
+  border-bottom: 1px solid rgba(231, 190, 215, 0.68);
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.8), rgba(252, 224, 241, 0.62));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 5px 20px rgba(126, 68, 105, 0.08);
+  backdrop-filter: blur(24px) saturate(1.35); -webkit-backdrop-filter: blur(24px) saturate(1.35);
 }
 .关系图工具栏 button, .关系图工具栏 select {
-  min-height: 27px; padding: 3px 8px; border: 1px solid #e3cfe0; border-radius: 8px;
-  background: #fff; color: #85647d; font-family: inherit; font-size: 10px; cursor: pointer;
+  min-height: 29px; padding: 4px 10px; border: 1px solid rgba(219, 159, 197, 0.72); border-radius: 10px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.86), rgba(250, 218, 237, 0.58));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), 0 3px 10px rgba(121, 65, 100, 0.07);
+  color: #815a75; font-family: inherit; font-size: 10px; cursor: pointer;
 }
-.关系图工具栏 button:hover, .关系图工具栏 button.选中 { border-color: #ca98b7; background: #f7e8f0; color: #925979; }
+.关系图工具栏 button:hover, .关系图工具栏 button.选中 {
+  border-color: rgba(205, 105, 161, 0.8); background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(247, 192, 224, 0.74)); color: #8f4c72;
+}
 .关系图工具栏 button:disabled { opacity: 0.55; cursor: wait; }
-.关系图比例 { min-width: 37px; color: #99798d; font-size: 9px; text-align: center; }
-.关系图帮助 { margin-left: auto; color: #ad8e9f; font-size: 9px; white-space: nowrap; }
+.关系图帮助 { margin-left: auto; color: #a37f94; font-size: 9px; white-space: nowrap; }
 .关系图视口 {
   position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; touch-action: none; cursor: grab;
-  background-color: #fcf9fb;
-  background-image: radial-gradient(circle, rgba(185, 139, 170, 0.22) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255, 188, 226, 0.33), transparent 31%),
+    radial-gradient(circle at 86% 76%, rgba(220, 191, 247, 0.29), transparent 36%),
+    linear-gradient(145deg, #fffafd 0%, #faedf6 48%, #f8f4fb 100%);
+}
+.关系图视口::before {
+  content: ''; position: absolute; z-index: 0; inset: 0; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(178, 117, 157, 0.18) 1px, transparent 1.2px); background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.76), rgba(0, 0, 0, 0.25));
 }
 .关系图视口:active { cursor: grabbing; }
-.关系图世界 { position: absolute; left: 0; top: 0; width: 2400px; height: 6000px; transform-origin: 0 0; will-change: transform; }
-.关系图连线层, .关系图卡片层 { position: absolute; inset: 0; width: 2400px; height: 6000px; overflow: visible; }
-.关系图连线 { cursor: pointer; }
-.关系图连线 path:not(.关系图连线命中) { fill: none; stroke-width: 2; opacity: 0.78; }
-.关系图连线.候选 path:not(.关系图连线命中) { stroke-dasharray: 7 6; opacity: 0.5; }
-.关系图连线命中 { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; }
+.关系图世界 { position: absolute; z-index: 1; left: 0; top: 0; width: 2800px; height: 6200px; transform-origin: 0 0; will-change: transform; }
+.关系图世界.平滑移动 { transition: transform 460ms cubic-bezier(0.22, 0.88, 0.3, 1); }
+.关系图连线层, .关系图卡片层 { position: absolute; inset: 0; width: 2800px; height: 6200px; overflow: visible; }
+.关系图连线 { cursor: pointer; opacity: 1; transition: opacity 280ms ease; }
+.关系图连线 path:not(.关系图连线命中) { fill: none; stroke-width: 2.4; opacity: 0.76; filter: drop-shadow(0 1px 2px rgba(121, 71, 105, 0.14)); }
+.关系图连线.候选 path:not(.关系图连线命中) { stroke-dasharray: 7 6; opacity: 0.52; }
+.关系图连线.焦点关系 path:not(.关系图连线命中) { stroke-width: 3.4; opacity: 0.96; }
+.关系图连线.淡出关系 { opacity: 0.045; pointer-events: none; }
+.关系图连线命中 { fill: none; stroke: transparent; stroke-width: 18; pointer-events: stroke; }
 .关系图连线 text {
-  fill: #886b7e; font-family: inherit; font-size: 10px; text-anchor: middle; paint-order: stroke;
-  stroke: #fffafd; stroke-width: 4px; stroke-linejoin: round; pointer-events: auto; user-select: none;
+  fill: #805e74; font-family: inherit; font-size: 10px; font-weight: 600; text-anchor: middle; paint-order: stroke;
+  stroke: rgba(255, 250, 253, 0.92); stroke-width: 5px; stroke-linejoin: round; pointer-events: auto; user-select: none;
 }
-.关系图连线.候选 text { fill: #a28c9a; font-style: italic; }
+.关系图连线.候选 text { fill: #a17f94; font-style: italic; }
 .关系图卡片 {
-  position: absolute; box-sizing: border-box; width: 252px; min-height: 110px; max-height: 138px; padding: 10px 11px 9px;
-  border: 1px solid #e2cedd; border-top: 3px solid #bd91bc; border-radius: 12px; overflow: hidden;
-  background: rgba(255, 255, 255, 0.97); box-shadow: 0 5px 18px rgba(94, 61, 83, 0.1); cursor: move;
-  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s; user-select: none; touch-action: none;
+  position: absolute; box-sizing: border-box; width: 260px; height: 132px; padding: 13px 14px 11px;
+  border: 1px solid rgba(232, 170, 207, 0.68); border-radius: 22px; overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255, 255, 255, 0.98), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.75), rgba(252, 192, 226, 0.48) 58%, rgba(235, 183, 226, 0.36));
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.98), inset -1px -1px 0 rgba(202, 119, 171, 0.14), 0 13px 32px rgba(111, 56, 92, 0.15);
+  backdrop-filter: blur(22px) saturate(1.42); -webkit-backdrop-filter: blur(22px) saturate(1.42);
+  cursor: pointer; transition: left 440ms cubic-bezier(0.22, 0.88, 0.3, 1), top 440ms cubic-bezier(0.22, 0.88, 0.3, 1), opacity 300ms ease, filter 300ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  user-select: none; touch-action: none;
 }
-.关系图卡片:hover { border-color: #cfabc2; box-shadow: 0 8px 22px rgba(94, 61, 83, 0.16); transform: translateY(-1px); }
-.关系图卡片.连接起点 { border-color: #c76f9d; box-shadow: 0 0 0 3px rgba(199, 111, 157, 0.18), 0 8px 22px rgba(94, 61, 83, 0.16); }
-.关系图卡片.类别-经历 { border-top-color: #d982a6; }
-.关系图卡片.类别-小本子 { border-top-color: #8da7c8; }
+.关系图卡片::before {
+  content: ''; position: absolute; pointer-events: none; left: 10px; right: 10px; top: 7px; height: 42%; border-radius: 16px 16px 48% 48%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0)); opacity: 0.86;
+}
+.关系图卡片::after {
+  content: ''; position: absolute; pointer-events: none; width: 70px; height: 70px; right: -24px; bottom: -32px; border-radius: 50%;
+  background: rgba(255, 150, 208, 0.2); filter: blur(3px);
+}
+.关系图卡片 > * { position: relative; z-index: 1; }
+.关系图卡片:hover { border-color: rgba(207, 112, 168, 0.86); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.98), 0 18px 38px rgba(111, 56, 92, 0.22); transform: translateY(-3px); }
+.关系图卡片.选中记忆 {
+  z-index: 4; border-color: rgba(202, 91, 156, 0.96); box-shadow: inset 1px 1px 0 #fff, 0 0 0 4px rgba(226, 128, 184, 0.17), 0 24px 52px rgba(109, 49, 88, 0.25); transform: none;
+}
+.关系图卡片.关联记忆 { z-index: 3; border-color: rgba(218, 133, 183, 0.9); box-shadow: inset 1px 1px 0 #fff, 0 18px 40px rgba(111, 56, 92, 0.19); }
+.关系图卡片.非关联记忆 { opacity: 0.08; filter: saturate(0.4) blur(0.5px); pointer-events: none; }
+.记忆关系图.连接模式 .关系图卡片 { opacity: 1; filter: none; pointer-events: auto; }
+.关系图卡片.连接起点 { border-color: #c75d99; box-shadow: inset 1px 1px 0 #fff, 0 0 0 4px rgba(199, 93, 153, 0.19), 0 18px 40px rgba(104, 49, 84, 0.2); }
+.关系图卡片.类别-经历 { background: radial-gradient(circle at 12% 4%, rgba(255,255,255,.98), transparent 34%), linear-gradient(145deg, rgba(255,255,255,.76), rgba(255,185,220,.5), rgba(237,173,210,.36)); }
+.关系图卡片.类别-小本子 { background: radial-gradient(circle at 12% 4%, rgba(255,255,255,.98), transparent 34%), linear-gradient(145deg, rgba(255,255,255,.78), rgba(239,205,244,.52), rgba(218,196,244,.38)); }
 .关系图卡片 header { display: flex; align-items: center; gap: 8px; }
-.关系图卡片 header strong { flex: 1; color: #875d80; font-size: 10px; }
-.关系图卡片 header time { color: #ae929f; font-size: 8px; }
-.关系图卡片 p { margin: 7px 0 5px; color: #5f4855; font-size: 11px; line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
-.关系图卡片 footer { color: #ae899e; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.关系图卡片 header strong { flex: 1; color: #815575; font-size: 10px; letter-spacing: 0.04em; }
+.关系图卡片 header time { color: #a9879b; font-size: 8px; }
+.关系图卡片 p { margin: 7px 0 5px; color: #58444f; font-size: 11px; line-height: 1.43; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.关系图卡片 footer { color: #9f7a90; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.关系图关联标签 {
+  position: absolute; right: 10px; bottom: 8px; max-width: 150px; padding: 3px 7px; border: 1px solid rgba(221, 140, 188, 0.55); border-radius: 999px;
+  background: rgba(255, 245, 251, 0.72); color: #985b7e; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.92); backdrop-filter: blur(8px);
+}
+.关系图聚焦条 {
+  position: absolute; z-index: 7; left: 50%; top: 12px; display: flex; align-items: center; gap: 12px; width: min(520px, calc(100% - 30px)); box-sizing: border-box; padding: 10px 12px 10px 15px;
+  border: 1px solid rgba(225, 151, 194, 0.68); border-radius: 17px; transform: translateX(-50%);
+  background: linear-gradient(145deg, rgba(255,255,255,.83), rgba(249,211,234,.68)); box-shadow: inset 0 1px 0 rgba(255,255,255,.96), 0 12px 34px rgba(107,54,88,.16);
+  backdrop-filter: blur(24px) saturate(1.35); -webkit-backdrop-filter: blur(24px) saturate(1.35);
+}
+.关系图聚焦条[hidden] { display: none; }
+.关系图聚焦文字 { flex: 1; min-width: 0; }
+.关系图聚焦文字 strong, .关系图聚焦文字 span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.关系图聚焦文字 strong { color: #744c68; font-size: 11px; }
+.关系图聚焦文字 span { margin-top: 3px; color: #9b748c; font-size: 9px; }
+.关系图聚焦条 button { width: 28px; height: 28px; padding: 0; border: 1px solid rgba(217,145,187,.62); border-radius: 50%; background: rgba(255,255,255,.62); color: #96647f; font: 18px/1 inherit; cursor: pointer; }
 .关系图编辑器 {
-  position: absolute; z-index: 8; right: 12px; top: 50px; width: min(238px, calc(100% - 24px)); padding: 11px;
-  border: 1px solid #ddc3d5; border-radius: 12px; background: rgba(255, 252, 254, 0.97);
-  box-shadow: 0 12px 34px rgba(93, 55, 81, 0.2); backdrop-filter: blur(10px);
+  position: absolute; z-index: 9; right: 12px; top: 56px; width: min(238px, calc(100% - 24px)); padding: 12px;
+  border: 1px solid rgba(221, 155, 195, 0.68); border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,.86), rgba(249,215,235,.72));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 16px 42px rgba(93,55,81,.2);
+  backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3);
 }
 .关系图编辑器头 { display: flex; align-items: center; }
 .关系图编辑器头 strong { flex: 1; color: #7e5574; font-size: 12px; }
