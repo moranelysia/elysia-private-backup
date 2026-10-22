@@ -2417,6 +2417,16 @@ function 接对讲机() {
           依据: (Array.isArray(一.自主评估.依据) ? 一.自主评估.依据 : []).slice(0, 8).map((值) => String(值 || '').slice(0, 120)),
           确认于: String(一.自主评估.确认于 || ''),
         } : null,
+        评估账本: 一.评估账本 && typeof 一.评估账本 === 'object' ? {
+          提及次数: Math.max(0, Math.min(99, Number(一.评估账本.提及次数) || 0)),
+          当前分数: Math.max(0, Math.min(100, Number(一.评估账本.当前分数) || 0)),
+          历史最高分: Math.max(0, Math.min(100, Number(一.评估账本.历史最高分) || 0)),
+          首次提及于: String(一.评估账本.首次提及于 || ''),
+          最近提及于: String(一.评估账本.最近提及于 || ''),
+          最近决定: String(一.评估账本.最近决定 || '').slice(0, 80),
+          最近说明: String(一.评估账本.最近说明 || '').slice(0, 240),
+          证据数: Math.min(100, Array.isArray(一.评估账本.证据) ? 一.评估账本.证据.length : 0),
+        } : null,
         归档于: String(一.归档于 || ''),
         归档原因: String(一.归档原因 || ''),
       }})
