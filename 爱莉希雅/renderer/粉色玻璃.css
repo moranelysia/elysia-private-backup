@@ -1,0 +1,299 @@
+/*
+ * 粉色玻璃.css —— 渐进式 UI 质感覆盖层
+ *
+ * 这里不接管布局，也不改任何业务状态。第一阶段只覆盖常驻的顶栏、侧栏状态卡和输入区。
+ * 原来的 style.css 保持完整；移除 index.html 里这一条样式引用即可立即退回原样。
+ */
+
+:root {
+  --玻璃-粉白: rgba(255, 250, 253, 0.76);
+  --玻璃-樱粉: rgba(255, 226, 241, 0.58);
+  --玻璃-淡紫: rgba(244, 236, 255, 0.52);
+  --玻璃-边: rgba(229, 153, 192, 0.44);
+  --玻璃-内高光: rgba(255, 255, 255, 0.94);
+  --玻璃-柔光: rgba(255, 255, 255, 0.55);
+  --玻璃-阴影: rgba(116, 57, 91, 0.13);
+  --玻璃-深阴影: rgba(96, 44, 75, 0.2);
+  --交互-粉: #d8659c;
+  --交互-紫: #8c70b6;
+  --交互-聚焦: rgba(222, 105, 163, 0.19);
+  --动效-快: 120ms;
+  --动效-普通: 180ms;
+  --动效-弹层: 220ms;
+  --缓动-响应: cubic-bezier(0.23, 1, 0.32, 1);
+  --缓动-移动: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+body {
+  border-color: rgba(234, 167, 200, 0.7);
+}
+
+/* 顶栏：一层背景模糊负责与插画分离，静态高光负责玻璃厚度。 */
+.顶栏 {
+  position: relative;
+  background:
+    linear-gradient(108deg, rgba(255, 255, 255, 0.82), rgba(255, 237, 247, 0.65) 58%, rgba(248, 237, 255, 0.58));
+  border-bottom-color: rgba(232, 169, 201, 0.55);
+  box-shadow:
+    inset 0 1px 0 var(--玻璃-内高光),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.38),
+    0 7px 22px rgba(126, 66, 101, 0.09);
+  backdrop-filter: blur(14px) saturate(1.12);
+  -webkit-backdrop-filter: blur(14px) saturate(1.12);
+}
+
+.头像 {
+  border-color: rgba(247, 184, 216, 0.9);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.68),
+    0 4px 11px rgba(190, 86, 140, 0.22);
+}
+
+.小按钮 {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0);
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-快) ease,
+    box-shadow var(--动效-快) ease;
+}
+
+.小按钮:hover {
+  background: rgba(255, 231, 243, 0.78);
+  color: #bd5e8d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 4px 10px rgba(156, 72, 116, 0.12);
+}
+
+.小按钮:not(:disabled):active {
+  transform: scale(0.94);
+  box-shadow: inset 0 2px 5px rgba(151, 75, 113, 0.14);
+}
+
+.小按钮:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 3px var(--交互-聚焦);
+}
+
+/* 侧栏只模糊一次；内部状态卡靠渐变、描边和内高光分层，避免嵌套模糊。 */
+.侧栏 {
+  background:
+    linear-gradient(168deg, rgba(255, 251, 253, 0.79), rgba(255, 231, 242, 0.63) 55%, rgba(246, 237, 255, 0.58));
+  border-right-color: rgba(232, 166, 199, 0.58);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.48),
+    7px 0 24px rgba(119, 58, 94, 0.08);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+.侧栏状态 {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 224, 240, 0.54) 66%, rgba(244, 233, 255, 0.48));
+  border-color: rgba(223, 143, 183, 0.52);
+  box-shadow:
+    inset 1px 1px 0 var(--玻璃-内高光),
+    inset -1px -1px 0 rgba(202, 116, 164, 0.1),
+    0 9px 24px rgba(112, 53, 88, 0.11);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.侧栏状态标题 {
+  color: #9f6c86;
+}
+
+.开新对话,
+.开临时对话,
+.侧栏状态标题 #状态详情开关,
+.侧栏状态 .模式按钮,
+.侧栏状态 .情感状态,
+.侧栏状态 .缓慢情绪,
+.侧栏状态 .记忆按钮,
+.侧栏状态 .记忆管理入口,
+.侧栏状态 .任务按钮,
+.侧栏状态 .干活目录,
+.侧栏状态 .工作索引入口 {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-普通) ease,
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.开新对话 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 230, 242, 0.7));
+  border-color: rgba(225, 135, 180, 0.62);
+  border-style: solid;
+}
+
+.开临时对话 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(241, 234, 255, 0.72));
+  border-color: rgba(174, 145, 211, 0.52);
+  border-style: solid;
+}
+
+.侧栏状态 .模式按钮,
+.侧栏状态 .情感状态,
+.侧栏状态 .缓慢情绪,
+.侧栏状态 .记忆按钮,
+.侧栏状态 .记忆管理入口,
+.侧栏状态 .工作索引入口 {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 241, 248, 0.66));
+}
+
+.开新对话:hover,
+.开临时对话:hover,
+.侧栏状态 button:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 5px 13px rgba(132, 65, 102, 0.12);
+}
+
+.开新对话:not(:disabled):active,
+.开临时对话:not(:disabled):active,
+.侧栏状态 button:not(:disabled):active {
+  transform: scale(0.975);
+}
+
+.开新对话:focus-visible,
+.开临时对话:focus-visible,
+.侧栏状态 button:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 0 0 3px var(--交互-聚焦);
+}
+
+/* 输入区：外层承担玻璃感，控件本身保持清晰、可读、可快速响应。 */
+.输入区 {
+  background:
+    linear-gradient(104deg, rgba(255, 255, 255, 0.75), rgba(255, 235, 246, 0.63) 66%, rgba(247, 239, 255, 0.58));
+  border-top-color: rgba(231, 161, 196, 0.56);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 -8px 24px rgba(117, 54, 91, 0.08);
+  backdrop-filter: blur(14px) saturate(1.12);
+  -webkit-backdrop-filter: blur(14px) saturate(1.12);
+}
+
+#输入 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(255, 245, 250, 0.74));
+  border-color: rgba(224, 153, 188, 0.5);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(211, 132, 173, 0.08),
+    0 5px 16px rgba(110, 53, 87, 0.08);
+  transition:
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease,
+    background-color var(--动效-普通) ease;
+}
+
+#输入:focus {
+  border-color: rgba(211, 93, 151, 0.72);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.98),
+    0 0 0 3px var(--交互-聚焦),
+    0 7px 18px rgba(122, 55, 92, 0.11);
+}
+
+.附件按钮,
+.麦克风,
+.通话开关,
+.上下文环,
+.发送 {
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    color var(--动效-快) ease,
+    background-color var(--动效-普通) ease,
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease,
+    opacity var(--动效-普通) ease;
+}
+
+.附件按钮,
+.麦克风,
+.通话开关,
+.上下文环 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 231, 243, 0.68));
+  border-color: rgba(221, 145, 183, 0.48);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 5px 14px rgba(118, 57, 91, 0.09);
+}
+
+.上下文环 {
+  border: 1px solid rgba(221, 145, 183, 0.36);
+}
+
+.附件按钮:hover,
+.麦克风:hover,
+.通话开关:hover,
+.上下文环:hover {
+  background: linear-gradient(145deg, #fff, rgba(255, 219, 237, 0.84));
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    0 7px 17px rgba(135, 62, 101, 0.14);
+}
+
+.发送 {
+  background: linear-gradient(145deg, #f9a8cb, #e66da4 68%, #c98bdd);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.52),
+    inset -1px -1px 0 rgba(158, 56, 107, 0.12),
+    0 7px 17px rgba(186, 74, 132, 0.25);
+}
+
+.发送:hover {
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.62),
+    0 9px 20px rgba(180, 65, 124, 0.3);
+}
+
+.附件按钮:not(:disabled):active,
+.麦克风:not(:disabled):active,
+.通话开关:not(:disabled):active,
+.上下文环:not(:disabled):active,
+.发送:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+.附件按钮:focus-visible,
+.麦克风:focus-visible,
+.通话开关:focus-visible,
+.上下文环:focus-visible,
+.发送:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 0 0 3px var(--交互-聚焦);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .小按钮,
+  .开新对话,
+  .开临时对话,
+  .侧栏状态 button,
+  #输入,
+  .输入区 button {
+    transition-duration: 1ms;
+  }
+
+  .小按钮:not(:disabled):active,
+  .开新对话:not(:disabled):active,
+  .开临时对话:not(:disabled):active,
+  .侧栏状态 button:not(:disabled):active,
+  .输入区 button:not(:disabled):active,
+  .发送:hover {
+    transform: none;
+  }
+}
