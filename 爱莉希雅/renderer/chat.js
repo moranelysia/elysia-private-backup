@@ -3164,7 +3164,7 @@ function 画上下文账本() {
   上下文记录.appendChild(说明)
   const 范围 = document.createElement('p')
   范围.className = '工具记录摘要'
-  范围.textContent = '下列是本轮发送的临时记忆资料，不代表模型一定采用。长期记忆仍沿用原读取规则；此处不列出完整人设和聊天历史。记录仅在本次运行保留。'
+  范围.textContent = '下列是本轮发送的记忆资料，不代表模型一定采用。长期关系只允许从直接命中沿已保存关系走一跳；候选、冲突和二跳不会发送。此处不列出完整人设和聊天历史。记录仅在本次运行保留。'
   上下文记录.appendChild(范围)
   for (const 一 of (账 && 账.条目) || []) {
     const 卡 = document.createElement('article')
@@ -3186,6 +3186,47 @@ function 画上下文账本() {
     const 空 = document.createElement('div')
     空.className = '工具记录空态'
     空.textContent = 账.好 ? '本轮没有使用临时记忆。' : '临时记忆读取失败，已跳过。'
+    上下文记录.appendChild(空)
+  }
+  const 长 = 账 && 账.长期关系
+  const 长摘要 = document.createElement('p')
+  长摘要.className = '工具记录摘要'
+  长摘要.textContent = 长
+    ? `长期记忆直接命中 ${长.种子.length}/${长.最多种子} 条，一跳补充 ${长.条目.length}/${长.最多条数} 条，正文 ${长.使用字符}/${长.字符预算} 字。${长.说明 || ''}`
+    : '尚无长期记忆关系召回记录。'
+  上下文记录.appendChild(长摘要)
+  for (const 一 of (长 && 长.种子) || []) {
+    const 卡 = document.createElement('article')
+    卡.className = '工具记录卡'
+    const 标题 = document.createElement('strong')
+    标题.textContent = `${一.类别} · 直接命中`
+    const 内容 = document.createElement('div')
+    内容.className = '工具记录参数'
+    内容.textContent = 一.内容
+    const 依据 = document.createElement('div')
+    依据.className = '工具记录摘要'
+    依据.textContent = `${一.选择原因}\n编号：${一.编号}`
+    卡.append(标题, 内容, 依据)
+    上下文记录.appendChild(卡)
+  }
+  for (const 一 of (长 && 长.条目) || []) {
+    const 卡 = document.createElement('article')
+    卡.className = '工具记录卡'
+    const 标题 = document.createElement('strong')
+    标题.textContent = `${一.类别} · 一跳${一.关系 && 一.关系.类型 || '关系'}`
+    const 内容 = document.createElement('div')
+    内容.className = '工具记录参数'
+    内容.textContent = 一.内容
+    const 依据 = document.createElement('div')
+    依据.className = '工具记录摘要'
+    依据.textContent = `${一.选择原因}\n路径：${一.路径}\n关系编号：${一.关系 && 一.关系.编号 || '未记录'} · 记忆编号：${一.编号}`
+    卡.append(标题, 内容, 依据)
+    上下文记录.appendChild(卡)
+  }
+  if (长 && !长.条目.length) {
+    const 空 = document.createElement('div')
+    空.className = '工具记录空态'
+    空.textContent = 长.好 ? '本轮没有安全的一跳长期记忆补充。' : '长期记忆关系读取失败，已跳过。'
     上下文记录.appendChild(空)
   }
 }
