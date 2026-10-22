@@ -69,6 +69,7 @@ async function main() {
   检查('临时层提供手动新增入口', html.includes('id="临时记忆新增"') && js.includes('function 新增临时记忆表单()'))
   检查('临时内容和标签使用 textContent 绘制', js.includes("内容.textContent = 一.内容 || ''") && js.includes('一个.textContent = 名'))
   检查('界面可查看并手动修改重要性', js.includes('function 重要性选择') && js.includes('重要性: Number(重要性.value)') && css.includes('.临时状态.重要性-3'))
+  检查('临时与长期界面显示自主评分和可解释依据', main.includes('自主评估: 一.自主评估') && (js.match(/自动评估 \$\{一\.自主评估\.分数\} 分/g) || []).length >= 2)
   检查('手动新增与编辑都能选择三类记忆类型', js.includes('function 记忆类型选择') && js.includes("['episodic', 'semantic', 'procedural']") && js.includes('记忆类型: 记忆类型.value') && preload.includes("安全.记忆类型"))
   检查('上下文账本显示召回总分、分项和选择原因', js.includes('评分：${一.评分') && js.includes('分项：相关') && js.includes('一.选择原因'))
   检查('上下文账本区分关键词、类型、意图和语义分', js.includes('类型 ${一.分项') && js.includes('意图 ${一.分项') && js.includes('语义 ${一.分项'))

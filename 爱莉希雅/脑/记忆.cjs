@@ -108,6 +108,13 @@ function 记一条(类别, 内容, 来源 = '她', 上下文 = {}) {
   if (对话) 条.对话 = 对话
   const 临时记忆 = String((上下文 && 上下文.临时记忆) || '').trim()
   if (临时记忆) 条.临时记忆 = 临时记忆
+  if (上下文 && 上下文.自主评估 && typeof 上下文.自主评估 === 'object') {
+    const 分数 = Number(上下文.自主评估.分数)
+    const 依据 = Array.isArray(上下文.自主评估.依据) ? 上下文.自主评估.依据.map((一) => String(一 || '').trim()).filter(Boolean).slice(0, 8) : []
+    if (Number.isInteger(分数) && 分数 >= 70 && 分数 <= 100 && 依据.length) {
+      条.自主评估 = { 分数, 依据, 提及次数: Math.max(1, Math.min(99, Number(上下文.自主评估.提及次数) || 1)), 确认于: String(上下文.自主评估.确认于 || '') }
+    }
+  }
   全部.push(条)
   写JSON(文件, 全部)
   return 条
@@ -658,6 +665,12 @@ function 全部长期记忆() {
         整理来源: String(原.整理来源 || ''),
         整理合并数量: Number(原.整理合并数量) || 0,
         临时记忆: String(原.临时记忆 || ''),
+        自主评估: 原.自主评估 && typeof 原.自主评估 === 'object' ? {
+          分数: Number(原.自主评估.分数) || 0,
+          依据: Array.isArray(原.自主评估.依据) ? 原.自主评估.依据.map((一) => String(一 || '')).slice(0, 8) : [],
+          提及次数: Number(原.自主评估.提及次数) || 0,
+          确认于: String(原.自主评估.确认于 || ''),
+        } : null,
       })
     }
   }
