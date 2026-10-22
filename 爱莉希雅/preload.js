@@ -449,6 +449,30 @@ contextBridge.exposeInMainWorld('爱莉', {
     编号: String(请求.编号 || '').slice(0, 120),
   }),
 
+  问长期记忆关系图: (条件 = {}) => ipcRenderer.invoke('问长期记忆关系图', {
+    类别: String(条件.类别 || '').slice(0, 20),
+    搜索: String(条件.搜索 || '').slice(0, 80),
+  }),
+  新增长期记忆关系: (请求 = {}) => ipcRenderer.invoke('新增长期记忆关系', {
+    类型: String(请求.类型 || '').slice(0, 20),
+    从: { 类别: String(请求.从 && 请求.从.类别 || '').slice(0, 20), 编号: String(请求.从 && 请求.从.编号 || '').slice(0, 120) },
+    到: { 类别: String(请求.到 && 请求.到.类别 || '').slice(0, 20), 编号: String(请求.到 && 请求.到.编号 || '').slice(0, 120) },
+  }),
+  修改长期记忆关系: (请求 = {}) => ipcRenderer.invoke('修改长期记忆关系', {
+    编号: String(请求.编号 || '').slice(0, 120),
+    类型: String(请求.类型 || '').slice(0, 20),
+  }),
+  删除长期记忆关系: (编号) => ipcRenderer.invoke('删除长期记忆关系', String(编号 || '').slice(0, 120)),
+  保存长期记忆图布局: (请求 = {}) => {
+    const 节点 = {}
+    const 原节点 = 请求.节点 && typeof 请求.节点 === 'object' ? 请求.节点 : {}
+    for (const [键, 值] of Object.entries(原节点).slice(0, 1000)) 节点[String(键).slice(0, 260)] = { x: Number(值 && 值.x), y: Number(值 && 值.y) }
+    return ipcRenderer.invoke('保存长期记忆图布局', {
+      节点,
+      视图: { x: Number(请求.视图 && 请求.视图.x), y: Number(请求.视图 && 请求.视图.y), 缩放: Number(请求.视图 && 请求.视图.缩放) },
+    })
+  },
+
   // ---------- 临时记忆：跨重启短期层，不自动进入模型上下文 ----------
   问临时记忆: (条件 = {}) => ipcRenderer.invoke('问临时记忆', {
     类别: String(条件.类别 || '').slice(0, 20),

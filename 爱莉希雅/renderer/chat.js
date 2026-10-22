@@ -102,7 +102,9 @@ const 记忆管理统计 = document.getElementById('记忆管理统计')
 const 记忆管理列表 = document.getElementById('记忆管理列表')
 const 记忆搜索 = document.getElementById('记忆搜索')
 const 记忆层切换 = document.querySelector('.记忆层切换')
+const 记忆管理面板 = document.querySelector('.记忆管理面板')
 const 长期记忆筛选 = document.getElementById('长期记忆筛选')
+const 长期记忆视图切换 = document.getElementById('长期记忆视图切换')
 const 临时记忆筛选 = document.getElementById('临时记忆筛选')
 const 临时记忆分类 = document.getElementById('临时记忆分类')
 const 临时记忆生命周期 = document.getElementById('临时记忆生命周期')
@@ -1347,12 +1349,15 @@ function 关工具记录() {
 
 let 当前记忆层 = '长期'
 let 当前记忆类别 = ''
+let 当前长期视图 = '列表'
 let 当前日记类型 = ''
 let 记忆搜索计时 = null
 let 记忆请求号 = 0
+let 关系图保存计时 = null
 const 临时分类们 = ['近期状态', '近期计划', '未完话题', '候选偏好', '近期事件', '关系语境']
 const 重要性名字 = ['低', '普通', '重要', '核心']
 const 记忆类型名字 = { episodic: '事件', semantic: '事实', procedural: '方法' }
+const 记忆关系类型们 = ['同一主题', '后续发展', '更新', '矛盾', '先于', '后于']
 
 function 记忆类型选择(当前 = 'semantic') {
   const 选择 = document.createElement('select')
@@ -1555,6 +1560,7 @@ function 画长期记忆(果) {
 }
 
 async function 刷新长期记忆() {
+  if (当前长期视图 === '关系图') return 刷新长期记忆关系图()
   const 这次 = ++记忆请求号
   记忆管理统计.textContent = '读取中……'
   try {
@@ -1563,6 +1569,235 @@ async function 刷新长期记忆() {
   } catch (错误) {
     if (这次 === 记忆请求号) 画长期记忆({ 好: false, 说明: 错误.message })
   }
+}
+
+function 默认关系图位置(节点们) {
+  const 分组 = { 事实: [], 经历: [], 小本子: [] }
+  for (const 一 of 节点们) (分组[一.类别] || 分组.事实).push(一)
+  const 位置 = {}
+  const 类别们 = ['事实', '经历', '小本子']
+  类别们.forEach((类别, 列) => {
+    分组[类别].sort((a, b) => {
+      const 甲 = a.事件时间 && a.事件时间.排序键 || '', 乙 = b.事件时间 && b.事件时间.排序键 || ''
+      if (!!甲 !== !!乙) return 甲 ? -1 : 1
+      return 甲.localeCompare(乙) || String(a.时间 || '').localeCompare(String(b.时间 || '')) || a.键.localeCompare(b.键)
+    }).forEach((一, 行) => { 位置[一.键] = { x: 54 + 列 * 330, y: 86 + 行 * 154 } })
+  })
+  return 位置
+}
+
+function 关系图端点(节点) { return { 类别: 节点.类别, 编号: 节点.编号 } }
+
+function 关系图关系颜色(类型) {
+  return ({ 同一主题: '#b788c4', 后续发展: '#d378a0', 更新: '#d58b63', 矛盾: '#c76272', 先于: '#7799c6', 后于: '#739f91' })[类型] || '#a584a5'
+}
+
+async function 刷新长期记忆关系图() {
+  const 这次 = ++记忆请求号
+  记忆管理统计.textContent = '正在整理关系图……'
+  try {
+    const 果 = await window.爱莉.问长期记忆关系图({ 类别: 当前记忆类别, 搜索: 记忆搜索.value })
+    if (这次 === 记忆请求号) 画长期记忆关系图(果)
+  } catch (错误) {
+    if (这次 === 记忆请求号) 画长期记忆关系图({ 好: false, 说明: 错误.message })
+  }
+}
+
+function 画长期记忆关系图(果) {
+  记忆管理列表.replaceChildren()
+  if (!果 || !果.好) {
+    记忆管理统计.textContent = (果 && 果.说明) || '关系图暂时读不到'
+    const 空 = document.createElement('div'); 空.className = '记忆管理空态'; 空.textContent = '长期记忆关系图暂时读不到。'; 记忆管理列表.appendChild(空)
+    return
+  }
+  const 节点们 = Array.isArray(果.节点) ? 果.节点 : []
+  const 关系们 = Array.isArray(果.关系) ? 果.关系 : []
+  const 候选关系 = Array.isArray(果.候选关系) ? 果.候选关系 : []
+  记忆管理统计.textContent = `${节点们.length} 张卡片 · ${关系们.length} 条关系${候选关系.length ? ` · ${候选关系.length} 条待确认建议` : ''}${果.失效关系数 ? ` · ${果.失效关系数} 条失效关系未显示` : ''}`
+  if (!节点们.length) {
+    const 空 = document.createElement('div'); 空.className = '记忆管理空态'; 空.textContent = 记忆搜索.value.trim() || 当前记忆类别 ? '没有符合条件的记忆卡片。' : '还没有长期记忆。'; 记忆管理列表.appendChild(空)
+    return
+  }
+
+  const 壳 = document.createElement('section'); 壳.className = '记忆关系图'
+  const 工具 = document.createElement('div'); 工具.className = '关系图工具栏'
+  const 类型选择 = document.createElement('select'); 类型选择.setAttribute('aria-label', '新关系类型')
+  for (const 名 of 记忆关系类型们) { const 项 = document.createElement('option'); 项.value = 名; 项.textContent = 名; 类型选择.appendChild(项) }
+  const 建立 = document.createElement('button'); 建立.textContent = '建立连接'; 建立.title = '再依次选择起点和终点卡片'
+  const 归位 = document.createElement('button'); 归位.textContent = '自动排列'
+  const 缩小 = document.createElement('button'); 缩小.textContent = '−'; 缩小.title = '缩小'
+  const 放大 = document.createElement('button'); 放大.textContent = '+'; 放大.title = '放大'
+  const 比例 = document.createElement('span'); 比例.className = '关系图比例'
+  const 帮助 = document.createElement('span'); 帮助.className = '关系图帮助'; 帮助.textContent = '拖动卡片调整位置 · 拖动空白移动画布 · 滚轮缩放'
+  工具.append(类型选择, 建立, 归位, 缩小, 放大, 比例, 帮助)
+  const 视口 = document.createElement('div'); 视口.className = '关系图视口'
+  const 世界 = document.createElement('div'); 世界.className = '关系图世界'
+  const 连线层 = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); 连线层.classList.add('关系图连线层'); 连线层.setAttribute('width', '2400'); 连线层.setAttribute('height', '6000'); 连线层.setAttribute('viewBox', '0 0 2400 6000')
+  const 卡片层 = document.createElement('div'); 卡片层.className = '关系图卡片层'
+  世界.append(连线层, 卡片层); 视口.appendChild(世界); 壳.append(工具, 视口); 记忆管理列表.appendChild(壳)
+
+  const 默认位置 = 默认关系图位置(节点们)
+  const 已存位置 = 果.布局 && 果.布局.节点 || {}
+  const 已存视图 = 果.布局 && 果.布局.视图 || {}
+  const 位置 = {}
+  for (const 一 of 节点们) 位置[一.键] = 已存位置[一.键] ? { x: Number(已存位置[一.键].x), y: Number(已存位置[一.键].y) } : 默认位置[一.键]
+  const 视图 = {
+    x: Number.isFinite(Number(已存视图.x)) ? Number(已存视图.x) : 18,
+    y: Number.isFinite(Number(已存视图.y)) ? Number(已存视图.y) : 18,
+    缩放: Math.max(0.35, Math.min(2, Number.isFinite(Number(已存视图.缩放)) ? Number(已存视图.缩放) : 0.82)),
+  }
+  const 卡片映射 = new Map(), 节点映射 = new Map(节点们.map((一) => [一.键, 一]))
+  let 连接起点 = null, 正在连接 = false, 编辑器 = null
+
+  function 应用视图() {
+    世界.style.transform = `translate(${视图.x}px, ${视图.y}px) scale(${视图.缩放})`
+    比例.textContent = `${Math.round(视图.缩放 * 100)}%`
+  }
+  function 保存关系图布局() {
+    clearTimeout(关系图保存计时)
+    关系图保存计时 = setTimeout(() => void window.爱莉.保存长期记忆图布局({ 节点: 位置, 视图 }).catch(() => {}), 350)
+  }
+  function 关编辑器() { if (编辑器) 编辑器.remove(); 编辑器 = null }
+
+  function 显示关系编辑器(关系, 是候选 = false) {
+    关编辑器()
+    const 从 = 节点映射.get(关系.从键), 到 = 节点映射.get(关系.到键)
+    if (!从 || !到) return
+    编辑器 = document.createElement('aside'); 编辑器.className = '关系图编辑器'
+    const 头 = document.createElement('div'); 头.className = '关系图编辑器头'
+    const 标题 = document.createElement('strong'); 标题.textContent = 是候选 ? '关系建议' : '编辑关系'
+    const 关闭 = document.createElement('button'); 关闭.textContent = '×'; 关闭.setAttribute('aria-label', '关闭关系编辑器'); 关闭.addEventListener('click', 关编辑器)
+    头.append(标题, 关闭)
+    const 摘要 = document.createElement('p'); 摘要.textContent = `${从.内容.slice(0, 42)}${从.内容.length > 42 ? '…' : ''}  →  ${到.内容.slice(0, 42)}${到.内容.length > 42 ? '…' : ''}`
+    const 选择 = 类型选择.cloneNode(true); 选择.value = 关系.类型
+    const 操作 = document.createElement('div'); 操作.className = '关系图编辑操作'
+    const 保存 = document.createElement('button'); 保存.className = '主要'; 保存.textContent = 是候选 ? '采纳建议' : '保存修改'
+    保存.addEventListener('click', async () => {
+      保存.disabled = true
+      const 请求 = 是候选
+        ? window.爱莉.新增长期记忆关系({ 类型: 选择.value, 从: 关系图端点(从), 到: 关系图端点(到) })
+        : window.爱莉.修改长期记忆关系({ 编号: 关系.编号, 类型: 选择.value })
+      const 结果 = await 请求.catch((错误) => ({ 好: false, 说明: 错误.message }))
+      if (结果 && 结果.好) { 提示(是候选 ? '关系建议已采纳' : '关系已修改'); await 刷新长期记忆关系图() }
+      else { 提示((结果 && 结果.说明) || '关系没有保存成功', '#c9779d'); 保存.disabled = false }
+    })
+    操作.appendChild(保存)
+    if (!是候选) {
+      const 删除 = document.createElement('button'); 删除.className = '危险'; 删除.textContent = '删除连接'
+      删除.addEventListener('click', async () => {
+        if (!window.confirm('删除这条记忆关系？\n记忆卡片和正文都会保留。')) return
+        const 结果 = await window.爱莉.删除长期记忆关系(关系.编号).catch((错误) => ({ 好: false, 说明: 错误.message }))
+        if (结果 && 结果.好) { 提示('关系已删除'); await 刷新长期记忆关系图() }
+        else 提示((结果 && 结果.说明) || '关系没有删除成功', '#c9779d')
+      })
+      操作.appendChild(删除)
+    } else {
+      const 依据 = document.createElement('small'); 依据.textContent = `仅供确认：${关系.依据 || '本地规则发现内容可能相关'}`; 编辑器.append(头, 摘要, 选择, 依据, 操作); 壳.appendChild(编辑器); return
+    }
+    编辑器.append(头, 摘要, 选择, 操作); 壳.appendChild(编辑器)
+  }
+
+  function 画线() {
+    连线层.replaceChildren()
+    const 定义 = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
+    const 箭头 = document.createElementNS('http://www.w3.org/2000/svg', 'marker')
+    箭头.setAttribute('id', '记忆关系箭头'); 箭头.setAttribute('markerWidth', '7'); 箭头.setAttribute('markerHeight', '7'); 箭头.setAttribute('refX', '6'); 箭头.setAttribute('refY', '3.5'); 箭头.setAttribute('orient', 'auto'); 箭头.setAttribute('markerUnits', 'strokeWidth')
+    const 箭形 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 箭形.setAttribute('d', 'M 0 0 L 7 3.5 L 0 7 z'); 箭形.setAttribute('fill', 'context-stroke')
+    箭头.appendChild(箭形); 定义.appendChild(箭头); 连线层.appendChild(定义)
+    const 全部线 = [...候选关系.map((一) => ({ ...一, 候选: true })), ...关系们]
+    const 成对总数 = new Map(), 成对序号 = new Map()
+    for (const 一 of 全部线) {
+      const 对 = [一.从键, 一.到键].sort().join('|')
+      成对总数.set(对, (成对总数.get(对) || 0) + 1)
+    }
+    for (const 一 of 全部线) {
+      const 起 = 位置[一.从键], 终 = 位置[一.到键]
+      if (!起 || !终) continue
+      const x1 = 起.x + 126, y1 = 起.y + 55, x2 = 终.x + 126, y2 = 终.y + 55
+      const 弯 = Math.max(50, Math.abs(x2 - x1) * 0.38)
+      const 对 = [一.从键, 一.到键].sort().join('|'), 序号 = 成对序号.get(对) || 0
+      成对序号.set(对, 序号 + 1)
+      const 偏移 = (序号 - (成对总数.get(对) - 1) / 2) * 34
+      const 路径值 = `M ${x1} ${y1} C ${x1 + (x2 >= x1 ? 弯 : -弯)} ${y1 + 偏移}, ${x2 - (x2 >= x1 ? 弯 : -弯)} ${y2 + 偏移}, ${x2} ${y2}`
+      const 组 = document.createElementNS('http://www.w3.org/2000/svg', 'g'); 组.classList.add('关系图连线'); if (一.候选) 组.classList.add('候选')
+      const 线 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 线.setAttribute('d', 路径值); 线.setAttribute('stroke', 关系图关系颜色(一.类型)); 线.setAttribute('marker-end', 'url(#记忆关系箭头)')
+      const 命中 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); 命中.setAttribute('d', 路径值); 命中.classList.add('关系图连线命中')
+      const 标签 = document.createElementNS('http://www.w3.org/2000/svg', 'text'); 标签.setAttribute('x', String((x1 + x2) / 2)); 标签.setAttribute('y', String((y1 + y2) / 2 + 偏移 * 0.75 - 7)); 标签.textContent = 一.候选 ? `${一.类型} · 建议` : 一.类型
+      命中.addEventListener('click', (事件) => { 事件.stopPropagation(); 显示关系编辑器(一, !!一.候选) })
+      标签.addEventListener('click', (事件) => { 事件.stopPropagation(); 显示关系编辑器(一, !!一.候选) })
+      组.append(线, 命中, 标签); 连线层.appendChild(组)
+    }
+  }
+
+  async function 选择连接卡片(节点, 卡) {
+    if (!正在连接) return
+    if (!连接起点) {
+      连接起点 = 节点
+      卡.classList.add('连接起点')
+      建立.textContent = '请选择终点'
+      return
+    }
+    if (连接起点.键 === 节点.键) return
+    建立.disabled = true
+    const 结果 = await window.爱莉.新增长期记忆关系({ 类型: 类型选择.value, 从: 关系图端点(连接起点), 到: 关系图端点(节点) }).catch((错误) => ({ 好: false, 说明: 错误.message }))
+    if (结果 && 结果.好) { 提示(结果.没变化 ? '这条关系已经存在' : '关系已建立'); await 刷新长期记忆关系图() }
+    else { 提示((结果 && 结果.说明) || '关系没有保存成功', '#c9779d'); 建立.disabled = false }
+  }
+
+  for (const 节点 of 节点们) {
+    const 卡 = document.createElement('article'); 卡.className = `关系图卡片 类别-${节点.类别}`; 卡.dataset.键 = 节点.键
+    const 头 = document.createElement('header')
+    const 类别 = document.createElement('strong'); 类别.textContent = 节点.类别
+    const 时间 = document.createElement('time'); 时间.textContent = 节点.事件时间 && 节点.事件时间.状态 === '明确' ? 节点.事件时间.开始 : '时间未确定'
+    头.append(类别, 时间)
+    const 正文 = document.createElement('p'); 正文.textContent = 节点.内容
+    const 脚 = document.createElement('footer'); 脚.textContent = `${记忆类型名字[节点.记忆类型] || '记忆'}${节点.人物 ? ` · ${节点.人物}` : ''}`
+    卡.append(头, 正文, 脚); 卡片层.appendChild(卡); 卡片映射.set(节点.键, 卡)
+    const 摆 = () => { 卡.style.left = `${位置[节点.键].x}px`; 卡.style.top = `${位置[节点.键].y}px` }
+    摆()
+    卡.addEventListener('click', (事件) => { 事件.stopPropagation(); if (卡.dataset.拖过 === '1') { 卡.dataset.拖过 = ''; return } void 选择连接卡片(节点, 卡) })
+    卡.addEventListener('pointerdown', (事件) => {
+      if (事件.button !== 0) return
+      事件.stopPropagation(); 卡.setPointerCapture(事件.pointerId)
+      const 起鼠标 = { x: 事件.clientX, y: 事件.clientY }, 起位置 = { ...位置[节点.键] }; let 动了 = false
+      const 移动 = (e) => {
+        const dx = (e.clientX - 起鼠标.x) / 视图.缩放, dy = (e.clientY - 起鼠标.y) / 视图.缩放
+        if (Math.abs(dx) + Math.abs(dy) > 3) 动了 = true
+        if (!动了) return
+        位置[节点.键] = { x: 起位置.x + dx, y: 起位置.y + dy }; 摆(); 画线()
+      }
+      const 放开 = () => { 卡.removeEventListener('pointermove', 移动); 卡.removeEventListener('pointerup', 放开); 卡.removeEventListener('pointercancel', 放开); if (动了) { 卡.dataset.拖过 = '1'; 保存关系图布局() } }
+      卡.addEventListener('pointermove', 移动); 卡.addEventListener('pointerup', 放开); 卡.addEventListener('pointercancel', 放开)
+    })
+  }
+
+  function 调整缩放(新值, 中心X = 视口.clientWidth / 2, 中心Y = 视口.clientHeight / 2) {
+    const 旧 = 视图.缩放, 新 = Math.max(0.35, Math.min(2, 新值))
+    const 世界X = (中心X - 视图.x) / 旧, 世界Y = (中心Y - 视图.y) / 旧
+    视图.x = 中心X - 世界X * 新; 视图.y = 中心Y - 世界Y * 新; 视图.缩放 = 新; 应用视图(); 保存关系图布局()
+  }
+  视口.addEventListener('wheel', (事件) => {
+    事件.preventDefault(); const 框 = 视口.getBoundingClientRect(); 调整缩放(视图.缩放 * (事件.deltaY > 0 ? 0.9 : 1.1), 事件.clientX - 框.left, 事件.clientY - 框.top)
+  }, { passive: false })
+  视口.addEventListener('pointerdown', (事件) => {
+    if (事件.button !== 0 || 事件.target.closest('.关系图卡片') || 事件.target.closest('.关系图连线')) return
+    关编辑器(); 视口.setPointerCapture(事件.pointerId)
+    const 起 = { x: 事件.clientX, y: 事件.clientY, vx: 视图.x, vy: 视图.y }
+    const 移动 = (e) => { 视图.x = 起.vx + e.clientX - 起.x; 视图.y = 起.vy + e.clientY - 起.y; 应用视图() }
+    const 放开 = () => { 视口.removeEventListener('pointermove', 移动); 视口.removeEventListener('pointerup', 放开); 视口.removeEventListener('pointercancel', 放开); 保存关系图布局() }
+    视口.addEventListener('pointermove', 移动); 视口.addEventListener('pointerup', 放开); 视口.addEventListener('pointercancel', 放开)
+  })
+  建立.addEventListener('click', () => {
+    正在连接 = !正在连接; 连接起点 = null; 建立.disabled = false; 建立.classList.toggle('选中', 正在连接); 建立.textContent = 正在连接 ? '请选择起点' : '建立连接'
+    for (const 卡 of 卡片映射.values()) 卡.classList.remove('连接起点')
+  })
+  归位.addEventListener('click', () => {
+    const 新位置 = 默认关系图位置(节点们); for (const 一 of 节点们) { 位置[一.键] = 新位置[一.键]; const 卡 = 卡片映射.get(一.键); 卡.style.left = `${位置[一.键].x}px`; 卡.style.top = `${位置[一.键].y}px` }
+    视图.x = 18; 视图.y = 18; 视图.缩放 = 0.82; 应用视图(); 画线(); 保存关系图布局()
+  })
+  缩小.addEventListener('click', () => 调整缩放(视图.缩放 / 1.15))
+  放大.addEventListener('click', () => 调整缩放(视图.缩放 * 1.15))
+  应用视图(); 画线()
 }
 
 function 临时操作按钮(文字, 类名 = '') {
@@ -4477,9 +4712,12 @@ function 收起文件抽屉() {
   }
   const 是临时 = 当前记忆层 === '临时'
   const 是日记 = 当前记忆层 === '日记'
+  const 是长期 = !是临时 && !是日记
   长期记忆筛选.classList.toggle('收着', 是临时 || 是日记)
+  长期记忆视图切换.classList.toggle('收着', !是长期)
   临时记忆筛选.classList.toggle('收着', !是临时)
   日记筛选.classList.toggle('收着', !是日记)
+  记忆管理面板.classList.toggle('图谱模式', 是长期 && 当前长期视图 === '关系图')
   记忆导出.hidden = 是临时
   记忆导出.textContent = 是日记 ? '导出日记' : '导出全部'
   记忆导出.title = 是日记 ? '导出全部记忆日记为 Markdown' : '导出全部长期记忆'
@@ -4489,6 +4727,19 @@ function 收起文件抽屉() {
     ? '搜索日记、模块或来源摘要……'
     : 是临时 ? '搜索内容、标签或来源会话……' : '搜索内容、来源或会话……'
   void 刷新记忆管理()
+})
+长期记忆视图切换.addEventListener('click', (事件) => {
+  const 按钮 = 事件.target.closest('button[data-长期视图]')
+  if (!按钮 || 按钮.dataset.长期视图 === 当前长期视图) return
+  当前长期视图 = 按钮.dataset.长期视图
+  for (const 一 of 长期记忆视图切换.querySelectorAll('button')) {
+    const 选中 = 一 === 按钮
+    一.classList.toggle('选中', 选中)
+    一.setAttribute('aria-selected', String(选中))
+  }
+  记忆管理面板.classList.toggle('图谱模式', 当前长期视图 === '关系图')
+  记忆搜索.placeholder = 当前长期视图 === '关系图' ? '筛选关系图中的记忆卡片……' : '搜索内容、来源或会话……'
+  void 刷新长期记忆()
 })
 长期记忆筛选.addEventListener('click', (事件) => {
   const 按钮 = 事件.target.closest('button[data-类别]')

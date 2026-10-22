@@ -69,6 +69,7 @@ const 声音启动器 = 创建声音启动器({
   状态: (超时毫秒) => TTS.status(超时毫秒),
 })
 const 记忆 = require(path.join(脑, '记忆.cjs'))
+const 记忆关系图 = require(path.join(脑, '记忆关系图.cjs'))
 const 记忆日记 = require(path.join(脑, '记忆日记.cjs'))
 const 临时记忆 = require(path.join(脑, '临时记忆.cjs'))
 const { 晋升到长期 } = require(path.join(脑, '临时记忆晋升.cjs'))
@@ -2357,6 +2358,60 @@ function 接对讲机() {
     } catch (错误) {
       console.log('⚠ 遗忘长期记忆失败：' + 错误.message)
       return { 好: false, 说明: '这条记忆没能删除' }
+    }
+  })
+
+  // ---- 长期记忆关系图：正文仍由记忆模块提供；这里只管理关系和画布布局 ----
+  ipcMain.handle('问长期记忆关系图', (事件, 条件) => {
+    确认来自聊天窗口(事件)
+    try {
+      return 记忆关系图.查询({
+        类别: String((条件 && 条件.类别) || '').slice(0, 20),
+        搜索: String((条件 && 条件.搜索) || '').slice(0, 80),
+      })
+    } catch (错误) {
+      console.log('⚠ 长期记忆关系图读不出来：' + 错误.message)
+      return { 好: false, 节点: [], 关系: [], 候选关系: [], 说明: '关系图暂时读不到' }
+    }
+  })
+
+  ipcMain.handle('新增长期记忆关系', (事件, 请求) => {
+    确认来自聊天窗口(事件)
+    try {
+      return 记忆关系图.新增({
+        类型: String((请求 && 请求.类型) || '').slice(0, 20),
+        从: { 类别: String(请求 && 请求.从 && 请求.从.类别 || '').slice(0, 20), 编号: String(请求 && 请求.从 && 请求.从.编号 || '').slice(0, 120) },
+        到: { 类别: String(请求 && 请求.到 && 请求.到.类别 || '').slice(0, 20), 编号: String(请求 && 请求.到 && 请求.到.编号 || '').slice(0, 120) },
+      })
+    } catch (错误) {
+      console.log('⚠ 新增长期记忆关系失败：' + 错误.message)
+      return { 好: false, 说明: '关系没有保存成功' }
+    }
+  })
+
+  ipcMain.handle('修改长期记忆关系', (事件, 请求) => {
+    确认来自聊天窗口(事件)
+    try {
+      return 记忆关系图.修改({ 编号: String((请求 && 请求.编号) || '').slice(0, 120), 类型: String((请求 && 请求.类型) || '').slice(0, 20) })
+    } catch (错误) {
+      console.log('⚠ 修改长期记忆关系失败：' + 错误.message)
+      return { 好: false, 说明: '关系没有修改成功' }
+    }
+  })
+
+  ipcMain.handle('删除长期记忆关系', (事件, 编号) => {
+    确认来自聊天窗口(事件)
+    try { return 记忆关系图.删除(String(编号 || '').slice(0, 120)) } catch (错误) {
+      console.log('⚠ 删除长期记忆关系失败：' + 错误.message)
+      return { 好: false, 说明: '关系没有删除成功' }
+    }
+  })
+
+  ipcMain.handle('保存长期记忆图布局', (事件, 请求) => {
+    确认来自聊天窗口(事件)
+    try { return 记忆关系图.保存布局(请求 || {}) } catch (错误) {
+      console.log('⚠ 保存长期记忆关系图布局失败：' + 错误.message)
+      return { 好: false, 说明: '卡片位置没有保存成功' }
     }
   })
 

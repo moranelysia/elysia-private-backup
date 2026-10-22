@@ -2627,6 +2627,16 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
   color: #a17f99; font-family: inherit; font-size: 11px; cursor: pointer;
 }
 .记忆层切换 button.选中 { background: #fff; color: #80568f; font-weight: 600; box-shadow: 0 1px 4px rgba(91, 52, 80, 0.09); }
+.长期记忆视图切换 {
+  align-self: flex-end; display: flex; gap: 3px; margin: 0 0 8px; padding: 3px;
+  border-radius: 9px; background: rgba(245, 237, 245, 0.92); z-index: 1;
+}
+.长期记忆视图切换.收着 { display: none; }
+.长期记忆视图切换 button {
+  min-width: 48px; min-height: 25px; padding: 3px 8px; border: 0; border-radius: 7px;
+  background: transparent; color: #9c7d97; font-family: inherit; font-size: 10px; cursor: pointer;
+}
+.长期记忆视图切换 button.选中 { background: #fff; color: #855d8e; font-weight: 600; box-shadow: 0 1px 4px rgba(91, 52, 80, 0.09); }
 .记忆筛选 { display: flex; gap: 5px; margin-bottom: 8px; }
 .记忆筛选.收着 { display: none; }
 .记忆筛选 button {
@@ -2699,6 +2709,71 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 .记忆操作提示 { margin-top: 6px; color: #8d7280; font-size: 10px; }
 .记忆操作提示.失败 { color: #bd5965; }
 
+/* 长期记忆关系图：卡片位置只进缓存，连线才代表人工确认的语义关系。 */
+.记忆管理面板.图谱模式 { width: min(980px, calc(100vw - 36px)); height: min(720px, calc(100vh - 36px)); }
+.记忆管理面板.图谱模式 .记忆管理列表 { overflow: hidden; padding: 0; border: 1px solid #eadce8; border-radius: 13px; background: #fbf7fa; }
+.记忆关系图 { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.关系图工具栏 {
+  position: relative; z-index: 4; display: flex; align-items: center; gap: 5px; min-height: 38px; padding: 5px 7px;
+  border-bottom: 1px solid #eadce8; background: rgba(255, 251, 253, 0.95); backdrop-filter: blur(8px);
+}
+.关系图工具栏 button, .关系图工具栏 select {
+  min-height: 27px; padding: 3px 8px; border: 1px solid #e3cfe0; border-radius: 8px;
+  background: #fff; color: #85647d; font-family: inherit; font-size: 10px; cursor: pointer;
+}
+.关系图工具栏 button:hover, .关系图工具栏 button.选中 { border-color: #ca98b7; background: #f7e8f0; color: #925979; }
+.关系图工具栏 button:disabled { opacity: 0.55; cursor: wait; }
+.关系图比例 { min-width: 37px; color: #99798d; font-size: 9px; text-align: center; }
+.关系图帮助 { margin-left: auto; color: #ad8e9f; font-size: 9px; white-space: nowrap; }
+.关系图视口 {
+  position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; touch-action: none; cursor: grab;
+  background-color: #fcf9fb;
+  background-image: radial-gradient(circle, rgba(185, 139, 170, 0.22) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.关系图视口:active { cursor: grabbing; }
+.关系图世界 { position: absolute; left: 0; top: 0; width: 2400px; height: 6000px; transform-origin: 0 0; will-change: transform; }
+.关系图连线层, .关系图卡片层 { position: absolute; inset: 0; width: 2400px; height: 6000px; overflow: visible; }
+.关系图连线 { cursor: pointer; }
+.关系图连线 path:not(.关系图连线命中) { fill: none; stroke-width: 2; opacity: 0.78; }
+.关系图连线.候选 path:not(.关系图连线命中) { stroke-dasharray: 7 6; opacity: 0.5; }
+.关系图连线命中 { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; }
+.关系图连线 text {
+  fill: #886b7e; font-family: inherit; font-size: 10px; text-anchor: middle; paint-order: stroke;
+  stroke: #fffafd; stroke-width: 4px; stroke-linejoin: round; pointer-events: auto; user-select: none;
+}
+.关系图连线.候选 text { fill: #a28c9a; font-style: italic; }
+.关系图卡片 {
+  position: absolute; box-sizing: border-box; width: 252px; min-height: 110px; max-height: 138px; padding: 10px 11px 9px;
+  border: 1px solid #e2cedd; border-top: 3px solid #bd91bc; border-radius: 12px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.97); box-shadow: 0 5px 18px rgba(94, 61, 83, 0.1); cursor: move;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s; user-select: none; touch-action: none;
+}
+.关系图卡片:hover { border-color: #cfabc2; box-shadow: 0 8px 22px rgba(94, 61, 83, 0.16); transform: translateY(-1px); }
+.关系图卡片.连接起点 { border-color: #c76f9d; box-shadow: 0 0 0 3px rgba(199, 111, 157, 0.18), 0 8px 22px rgba(94, 61, 83, 0.16); }
+.关系图卡片.类别-经历 { border-top-color: #d982a6; }
+.关系图卡片.类别-小本子 { border-top-color: #8da7c8; }
+.关系图卡片 header { display: flex; align-items: center; gap: 8px; }
+.关系图卡片 header strong { flex: 1; color: #875d80; font-size: 10px; }
+.关系图卡片 header time { color: #ae929f; font-size: 8px; }
+.关系图卡片 p { margin: 7px 0 5px; color: #5f4855; font-size: 11px; line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.关系图卡片 footer { color: #ae899e; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.关系图编辑器 {
+  position: absolute; z-index: 8; right: 12px; top: 50px; width: min(238px, calc(100% - 24px)); padding: 11px;
+  border: 1px solid #ddc3d5; border-radius: 12px; background: rgba(255, 252, 254, 0.97);
+  box-shadow: 0 12px 34px rgba(93, 55, 81, 0.2); backdrop-filter: blur(10px);
+}
+.关系图编辑器头 { display: flex; align-items: center; }
+.关系图编辑器头 strong { flex: 1; color: #7e5574; font-size: 12px; }
+.关系图编辑器头 button { border: 0; background: transparent; color: #a17f95; font-size: 17px; cursor: pointer; }
+.关系图编辑器 p { margin: 8px 0; color: #6c5361; font-size: 10px; line-height: 1.5; }
+.关系图编辑器 select { width: 100%; min-height: 29px; padding: 4px 7px; border: 1px solid #e1cedb; border-radius: 8px; background: #fff; color: #806276; font-family: inherit; font-size: 10px; }
+.关系图编辑器 small { display: block; margin-top: 7px; color: #9d8191; font-size: 9px; line-height: 1.45; }
+.关系图编辑操作 { display: flex; justify-content: flex-end; gap: 5px; margin-top: 9px; }
+.关系图编辑操作 button { min-height: 27px; padding: 4px 8px; border: 1px solid #dfc8d7; border-radius: 8px; background: #fff; color: #89677c; font-family: inherit; font-size: 10px; cursor: pointer; }
+.关系图编辑操作 .主要 { border-color: #d2a4bd; background: #f7e8f0; color: #995c7b; }
+.关系图编辑操作 .危险 { color: #b25e6f; }
+
 /* 日记时间轴：内容与来源都由 textContent 绘制。 */
 .日记卡 { position: relative; margin-left: 10px; border-left: 2px solid #e8cce0; }
 .日记卡::before {
@@ -2738,6 +2813,10 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
   .记忆管理头操作 { flex-wrap: wrap; justify-content: flex-end; }
   .临时记忆筛选, .临时记忆编辑字段 { grid-template-columns: 1fr; }
   .记忆操作 { flex-wrap: wrap; }
+  .长期记忆视图切换 { align-self: stretch; margin: 0 0 8px; }
+  .长期记忆视图切换 button { flex: 1; }
+  .关系图帮助 { display: none; }
+  .关系图工具栏 { flex-wrap: wrap; }
 }
 
 .小状态栏:hover {
