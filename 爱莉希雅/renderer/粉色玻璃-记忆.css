@@ -1,0 +1,367 @@
+/*
+ * 粉色玻璃-记忆.css —— 阶段 4 记忆库与关系图覆盖层
+ *
+ * 保留固定面板/卡片尺寸、只平移不缩放、选中居中、连线命中和全部数据逻辑。
+ * 只统一材质与交互反馈，并移除关系图卡片、工具条、聚焦条和编辑器的重复背景模糊。
+ */
+
+.记忆管理遮罩 {
+  background: linear-gradient(135deg, rgba(102, 53, 82, 0.2), rgba(133, 83, 119, 0.13));
+  backdrop-filter: blur(6px) saturate(1.05);
+  -webkit-backdrop-filter: blur(6px) saturate(1.05);
+  transition:
+    opacity var(--动效-普通) ease,
+    visibility 0s linear 0s;
+}
+
+.记忆管理遮罩.收着 { transition-delay: 0s, var(--动效-弹层); }
+
+.记忆管理面板 {
+  position: relative;
+  overflow-x: hidden;
+  border-color: rgba(220, 145, 183, 0.55);
+  background:
+    linear-gradient(148deg, rgba(255, 255, 255, 0.95), rgba(255, 235, 246, 0.91) 58%, rgba(246, 239, 255, 0.9));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.42),
+    0 24px 64px rgba(94, 42, 73, 0.24),
+    0 7px 20px rgba(151, 71, 112, 0.12);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    transform var(--动效-弹层) var(--缓动-响应),
+    opacity var(--动效-普通) ease;
+}
+
+.记忆管理遮罩.收着 .记忆管理面板 {
+  opacity: 0;
+  transform: translateY(9px) scale(0.985);
+}
+
+.记忆管理头 {
+  position: relative;
+  box-shadow: inset 0 -1px 0 rgba(224, 165, 195, 0.36);
+}
+
+.记忆管理头 h2 {
+  color: #65475a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.记忆管理关闭,
+.临时记忆新增,
+.记忆导出,
+.记忆清空,
+.记忆层切换 button,
+.长期记忆视图切换 button,
+.记忆筛选 button,
+.记忆操作 button,
+.记忆编辑按钮 button,
+.关系图工具栏 button,
+.关系图工具栏 select,
+.关系图聚焦条 button,
+.关系图编辑器头 button,
+.关系图编辑操作 button,
+.关系图确认操作 button {
+  transition:
+    transform var(--动效-快) var(--缓动-响应),
+    background-color var(--动效-快) ease,
+    border-color var(--动效-快) ease,
+    color var(--动效-快) ease,
+    box-shadow var(--动效-快) ease;
+}
+
+.临时记忆新增,
+.记忆导出,
+.记忆清空,
+.记忆操作 button,
+.记忆编辑按钮 button,
+.关系图工具栏 button,
+.关系图工具栏 select,
+.关系图聚焦条 button,
+.关系图编辑操作 button,
+.关系图确认操作 button {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 233, 244, 0.69));
+  border-color: rgba(218, 155, 187, 0.54);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.记忆管理关闭 {
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.记忆管理关闭:hover,
+.临时记忆新增:hover,
+.记忆导出:hover,
+.记忆清空:hover,
+.记忆操作 button:hover,
+.记忆编辑按钮 button:hover,
+.关系图工具栏 button:hover,
+.关系图聚焦条 button:hover,
+.关系图编辑器头 button:hover,
+.关系图编辑操作 button:hover,
+.关系图确认操作 button:hover {
+  border-color: rgba(203, 104, 154, 0.7);
+  background: linear-gradient(145deg, #fff, rgba(249, 218, 235, 0.84));
+  color: #96496f;
+  box-shadow: inset 0 1px 0 #fff, 0 4px 10px rgba(148, 66, 108, 0.1);
+}
+
+.记忆管理关闭:active,
+.临时记忆新增:not(:disabled):active,
+.记忆导出:not(:disabled):active,
+.记忆清空:not(:disabled):active,
+.记忆层切换 button:active,
+.长期记忆视图切换 button:active,
+.记忆筛选 button:active,
+.记忆操作 button:not(:disabled):active,
+.记忆编辑按钮 button:not(:disabled):active,
+.关系图工具栏 button:not(:disabled):active,
+.关系图聚焦条 button:active,
+.关系图编辑器头 button:active,
+.关系图编辑操作 button:active,
+.关系图确认操作 button:active { transform: scale(0.96); }
+
+.记忆管理关闭:focus-visible,
+.临时记忆新增:focus-visible,
+.记忆导出:focus-visible,
+.记忆清空:focus-visible,
+.记忆层切换 button:focus-visible,
+.长期记忆视图切换 button:focus-visible,
+.记忆筛选 button:focus-visible,
+.记忆操作 button:focus-visible,
+.记忆编辑按钮 button:focus-visible,
+.关系图工具栏 button:focus-visible,
+.关系图工具栏 select:focus-visible,
+.关系图聚焦条 button:focus-visible,
+.关系图编辑器头 button:focus-visible,
+.关系图编辑操作 button:focus-visible,
+.关系图确认操作 button:focus-visible {
+  outline: none;
+  border-color: rgba(202, 96, 150, 0.78);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 3px var(--交互-聚焦);
+}
+
+.记忆层切换,
+.长期记忆视图切换 {
+  background: linear-gradient(145deg, rgba(247, 235, 243, 0.84), rgba(244, 235, 252, 0.76));
+  box-shadow: inset 0 1px 2px rgba(124, 67, 98, 0.06), 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.记忆层切换 button.选中,
+.长期记忆视图切换 button.选中,
+.记忆筛选 button.选中 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 215, 233, 0.9));
+  border-color: rgba(204, 107, 157, 0.68);
+  color: #8d456f;
+  box-shadow: inset 0 1px 0 #fff, 0 4px 10px rgba(137, 67, 108, 0.11);
+}
+
+.记忆筛选 button,
+.临时记忆筛选 select,
+.临时记忆编辑字段 select,
+.临时记忆编辑字段 input,
+.记忆搜索,
+.记忆操作 select,
+.记忆编辑区 textarea,
+.日记编辑区 > input,
+.关系图编辑器 select {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(218, 155, 187, 0.52);
+  box-shadow: inset 0 1px 3px rgba(124, 67, 98, 0.05);
+  transition:
+    background-color var(--动效-快) ease,
+    border-color var(--动效-快) ease,
+    box-shadow var(--动效-快) ease;
+}
+
+.临时记忆筛选 select:focus,
+.临时记忆编辑字段 select:focus,
+.临时记忆编辑字段 input:focus,
+.记忆搜索:focus,
+.记忆操作 select:focus,
+.记忆编辑区 textarea:focus,
+.日记编辑区 > input:focus,
+.关系图编辑器 select:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(203, 91, 147, 0.78);
+  box-shadow: 0 0 0 3px var(--交互-聚焦);
+}
+
+.记忆卡,
+.临时记忆关系,
+.日记来源条 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 238, 247, 0.7));
+  border-color: rgba(226, 171, 199, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 5px 14px rgba(127, 67, 99, 0.075);
+}
+
+.记忆卡 {
+  transition:
+    border-color var(--动效-普通) ease,
+    box-shadow var(--动效-普通) ease;
+}
+
+.记忆卡:hover {
+  border-color: rgba(207, 126, 168, 0.58);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 7px 17px rgba(127, 67, 99, 0.105);
+}
+
+.临时记忆关系.关系-待处理 { background: linear-gradient(145deg, #fffdf8, rgba(255, 244, 220, 0.82)); }
+.临时记忆关系.关系-已被替代 { background: linear-gradient(145deg, #fff, rgba(241, 237, 244, 0.82)); }
+.临时记忆关系.关系-当前 { background: linear-gradient(145deg, #fff, rgba(229, 245, 237, 0.82)); }
+
+.记忆管理列表::-webkit-scrollbar { width: 16px; height: 16px; }
+.记忆管理列表::-webkit-scrollbar-track { background: transparent; }
+.记忆管理列表::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(205, 112, 158, 0.48);
+  background-clip: padding-box;
+}
+.记忆管理列表::-webkit-scrollbar-thumb:hover {
+  background: rgba(190, 82, 137, 0.66);
+  background-clip: padding-box;
+}
+
+/* 关系图：只保留视口外层的静态材质，移动中的卡片和浮层不重复采样背景。 */
+.记忆管理面板.图谱模式 .记忆管理列表 {
+  border-color: rgba(221, 149, 188, 0.56);
+  background: linear-gradient(145deg, rgba(255, 249, 253, 0.98), rgba(249, 235, 245, 0.95));
+  box-shadow: inset 0 1px 0 #fff, 0 14px 40px rgba(133, 71, 110, 0.1);
+}
+
+.关系图工具栏 {
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.94), rgba(252, 224, 241, 0.88));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.关系图工具栏 button.选中 {
+  border-color: rgba(203, 99, 151, 0.72);
+  background: linear-gradient(145deg, #fff, rgba(245, 211, 230, 0.94));
+  box-shadow: inset 0 1px 0 #fff, 0 3px 9px rgba(148, 66, 108, 0.1);
+}
+
+.关系图视口 {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255, 188, 226, 0.3), transparent 31%),
+    radial-gradient(circle at 86% 76%, rgba(220, 191, 247, 0.26), transparent 36%),
+    linear-gradient(145deg, #fffafd 0%, #faedf6 48%, #f8f4fb 100%);
+}
+
+.关系图卡片,
+.关系图卡片.类别-经历,
+.关系图卡片.类别-小本子 {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.关系图卡片 {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255, 255, 255, 0.98), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(252, 200, 229, 0.9) 58%, rgba(239, 194, 230, 0.86));
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 rgba(202, 119, 171, 0.12),
+    0 11px 26px rgba(111, 56, 92, 0.14);
+}
+
+.关系图卡片.类别-经历 {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255, 255, 255, 0.98), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 191, 222, 0.9), rgba(241, 190, 220, 0.86));
+}
+
+.关系图卡片.类别-小本子 {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255, 255, 255, 0.98), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 211, 245, 0.9), rgba(224, 204, 245, 0.86));
+}
+
+.关系图卡片::after {
+  background: radial-gradient(circle, rgba(255, 150, 208, 0.2), rgba(255, 150, 208, 0));
+  filter: none;
+}
+
+.关系图卡片.非关联记忆 {
+  opacity: 0.1;
+  filter: none;
+}
+
+.关系图关联标签,
+.关系图聚焦条,
+.关系图编辑器,
+.关系图确认卡 {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.关系图关联标签 {
+  background: rgba(255, 245, 251, 0.94);
+}
+
+.关系图聚焦条,
+.关系图编辑器 {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(249, 215, 235, 0.92));
+}
+
+.关系图确认遮罩 {
+  background: rgba(105, 65, 91, 0.28);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.关系图确认卡 {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.99), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(250, 216, 237, 0.95));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .记忆管理遮罩,
+  .记忆管理面板,
+  .记忆管理关闭,
+  .临时记忆新增,
+  .记忆导出,
+  .记忆清空,
+  .记忆层切换 button,
+  .长期记忆视图切换 button,
+  .记忆筛选 button,
+  .记忆操作 button,
+  .记忆编辑按钮 button,
+  .关系图工具栏 button,
+  .关系图工具栏 select,
+  .关系图聚焦条 button,
+  .关系图编辑器头 button,
+  .关系图编辑操作 button,
+  .关系图确认操作 button,
+  .记忆卡 {
+    transition-duration: 1ms;
+  }
+
+  .记忆管理遮罩.收着 .记忆管理面板,
+  .记忆管理关闭:active,
+  .临时记忆新增:active,
+  .记忆导出:active,
+  .记忆清空:active,
+  .记忆层切换 button:active,
+  .长期记忆视图切换 button:active,
+  .记忆筛选 button:active,
+  .记忆操作 button:active,
+  .记忆编辑按钮 button:active,
+  .关系图工具栏 button:active,
+  .关系图聚焦条 button:active,
+  .关系图编辑器头 button:active,
+  .关系图编辑操作 button:active,
+  .关系图确认操作 button:active {
+    transform: none;
+  }
+}

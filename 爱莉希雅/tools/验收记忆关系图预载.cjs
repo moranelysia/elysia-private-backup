@@ -32,8 +32,11 @@ const 关系图 = require(path.join(项目根, '脑', '记忆关系图.cjs'))
   }
   return Promise.resolve(果)
 }
-接口.问模式和目录 = () => Promise.resolve({ 模式: 'chat', 工作区: null, 写长期记忆: true, 临时: false })
+接口.问模式和目录 = () => Promise.resolve({ 模式: process.env.ELYSIA_UI_MODE_FIXTURE || 'chat', 工作区: null, 写长期记忆: true, 临时: false })
 接口.问对话们 = () => Promise.resolve({ 现在: '', 列表: [] })
 接口.要状态 = () => Promise.resolve({ 好: true, 记忆: { 事实: 0, 经历: 0, 小本子: 0 } })
+// chat.js 为了可读性把部分链式调用断行了，简单的源码正则不会抓到这个方法。
+// 显式补齐，避免模型列表初始化异常提前中断后续关系图事件绑定。
+接口.有哪些模型 = () => Promise.resolve({ 好: true, 名单: ['deepseek-chat'], 现在用的: 'deepseek-chat' })
 
 contextBridge.exposeInMainWorld('爱莉', 接口)
