@@ -4,7 +4,8 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const 根 = path.resolve(__dirname, '..')
-const 前端 = fs.readFileSync(path.join(根, 'renderer', 'chat.js'), 'utf8')
+// Git 在 Windows 工作区可能把 LF 转为 CRLF；静态契约不应被换行风格误判。
+const 前端 = fs.readFileSync(path.join(根, 'renderer', 'chat.js'), 'utf8').replace(/\r\n/g, '\n')
 const 样式 = fs.readFileSync(path.join(根, 'renderer', 'style.css'), 'utf8')
 
 let 总数 = 0
