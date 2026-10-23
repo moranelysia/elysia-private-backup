@@ -55,6 +55,7 @@ const { 在线程里创建备份 } = require('./main/backup-service.cjs')
 const { 时间戳: 备份时间戳 } = require('./main/user-backup.cjs')
 const { 创建长期记忆导出 } = require('./main/memory-export.cjs')
 const { 创建声音启动器 } = require('./main/voice-launcher.cjs')
+const { 创建账本跟随调度 } = require('./main/账本跟随.cjs')
 const 进程检查 = require('./main/processes.cjs')
 const { 说话, 体检, 有哪些模型, 地址: 模型地址, 模型: 默认模型 } = require(path.join(脑, '对话.cjs'))
 const { 拿钥匙, 遮住 } = require(path.join(脑, '钥匙.cjs'))
@@ -951,16 +952,16 @@ function 建窗口() {
   //   不重算的话它就停在老坐标上：最大化之后卡在屏幕左上角、被主窗口盖住 ——
   //   看上去就是"账本打不开"。
   //   两个事件都绑：最大化只触发 resize，拖着窗口走只触发 move。
-  let 账本跟随计时器 = null
-  const 账本跟着挪 = () => {
-    if (账本跟随计时器) clearTimeout(账本跟随计时器)
-    账本跟随计时器 = setTimeout(() => {
-      账本跟随计时器 = null
+  // 旧版 60ms 防抖会在连续 move 时反复延期，账本只有等拖动快停下才追上。
+  // 现在只合并同一轮事件循环里的重复事件；下一轮立即 setBounds，不人为降低跟随刷新率。
+  const 账本跟着挪 = 创建账本跟随调度({
+    更新: () => {
       if (账本窗 && !账本窗.isDestroyed() && 账本窗.isVisible()) 摆在小窗边上()
-    }, 60)
-  }
+    },
+  })
   窗口.on('resize', 账本跟着挪)
   窗口.on('move', 账本跟着挪)
+  窗口.once('closed', 账本跟着挪.取消)
 
   // 【还有最后一种可能：界面自己崩了】
   //   那种情况窗口**不会被 hide** —— 它就停在那儿，但里面是白的。
