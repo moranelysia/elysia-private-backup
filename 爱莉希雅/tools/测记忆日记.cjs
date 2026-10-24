@@ -4,7 +4,7 @@
 const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
-const { 创建日记系统, 周期间 } = require('../脑/记忆日记.cjs')
+const { 创建日记系统, 周期间, 规范日记可见性, 共享日记投影 } = require('../脑/记忆日记.cjs')
 
 const 临时根 = fs.mkdtempSync(path.join(os.tmpdir(), 'elysia-diary-'))
 let 总数 = 0
@@ -63,6 +63,14 @@ async function main() {
   检查('日记保留模块正文和真实来源编号', 日记.模块[0].正文 === '完成练习 1' && 日记.模块[0].来源[0] === '聊天:abc')
   检查('日记来源清单保存可核对的真实摘要', 日记.来源.length === 1 && 日记.来源[0].编号 === '聊天:abc' && 日记.来源[0].摘要 === 来源[0].摘要)
   检查('日记默认不标为用户修改', 日记.用户修改 === false)
+  检查('新生成日记明确写为共享可见性', 日记.可见性 === 'shared')
+  检查('旧日记缺少可见性字段时只读兼容为共享', 规范日记可见性(undefined) === 'shared')
+  let 非法可见性拒绝 = false
+  try { 规范日记可见性('secret') } catch (错误) { 非法可见性拒绝 = 错误.message.includes('可见性无效') }
+  检查('显式非法可见性不会降级成共享', 非法可见性拒绝)
+  let 空可见性拒绝 = false
+  try { 规范日记可见性('') } catch (错误) { 空可见性拒绝 = 错误.message.includes('可见性无效') }
+  检查('显式空可见性同样被拒绝', 空可见性拒绝)
 
   日记.用户修改 = true
   日记.标题 = '我自己改的标题'
@@ -101,6 +109,32 @@ async function main() {
   const 导出正文 = fs.readFileSync(导出文件, 'utf8')
   检查('Markdown 导出包含全部日记正文与来源摘要', 导出结果.条数 === 2 && 导出正文.includes('我改过的周记') && 导出正文.includes('第一行\n第二行') && 导出正文.includes(来源[0].摘要))
   检查('Markdown 导出不夹带本机路径或聊天全文字段', 导出正文.includes('[本机路径已省略]') && !导出正文.includes('F:\\private') && !导出正文.includes(临时根) && !导出正文.includes('消息们'))
+
+  const 私密日记 = 读JSON(日文件)
+  私密日记.可见性 = 'private'
+  私密日记.标题 = '只留在本地的私密日记'
+  fs.writeFileSync(日文件, JSON.stringify(私密日记, null, 2), 'utf8')
+  检查('共享投影明确拒绝私密日记', 共享日记投影(私密日记) === null)
+  检查('默认界面完全不返回私密日记', !正常系统.给界面().列表.some((一) => 一.编号 === 私密日记.编号))
+  const 私密后导出文件 = path.join(临时根, '导出', '私密过滤.md')
+  const 私密后导出 = 正常系统.导出Markdown(私密后导出文件)
+  const 私密后正文 = fs.readFileSync(私密后导出文件, 'utf8')
+  检查('默认导出只包含共享日记', 私密后导出.条数 === 1 && !私密后正文.includes('只留在本地的私密日记'))
+
+  delete 私密日记.可见性
+  const 旧格式原文 = JSON.stringify(私密日记, null, 2)
+  fs.writeFileSync(日文件, 旧格式原文, 'utf8')
+  正常系统.给界面()
+  检查('读取旧格式日记不会顺手重写正式数据结构', fs.readFileSync(日文件, 'utf8') === 旧格式原文)
+  私密日记.可见性 = 'not-allowed'
+  fs.writeFileSync(日文件, JSON.stringify(私密日记, null, 2), 'utf8')
+  const 非法界面项 = 正常系统.给界面().列表.find((一) => 一.编号 === 私密日记.编号)
+  const 非法导出文件 = path.join(临时根, '导出', '非法过滤.md')
+  const 非法导出 = 正常系统.导出Markdown(非法导出文件)
+  检查('非法可见性只显示读取失败且不会进入导出', 非法界面项 && 非法界面项.状态 === '读取失败' && 非法导出.条数 === 1)
+
+  私密日记.可见性 = 'shared'
+  fs.writeFileSync(日文件, JSON.stringify(私密日记, null, 2), 'utf8')
 
   const 删除结果 = 正常系统.删除日记({ 编号: 改后.编号, 版本标记: 改后.版本标记 })
   const 删除任务 = 正常系统.读索引().任务.find((一) => 一.编号 === 改后.编号)

@@ -12,6 +12,7 @@ const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 
 const 模块名们 = Object.freeze(['回顾', '学习', '工作', '陪伴片段', '未完事项'])
+const 日记可见性们 = Object.freeze(['shared', 'private'])
 const 格式版本 = 1
 
 function 是对象(值) { return !!值 && typeof 值 === 'object' && !Array.isArray(值) }
@@ -41,6 +42,28 @@ function 导出安全文本(值) {
   return String(值 == null ? '' : 值)
     .replace(/\b[A-Za-z]:[\\/][^\s<>"|?*]+/g, '[本机路径已省略]')
     .replace(/\\\\[^\s\\/]+[\\/][^\s<>"|?*]+/g, '[网络路径已省略]')
+}
+
+/**
+ * 旧日记没有可见性字段时按 shared 只读兼容；显式但非法的值必须拒绝，
+ * 不能因为拼写错误把本应私密的内容降级成共享内容。
+ */
+function 规范日记可见性(值) {
+  if (值 === undefined) return 'shared'
+  const 可见性 = String(值).trim()
+  if (!日记可见性们.includes(可见性)) throw new Error('日记可见性无效')
+  return 可见性
+}
+
+function 规范日记记录(值) {
+  if (!是对象(值)) throw new Error('日记记录无效')
+  return { ...值, 可见性: 规范日记可见性(值.可见性) }
+}
+
+/** 所有默认界面、导出和将来的外发渠道都必须先经过这个共享投影。 */
+function 共享日记投影(值) {
+  const 日记 = 规范日记记录(值)
+  return 日记.可见性 === 'shared' ? 日记 : null
 }
 
 /** ISO 周：周一到下周一。 */
@@ -105,16 +128,22 @@ function 创建日记系统(选项 = {}) {
     return path.join(日记根, 类型 === '日' ? '日' : '周', 年, `${周期}.json`)
   }
 
+  function 读日记文件(任务) {
+    const 文件 = 日记路径(任务.类型, 任务.周期)
+    const 原文 = fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/, '')
+    const 值 = 规范日记记录(JSON.parse(原文))
+    if (String(值.编号 || '') !== String(任务.编号)) throw new Error('文件与索引不一致')
+    return { 文件, 原文, 值 }
+  }
+
   function 找可改日记(编号, 版本标记 = '') {
     const 安全编号 = 截(编号, 160)
     if (!安全编号 || !/^[日周]:[0-9W-]+$/.test(安全编号)) throw new Error('日记编号无效')
     const 索引 = 读索引()
     const 任务 = 索引.任务.find((一) => 一 && 一.编号 === 安全编号)
     if (!任务 || 任务.状态 !== '已完成') throw new Error('这篇日记不存在或还不能修改')
-    const 文件 = 日记路径(任务.类型, 任务.周期)
-    const 原文 = fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/, '')
-    const 值 = JSON.parse(原文)
-    if (!是对象(值) || String(值.编号 || '') !== 安全编号) throw new Error('日记文件与索引不一致')
+    const { 文件, 原文, 值 } = 读日记文件(任务)
+    if (String(值.编号 || '') !== 安全编号) throw new Error('日记文件与索引不一致')
     const 当前版本 = 短哈希(原文)
     if (版本标记 && String(版本标记) !== 当前版本) throw new Error('这篇日记刚刚发生过变化，请刷新后再试')
     return { 索引, 任务, 文件, 值, 当前版本 }
@@ -187,12 +216,12 @@ function 创建日记系统(选项 = {}) {
     let 跳过 = 0
     for (const 任务 of 读索引().任务.filter((一) => 一 && 一.状态 === '已完成').sort((a, b) => String(b.结束).localeCompare(String(a.结束)))) {
       try {
-        const 值 = JSON.parse(fs.readFileSync(日记路径(任务.类型, 任务.周期), 'utf8').replace(/^\uFEFF/, ''))
-        if (!是对象(值) || String(值.编号 || '') !== String(任务.编号)) throw new Error('文件与索引不一致')
-        日记们.push(值)
+        const 共享日记 = 共享日记投影(读日记文件(任务).值)
+        if (!共享日记) continue
+        日记们.push(共享日记)
       } catch { 跳过++ }
     }
-    const 内容 = ['# 爱莉希雅的记忆日记', '', `导出时间：${正常日期(取现在()).toISOString()}`, '', '> 这里仅包含日记正文与日记中保存的来源摘要，不包含聊天全文、密钥或本机文件路径。', '']
+    const 内容 = ['# 爱莉希雅的记忆日记', '', `导出时间：${正常日期(取现在()).toISOString()}`, '', '> 这里仅包含共享日记的正文与其中保存的来源摘要，不包含私密日记、聊天全文、密钥或本机文件路径。', '']
     for (const 一 of 日记们) 内容.push(Markdown日记(一), '')
     fs.mkdirSync(path.dirname(目标), { recursive: true })
     const 临时 = 目标 + `.tmp-${process.pid}-${Date.now()}`
@@ -315,6 +344,7 @@ function 创建日记系统(选项 = {}) {
             开始: 任务.开始,
             结束: 任务.结束,
             标题: 内容.标题 || (任务.类型 === '日' ? `${任务.周期} 日记` : `${任务.周期} 周记`),
+            可见性: 'shared',
             模块: 内容.模块,
             // 保存一小段真实来源快照，J2 展开来源时才能直接核对；不保存整份聊天或文件。
             来源: 来源们.map(({ 编号, 类型, 时间, 标题, 摘要 }) => ({ 编号, 类型, 时间, 标题, 摘要: 截(摘要, 500) })),
@@ -385,10 +415,9 @@ function 创建日记系统(选项 = {}) {
           return 基础
         }
         try {
-          const 文件 = 日记路径(任务.类型, 任务.周期)
-          const 原文 = fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/, '')
-          const 值 = JSON.parse(原文)
-          if (!是对象(值) || String(值.编号 || '') !== String(任务.编号)) throw new Error('文件与索引不一致')
+          const { 原文, 值 } = 读日记文件(任务)
+          const 共享日记 = 共享日记投影(值)
+          if (!共享日记) return null
           基础.标题 = 截(值.标题, 120)
           基础.生成于 = 截(值.生成于, 40)
           基础.修改于 = 截(值.修改于, 40)
@@ -409,6 +438,7 @@ function 创建日记系统(选项 = {}) {
         }
         return 基础
       })
+      .filter(Boolean)
       .filter((一) => !关键词 || `${一.周期}\n${一.标题}\n${一.状态}\n${一.模块.map((模块) => `${模块.名字} ${模块.正文}`).join('\n')}\n${一.来源.map((来源) => `${来源.类型} ${来源.标题} ${来源.摘要}`).join('\n')}`.toLocaleLowerCase().includes(关键词))
       .sort((a, b) => String(b.结束).localeCompare(String(a.结束)) || String(b.编号).localeCompare(String(a.编号)))
     return { 列表: 全部.slice(0, 限量), 总数: 全部.length, 截断: 全部.length > 限量 }
@@ -527,4 +557,4 @@ async function 生成日记({ 期间, 来源们, 钥匙, 地址 = process.env.EL
 }
 
 const 默认系统 = 创建日记系统()
-module.exports = { 创建日记系统, 默认取来源, 生成日记, 校验生成结果, 规整来源, 日期间, 周期间, 模块名们, ...默认系统 }
+module.exports = { 创建日记系统, 默认取来源, 生成日记, 校验生成结果, 规整来源, 日期间, 周期间, 模块名们, 日记可见性们, 规范日记可见性, 规范日记记录, 共享日记投影, ...默认系统 }
