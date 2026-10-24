@@ -74,6 +74,7 @@ const 记忆关系图 = require(path.join(脑, '记忆关系图.cjs'))
 const 记忆关系整理 = require(path.join(脑, '记忆关系整理.cjs'))
 const 记忆聚类就绪 = require(path.join(脑, '记忆聚类就绪.cjs'))
 const 记忆日记 = require(path.join(脑, '记忆日记.cjs'))
+const 私密日记 = require(path.join(脑, '私密日记.cjs')).创建私密日记库({ 数据目录: 配置.数据目录 })
 const 临时记忆 = require(path.join(脑, '临时记忆.cjs'))
 const { 晋升到长期 } = require(path.join(脑, '临时记忆晋升.cjs'))
 const 工作索引 = require(path.join(脑, '工作索引.cjs'))
@@ -153,6 +154,7 @@ const 桌宠程序 = path.join(桌宠目录, 'Bongo Cat Mver.exe')
 const 图标文件 = path.join(脑, '图标-32.png')
 
 let 窗口 = null
+let 私密日记已打开 = false
 let Live2D窗 = null
 let Live2D保存定时 = null
 let Live2D手势 = null
@@ -914,6 +916,7 @@ function 建窗口() {
   //   他 2026-09-27 问的就是这个："我怎么才能保留一轮对话"。
   //   记忆是给她用的，聊天记录才是给他看的 —— 这是两件事。
   窗口.webContents.on('did-finish-load', () => {
+    私密日记已打开 = false
     发历史(窗口, 40)
     发Live2D显示状态()
   })
@@ -993,6 +996,7 @@ function 建窗口() {
   })
 
   窗口.on('hide', () => {
+    私密日记已打开 = false
     if (Live2D快聊中) 退出Live2D快聊()
     更新托盘菜单()
     // 她收起来了，面板也一起收 —— 只留一个孤零零的账本在屏幕上很奇怪
@@ -2526,6 +2530,51 @@ function 接对讲机() {
       }
     } catch (错误) {
       return { 好: false, 说明: 错误.message, 列表: [], 总数: 0, 截断: false }
+    }
+  })
+
+  // ---- 私密日记：只有本次显式打开后可读；不提供修改、导出、分享或聊天注入接口 ----
+  ipcMain.handle('打开私密记忆日记', (事件, 条件) => {
+    确认来自聊天窗口(事件)
+    私密日记已打开 = true
+    const 值 = 条件 && typeof 条件 === 'object' && !Array.isArray(条件) ? 条件 : {}
+    try {
+      return { 好: true, ...私密日记.给本机界面({ 搜索: String(值.搜索 || '').slice(0, 80), 最多: 200 }) }
+    } catch (错误) {
+      私密日记已打开 = false
+      return { 好: false, 说明: 错误.message, 列表: [], 总数: 0, 截断: false }
+    }
+  })
+
+  ipcMain.handle('关闭私密记忆日记', (事件) => {
+    确认来自聊天窗口(事件)
+    私密日记已打开 = false
+    return { 好: true }
+  })
+
+  ipcMain.handle('问私密记忆日记', (事件, 条件) => {
+    确认来自聊天窗口(事件)
+    if (!私密日记已打开) return { 好: false, 锁定: true, 说明: '私密日记已经重新上锁', 列表: [], 总数: 0, 截断: false }
+    const 值 = 条件 && typeof 条件 === 'object' && !Array.isArray(条件) ? 条件 : {}
+    try {
+      return { 好: true, ...私密日记.给本机界面({ 搜索: String(值.搜索 || '').slice(0, 80), 最多: 200 }) }
+    } catch (错误) {
+      return { 好: false, 说明: 错误.message, 列表: [], 总数: 0, 截断: false }
+    }
+  })
+
+  ipcMain.handle('删除私密记忆日记', (事件, 请求) => {
+    确认来自聊天窗口(事件)
+    if (!私密日记已打开) return { 好: false, 锁定: true, 说明: '私密日记已经重新上锁' }
+    const 值 = 请求 && typeof 请求 === 'object' && !Array.isArray(请求) ? 请求 : {}
+    if (值.已确认 !== true) return { 好: false, 说明: '需要先在界面确认删除' }
+    try {
+      return 私密日记.删除日记({
+        编号: String(值.编号 || '').slice(0, 160),
+        版本标记: String(值.版本标记 || '').slice(0, 32),
+      })
+    } catch (错误) {
+      return { 好: false, 说明: 错误.message }
     }
   })
 

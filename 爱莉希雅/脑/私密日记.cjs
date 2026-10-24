@@ -1,13 +1,14 @@
 /**
  * 私密日记.cjs —— M-32B 隔离生成器。
  *
- * 本模块不会被主进程或普通日记调度器加载。只有显式传入临时数据目录并开启
- * `允许隔离写入` 才会落盘；正式数据目录在 M-33 完成前被硬拒绝。
+ * 主进程只加载这里的本机查看库，不加载生成器。只有显式传入临时数据目录并
+ * 开启 `允许隔离写入`，生成器才会落盘；正式自动生成仍硬拒绝。
  */
 'use strict'
 
 const fs = require('node:fs')
 const path = require('node:path')
+const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 const { 日期间, 规范日记记录 } = require('./记忆日记.cjs')
 
@@ -37,6 +38,36 @@ function 同一路径(a, b) {
   const 左 = path.resolve(a)
   const 右 = path.resolve(b)
   return process.platform === 'win32' ? 左.toLocaleLowerCase() === 右.toLocaleLowerCase() : 左 === 右
+}
+function 短哈希(文字) { return crypto.createHash('sha256').update(String(文字)).digest('hex').slice(0, 16) }
+function 私密根目录(数据目录) { return path.join(path.resolve(数据目录), '日记', '私密') }
+function 已删除文件(数据目录) { return path.join(私密根目录(数据目录), '已删除.json') }
+
+function 读已删除周期(数据目录) {
+  const 文件 = 已删除文件(数据目录)
+  try {
+    const 原文 = fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/, '').trim()
+    if (!原文) throw new Error('文件为空')
+    const 值 = JSON.parse(原文)
+    if (!是对象(值) || 值.格式版本 !== 格式版本 || !Array.isArray(值.周期)
+      || 值.周期.some((一) => !/^\d{4}-\d{2}-\d{2}$/.test(String(一)))) throw new Error('结构无效')
+    return new Set(值.周期.map(String))
+  } catch (错误) {
+    if (错误.code === 'ENOENT') return new Set()
+    throw new Error('私密日记删除记录读不动，已停止操作：' + 错误.message)
+  }
+}
+
+function 原子写JSON(文件, 数据) {
+  fs.mkdirSync(path.dirname(文件), { recursive: true })
+  const 临时 = 文件 + `.tmp-${process.pid}-${Date.now()}`
+  try {
+    fs.writeFileSync(临时, JSON.stringify(数据, null, 2), 'utf8')
+    fs.renameSync(临时, 文件)
+  } catch (错误) {
+    try { fs.rmSync(临时, { force: true }) } catch { /* 保留原错误 */ }
+    throw 错误
+  }
 }
 
 const 敏感关键词 = /密码|口令|验证码|恢复码|api\s*key|access\s*token|refresh\s*token|token|cookie|私钥|助记词|账号|账户|银行卡|信用卡|身份证|证件号|手机号|电话号码|精确住址|系统提示|开发者消息|工具原文|调试日志/i
@@ -158,7 +189,7 @@ async function 生成私密日记({ 期间, 来源们, 钥匙, 地址 = process.
 function 创建私密日记生成器(选项 = {}) {
   const 数据目录 = path.resolve(选项.数据目录 || 配置.数据目录)
   const 允许隔离写入 = 选项.允许隔离写入 === true
-  if (允许隔离写入 && 同一路径(数据目录, 配置.数据目录)) throw new Error('M-33 完成前禁止向正式数据目录写私密日记')
+  if (允许隔离写入 && 同一路径(数据目录, 配置.数据目录)) throw new Error('正式私密日记自动生成尚未启用')
   const 取现在 = typeof 选项.现在 === 'function' ? 选项.现在 : () => new Date()
   const 取来源 = typeof 选项.取来源 === 'function' ? 选项.取来源 : async () => []
   const 生成 = typeof 选项.生成 === 'function' ? 选项.生成 : 生成私密日记
@@ -193,6 +224,7 @@ function 创建私密日记生成器(选项 = {}) {
     const 现在 = 正常日期(取现在(), '当前时间')
     if (期间.结束 > 现在) throw new Error('只能整理已经结束的本地自然日')
     const { 编号, 文件 } = 日记路径(期间.周期)
+    if (读已删除周期(数据目录).has(期间.周期)) return { 好: true, 写入: false, 状态: '已删除', 编号 }
     if (fs.existsSync(文件)) {
       读取已有(文件, 编号)
       return { 好: true, 写入: false, 状态: '已存在', 编号 }
@@ -245,8 +277,95 @@ function 创建私密日记生成器(选项 = {}) {
   return { 数据目录, 允许隔离写入, 整理一天, 日记路径: (周期) => 日记路径(周期).文件, 状态: () => ({ 运行中: [...运行中.keys()] }) }
 }
 
+/**
+ * M-33 的本机显式查看库。它不负责生成，也没有导出或修改接口；返回值只含
+ * 渲染所需白名单字段，避免把路径或内部元数据送进页面。
+ */
+function 创建私密日记库(选项 = {}) {
+  const 数据目录 = path.resolve(选项.数据目录 || 配置.数据目录)
+  const 根目录 = 私密根目录(数据目录)
+
+  function 读一篇(文件, 周期) {
+    const 原文 = fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/, '')
+    const 值 = 规范日记记录(JSON.parse(原文))
+    const 编号 = 私密日记编号(周期)
+    if (值.可见性 !== 'private' || String(值.编号 || '') !== 编号 || String(值.周期 || '') !== 周期 || 值.类型 !== '日') {
+      throw new Error('私密日记文件结构无效')
+    }
+    const 来源 = (Array.isArray(值.来源) ? 值.来源 : []).slice(0, 120).map((一) => ({
+      编号: 截(一 && 一.编号, 160), 类型: 截(一 && 一.类型, 40), 时间: 截(一 && 一.时间, 40),
+      标题: 截(一 && 一.标题, 160), 摘要: 正文文本(一 && 一.摘要).slice(0, 1200),
+    })).filter((一) => 一.编号 && 一.类型)
+    const 来源编号 = new Set(来源.map((一) => 一.编号))
+    const 模块 = (Array.isArray(值.模块) ? 值.模块 : []).slice(0, 5).map((一) => ({
+      名字: 截(一 && 一.名字, 20), 正文: 正文文本(一 && 一.正文).slice(0, 4000),
+      来源: [...new Set((Array.isArray(一 && 一.来源) ? 一.来源 : []).slice(0, 30).map((二) => 截(二, 160)).filter((二) => 来源编号.has(二)))],
+    })).filter((一) => 一.名字 && 一.正文 && 一.来源.length)
+    if (!模块.length) throw new Error('私密日记没有可核对的正文')
+    return {
+      编号, 类型: '日', 周期, 标题: 截(值.标题, 120) || '没有说出口的话',
+      开始: 截(值.开始, 40), 结束: 截(值.结束, 40), 模块, 来源,
+      生成于: 截(值.生成于, 40), 版本标记: 短哈希(原文),
+    }
+  }
+
+  function 给本机界面({ 搜索 = '', 最多 = 200 } = {}) {
+    const 关键词 = 截(搜索, 80).toLocaleLowerCase()
+    const 限量 = Math.max(1, Math.min(200, Number(最多) || 200))
+    const 列表 = []
+    let 跳过 = 0
+    let 年目录们 = []
+    try { 年目录们 = fs.readdirSync(根目录, { withFileTypes: true }) } catch (错误) {
+      if (错误.code === 'ENOENT') return { 列表: [], 总数: 0, 截断: false, 跳过: 0 }
+      throw 错误
+    }
+    for (const 年项 of 年目录们) {
+      if (!年项.isDirectory() || !/^\d{4}$/.test(年项.name)) continue
+      const 年目录 = path.join(根目录, 年项.name)
+      let 文件们
+      try { 文件们 = fs.readdirSync(年目录, { withFileTypes: true }) } catch { 跳过++; continue }
+      for (const 文件项 of 文件们) {
+        const 匹配 = 文件项.name.match(/^(\d{4}-\d{2}-\d{2})\.json$/)
+        if (!文件项.isFile() || !匹配 || !文件项.name.startsWith(年项.name + '-')) continue
+        try {
+          const 一 = 读一篇(path.join(年目录, 文件项.name), 匹配[1])
+          const 搜索文本 = [一.标题, 一.周期, ...一.模块.map((二) => 二.正文), ...一.来源.map((二) => `${二.标题} ${二.摘要}`)].join('\n').toLocaleLowerCase()
+          if (!关键词 || 搜索文本.includes(关键词)) 列表.push(一)
+        } catch { 跳过++ }
+      }
+    }
+    列表.sort((a, b) => String(b.周期).localeCompare(String(a.周期)))
+    return { 列表: 列表.slice(0, 限量), 总数: 列表.length, 截断: 列表.length > 限量, 跳过 }
+  }
+
+  function 删除日记({ 编号, 版本标记 = '' } = {}) {
+    const 安全编号 = 截(编号, 160)
+    const 匹配 = 安全编号.match(/^私密日:(\d{4}-\d{2}-\d{2})$/)
+    if (!匹配) throw new Error('私密日记编号无效')
+    const 周期 = 匹配[1]
+    const 文件 = path.join(根目录, 周期.slice(0, 4), `${周期}.json`)
+    const 当前 = 读一篇(文件, 周期)
+    if (版本标记 && String(版本标记) !== 当前.版本标记) throw new Error('这篇私密日记刚刚发生过变化，请刷新后再试')
+    const 已删除 = 读已删除周期(数据目录)
+    const 临时删除文件 = 文件 + `.delete-${process.pid}-${Date.now()}`
+    fs.renameSync(文件, 临时删除文件)
+    try {
+      已删除.add(周期)
+      原子写JSON(已删除文件(数据目录), { 格式版本, 周期: [...已删除].sort() })
+      try { fs.rmSync(临时删除文件, { force: true }) } catch { /* 墓碑已落盘，残留不影响语义 */ }
+      return { 好: true, 编号: 安全编号 }
+    } catch (错误) {
+      try { if (fs.existsSync(临时删除文件)) fs.renameSync(临时删除文件, 文件) } catch { /* 保留原错误 */ }
+      throw 错误
+    }
+  }
+
+  return { 数据目录, 根目录, 给本机界面, 删除日记 }
+}
+
 module.exports = {
   创建私密日记生成器,
+  创建私密日记库,
   生成私密日记,
   校验私密生成结果,
   规整私密来源,

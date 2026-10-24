@@ -2613,6 +2613,15 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
   background: transparent; color: #9c7d97; font-family: inherit; font-size: 10px; cursor: pointer;
 }
 .长期记忆视图切换 button.选中 { background: #fff; color: #855d8e; font-weight: 600; box-shadow: 0 1px 4px rgba(91, 52, 80, 0.09); }
+.日记视图切换 {
+  display: flex; gap: 4px; margin-bottom: 8px; padding: 3px; border: 1px solid rgba(231, 190, 215, .58); border-radius: 11px;
+  background: linear-gradient(145deg, rgba(255,255,255,.74), rgba(249,224,240,.54)); box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+.日记视图切换.收着 { display: none; }
+.日记视图切换 button {
+  flex: 1; min-height: 28px; border: 0; border-radius: 8px; background: transparent; color: #9a7893; font-family: inherit; font-size: 10px; cursor: pointer;
+}
+.日记视图切换 button.选中 { background: rgba(255,255,255,.82); color: #89536f; font-weight: 600; box-shadow: 0 2px 8px rgba(112,61,94,.09); }
 .记忆筛选 { display: flex; gap: 5px; margin-bottom: 8px; }
 .记忆筛选.收着 { display: none; }
 .记忆筛选 button {
@@ -2843,6 +2852,7 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 }
 .关系图确认操作 button:hover, .关系图确认操作 button:focus-visible { border-color: rgba(198, 99, 155, .82); outline: none; box-shadow: inset 0 1px 0 #fff, 0 0 0 3px rgba(211, 112, 169, .13); }
 .关系图确认操作 .危险 { border-color: rgba(211, 105, 133, .72); background: linear-gradient(145deg, #d57892, #c85f7d); color: #fff; }
+.关系图确认操作 .主要 { border-color: rgba(204, 115, 167, .72); background: linear-gradient(145deg, #dd8db9, #ca70a2); color: #fff; }
 @keyframes 关系确认淡入 { from { opacity: 0; } to { opacity: 1; } }
 @keyframes 关系确认出现 { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
 
@@ -2860,6 +2870,13 @@ body.快聊模式 #发送 { width: 34px; height: 34px; }
 .日记状态.已完成 { background: #eaf5ef; color: #5d826e; }
 .日记状态.无内容 { background: #f3f0f4; color: #8c7e91; }
 .日记状态.失败待重试, .日记状态.读取失败 { background: #fff0e4; color: #a16c3e; }
+.日记状态.私密 { background: rgba(244, 220, 239, .88); color: #965d80; }
+.私密日记卡 {
+  border-color: rgba(224, 155, 197, .72); background: radial-gradient(circle at 12% 2%, rgba(255,255,255,.95), transparent 35%), linear-gradient(145deg, rgba(255,250,253,.84), rgba(249,215,235,.68));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.96), 0 10px 28px rgba(111,56,92,.11); user-select: none; -webkit-user-select: none;
+}
+.私密日记卡 .日记正文, .私密日记卡 .日记来源条 p { user-select: none; -webkit-user-select: none; }
+.私密日记空态::before { content: '◇'; display: block; margin-bottom: 7px; color: #c27fa5; font-size: 20px; }
 .日记模块 { margin-top: 9px; padding-top: 8px; border-top: 1px solid #f1e6ed; }
 .日记模块 h3 { margin: 0 0 4px; color: #9b6b89; font-size: 11px; }
 .日记正文 { color: #5f4855; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }

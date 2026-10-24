@@ -485,6 +485,19 @@ contextBridge.exposeInMainWorld('爱莉', {
     类型: String(条件.类型 || '').slice(0, 4),
     搜索: String(条件.搜索 || '').slice(0, 80),
   }),
+  /** 私密日记只有显式打开后的本机界面会话可读；这里故意没有编辑或导出能力。 */
+  打开私密记忆日记: (条件 = {}) => ipcRenderer.invoke('打开私密记忆日记', {
+    搜索: String(条件.搜索 || '').slice(0, 80),
+  }),
+  关闭私密记忆日记: () => ipcRenderer.invoke('关闭私密记忆日记'),
+  问私密记忆日记: (条件 = {}) => ipcRenderer.invoke('问私密记忆日记', {
+    搜索: String(条件.搜索 || '').slice(0, 80),
+  }),
+  删除私密记忆日记: (请求 = {}) => ipcRenderer.invoke('删除私密记忆日记', {
+    编号: String(请求.编号 || '').slice(0, 160),
+    版本标记: String(请求.版本标记 || '').slice(0, 32),
+    已确认: 请求.已确认 === true,
+  }),
   修改记忆日记: (请求 = {}) => ipcRenderer.invoke('修改记忆日记', {
     编号: String(请求.编号 || '').slice(0, 160),
     版本标记: String(请求.版本标记 || '').slice(0, 32),

@@ -67,8 +67,8 @@ async function 应拒绝(名字, 输出, 片段) {
 
 async function main() {
   let 禁止正式 = false
-  try { 创建私密日记生成器({ 数据目录: 配置.数据目录, 允许隔离写入: true }) } catch (错误) { 禁止正式 = 错误.message.includes('M-33') }
-  检查('M-33 前硬拒绝向正式数据目录写入', 禁止正式)
+  try { 创建私密日记生成器({ 数据目录: 配置.数据目录, 允许隔离写入: true }) } catch (错误) { 禁止正式 = 错误.message.includes('尚未启用') }
+  检查('M-33 只开放查看删除，仍硬拒绝向正式数据目录自动生成', 禁止正式)
 
   let 未启用取源 = 0
   const 未启用目录 = path.join(临时根, '未启用')
@@ -174,7 +174,7 @@ async function main() {
 
   const 普通日记源码 = fs.readFileSync(path.join(__dirname, '..', '脑', '记忆日记.cjs'), 'utf8')
   const 主进程源码 = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8')
-  检查('M-32B 没有接入普通日记调度器或主进程', !普通日记源码.includes("require('./私密日记.cjs')") && !主进程源码.includes('私密日记.cjs'))
+  检查('私密生成器没有接入普通日记调度器或主进程', !普通日记源码.includes("require('./私密日记.cjs')") && !主进程源码.includes('创建私密日记生成器'))
 
   const 临时残留 = []
   function 找临时(目录) {

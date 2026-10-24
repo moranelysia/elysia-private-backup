@@ -109,6 +109,7 @@ const 临时记忆筛选 = document.getElementById('临时记忆筛选')
 const 临时记忆分类 = document.getElementById('临时记忆分类')
 const 临时记忆生命周期 = document.getElementById('临时记忆生命周期')
 const 临时记忆确认状态 = document.getElementById('临时记忆确认状态')
+const 日记视图切换 = document.getElementById('日记视图切换')
 const 日记筛选 = document.getElementById('日记筛选')
 const 工作索引入口 = document.getElementById('工作索引入口')
 const 工作索引抽屉 = document.getElementById('工作索引抽屉')
@@ -1351,6 +1352,8 @@ let 当前记忆层 = '长期'
 let 当前记忆类别 = ''
 let 当前长期视图 = '列表'
 let 当前日记类型 = ''
+let 当前日记视图 = '普通'
+let 私密日记已解锁 = false
 let 记忆搜索计时 = null
 let 记忆请求号 = 0
 let 关系图保存计时 = null
@@ -2284,6 +2287,93 @@ function 画记忆日记(果) {
   }
 }
 
+function 问记忆确认({ 标题, 正文, 确认文字 = '继续', 危险 = false }) {
+  return new Promise((完成) => {
+    const 遮罩 = document.createElement('div')
+    遮罩.className = '关系图确认遮罩'
+    const 卡 = document.createElement('section')
+    卡.className = '关系图确认卡'; 卡.setAttribute('role', 'alertdialog'); 卡.setAttribute('aria-modal', 'true')
+    const 图标 = document.createElement('div'); 图标.className = '关系图确认图标'; 图标.textContent = '◇'; 图标.setAttribute('aria-hidden', 'true')
+    const 标题节点 = document.createElement('strong'); 标题节点.textContent = 标题
+    const 正文节点 = document.createElement('p'); 正文节点.textContent = 正文
+    const 操作 = document.createElement('div'); 操作.className = '关系图确认操作'
+    const 取消 = document.createElement('button'); 取消.textContent = '取消'
+    const 确认 = document.createElement('button'); 确认.className = 危险 ? '危险' : '主要'; 确认.textContent = 确认文字
+    操作.append(取消, 确认); 卡.append(图标, 标题节点, 正文节点, 操作); 遮罩.appendChild(卡); 记忆管理面板.appendChild(遮罩)
+    const 收 = (答案) => {
+      遮罩.remove(); document.removeEventListener('keydown', 按键, true); 完成(答案)
+    }
+    const 按键 = (事件) => {
+      if (事件.key !== 'Escape') return
+      事件.preventDefault(); 事件.stopImmediatePropagation(); 收(false)
+    }
+    遮罩.addEventListener('click', (事件) => { if (事件.target === 遮罩) 收(false) })
+    取消.addEventListener('click', () => 收(false)); 确认.addEventListener('click', () => 收(true))
+    document.addEventListener('keydown', 按键, true)
+    requestAnimationFrame(() => 取消.focus({ preventScroll: true }))
+  })
+}
+
+function 画私密记忆日记(果) {
+  记忆管理列表.replaceChildren()
+  if (!果 || !果.好) {
+    if (果 && 果.锁定) 私密日记已解锁 = false
+    记忆管理统计.textContent = (果 && 果.说明) || '私密日记暂时读不到'
+    const 空 = document.createElement('div'); 空.className = '记忆管理空态'; 空.textContent = '私密日记已经上锁。'
+    记忆管理列表.appendChild(空)
+    return
+  }
+  const 条们 = Array.isArray(果.列表) ? 果.列表 : []
+  记忆管理统计.textContent = `本机私密日记 ${果.总数 || 0} 篇 · 不进入聊天、导出或分享${果.跳过 ? ` · 跳过 ${果.跳过} 个异常文件` : ''}`
+  if (!条们.length) {
+    const 空 = document.createElement('div'); 空.className = '记忆管理空态 私密日记空态'
+    空.textContent = 记忆搜索.value.trim() ? '没有符合条件的私密日记。' : '还没有私密日记。正式自动生成仍未开启。'
+    记忆管理列表.appendChild(空)
+    return
+  }
+  for (const 一 of 条们) {
+    const 卡 = document.createElement('article'); 卡.className = '记忆卡 日记卡 私密日记卡'
+    const 头 = document.createElement('div'); 头.className = '记忆卡头 日记卡头'
+    const 标题区 = document.createElement('div')
+    const 标题 = document.createElement('strong'); 标题.textContent = 一.标题 || '没有说出口的话'
+    const 周期 = document.createElement('div'); 周期.className = '日记周期'; 周期.textContent = `${一.周期 || '日期未记录'}${一.生成于 ? ` · 写于 ${显示日期时间(一.生成于)}` : ''}`
+    标题区.append(标题, 周期)
+    const 状态 = document.createElement('span'); 状态.className = '日记状态 私密'; 状态.textContent = '仅本机'
+    头.append(标题区, 状态); 卡.appendChild(头)
+    const 来源表 = new Map((Array.isArray(一.来源) ? 一.来源 : []).map((来源) => [来源.编号, 来源]))
+    for (const 模块 of (Array.isArray(一.模块) ? 一.模块 : [])) {
+      const 区 = document.createElement('section'); 区.className = '日记模块'
+      const 名 = document.createElement('h3'); 名.textContent = 模块.名字 || '陪伴片段'
+      const 正文 = document.createElement('div'); 正文.className = '日记正文'; 正文.textContent = 模块.正文 || ''
+      区.append(名, 正文)
+      const 引用们 = Array.isArray(模块.来源) ? 模块.来源 : []
+      if (引用们.length) {
+        const 详情 = document.createElement('details'); 详情.className = '日记来源详情'
+        const 摘要 = document.createElement('summary'); 摘要.textContent = `查看当天片段（${引用们.length}）`; 详情.appendChild(摘要)
+        for (const 编号 of 引用们) {
+          const 来源 = 来源表.get(编号); if (!来源) continue
+          const 行 = document.createElement('div'); 行.className = '日记来源条'
+          const 来源头 = document.createElement('strong'); 来源头.textContent = `${来源.类型 || '来源'}${来源.时间 ? ` · ${来源.时间}` : ''}${来源.标题 ? ` · ${来源.标题}` : ''}`
+          const 来源摘要 = document.createElement('p'); 来源摘要.textContent = 来源.摘要 || '这条来源没有保存摘要。'
+          行.append(来源头, 来源摘要); 详情.appendChild(行)
+        }
+        区.appendChild(详情)
+      }
+      卡.appendChild(区)
+    }
+    const 操作 = document.createElement('div'); 操作.className = '记忆操作 日记操作'
+    const 删除 = 临时操作按钮('删除', '遗忘记忆')
+    删除.addEventListener('click', async () => {
+      if (!await 问记忆确认({ 标题: '删除这篇私密日记？', 正文: '正文会从本机移除，并留下不含正文的删除记录，避免以后重新生成。', 确认文字: '删除', 危险: true })) return
+      删除.disabled = true
+      const 结果 = await window.爱莉.删除私密记忆日记({ 编号: 一.编号, 版本标记: 一.版本标记, 已确认: true }).catch((错误) => ({ 好: false, 说明: 错误.message }))
+      if (结果 && 结果.好) { 提示('私密日记已从本机删除'); await 刷新私密记忆日记() }
+      else { 记忆卡提示(卡, (结果 && 结果.说明) || '私密日记没有删除成功。', true); 删除.disabled = false }
+    })
+    操作.appendChild(删除); 卡.appendChild(操作); 记忆管理列表.appendChild(卡)
+  }
+}
+
 function 开始编辑日记(卡, 日记) {
   if (卡.querySelector('.日记编辑区')) return
   const 表单 = document.createElement('div')
@@ -2330,6 +2420,7 @@ async function 删除一篇日记(卡, 日记, 按钮) {
 }
 
 async function 刷新记忆日记() {
+  if (当前日记视图 === '私密') return 刷新私密记忆日记()
   const 这次 = ++记忆请求号
   记忆管理统计.textContent = '读取中……'
   try {
@@ -2338,6 +2429,57 @@ async function 刷新记忆日记() {
   } catch (错误) {
     if (这次 === 记忆请求号) 画记忆日记({ 好: false, 说明: 错误.message })
   }
+}
+
+async function 刷新私密记忆日记(首次结果 = null) {
+  const 这次 = ++记忆请求号
+  记忆管理统计.textContent = '读取本机私密日记……'
+  try {
+    const 果 = 首次结果 || await window.爱莉.问私密记忆日记({ 搜索: 记忆搜索.value })
+    if (这次 === 记忆请求号) 画私密记忆日记(果)
+  } catch (错误) {
+    if (这次 === 记忆请求号) 画私密记忆日记({ 好: false, 说明: 错误.message })
+  }
+}
+
+function 显示日记视图(视图) {
+  当前日记视图 = 视图
+  for (const 一 of 日记视图切换.querySelectorAll('button')) {
+    const 选中 = 一.dataset.日记视图 === 视图
+    一.classList.toggle('选中', 选中); 一.setAttribute('aria-selected', String(选中))
+  }
+  const 私密 = 视图 === '私密'
+  日记筛选.classList.toggle('收着', 私密 || 当前记忆层 !== '日记')
+  记忆导出.hidden = 私密 || 当前记忆层 === '临时'
+  记忆搜索.placeholder = 私密 ? '搜索本机私密日记……' : '搜索日记、模块或来源摘要……'
+}
+
+function 锁上私密日记({ 恢复普通 = true } = {}) {
+  const 曾解锁 = 私密日记已解锁
+  私密日记已解锁 = false
+  if (恢复普通) 显示日记视图('普通')
+  if (曾解锁) void window.爱莉.关闭私密记忆日记().catch(() => {})
+}
+
+async function 打开私密日记() {
+  if (私密日记已解锁) return
+  const 同意 = await 问记忆确认({
+    标题: '打开私密日记？',
+    正文: '内容只在本机这次打开期间显示，不进入聊天、导出或分享。关闭记忆库或切换页面后会重新上锁。',
+    确认文字: '在本机打开',
+  })
+  if (!同意) return
+  const 这次 = ++记忆请求号
+  记忆管理统计.textContent = '正在打开……'
+  const 果 = await window.爱莉.打开私密记忆日记({ 搜索: 记忆搜索.value }).catch((错误) => ({ 好: false, 说明: 错误.message }))
+  if (这次 !== 记忆请求号 || 当前记忆层 !== '日记' || 记忆管理遮罩.classList.contains('收着')) {
+    if (果 && 果.好) void window.爱莉.关闭私密记忆日记().catch(() => {})
+    return
+  }
+  if (!果 || !果.好) { 提示((果 && 果.说明) || '私密日记没有打开', '#c9779d'); return }
+  私密日记已解锁 = true
+  显示日记视图('私密')
+  await 刷新私密记忆日记(果)
 }
 
 function 刷新记忆管理() {
@@ -2393,6 +2535,8 @@ function 开记忆管理() {
 }
 
 function 关记忆管理() {
+  记忆请求号++
+  锁上私密日记()
   记忆管理遮罩.classList.add('收着')
   记忆管理遮罩.setAttribute('aria-hidden', 'true')
 }
@@ -4941,7 +5085,10 @@ function 收起文件抽屉() {
 })
 记忆管理入口.addEventListener('click', 开记忆管理)
 记忆管理关闭.addEventListener('click', 关记忆管理)
-记忆导出.addEventListener('click', () => void (当前记忆层 === '日记' ? 导出全部记忆日记() : 导出全部长期记忆()))
+记忆导出.addEventListener('click', () => {
+  if (当前记忆层 === '日记' && 当前日记视图 === '私密') return
+  void (当前记忆层 === '日记' ? 导出全部记忆日记() : 导出全部长期记忆())
+})
 记忆清空.addEventListener('click', () => void 清空全部长期记忆())
 临时记忆新增.addEventListener('click', 新增临时记忆表单)
 记忆管理遮罩.addEventListener('click', (事件) => {
@@ -4950,6 +5097,7 @@ function 收起文件抽屉() {
 记忆层切换.addEventListener('click', (事件) => {
   const 按钮 = 事件.target.closest('button[data-记忆层]')
   if (!按钮 || 按钮.dataset.记忆层 === 当前记忆层) return
+  if (当前记忆层 === '日记' && 当前日记视图 === '私密') 锁上私密日记()
   当前记忆层 = 按钮.dataset.记忆层
   for (const 一 of 记忆层切换.querySelectorAll('button')) {
     const 选中 = 一 === 按钮
@@ -4962,9 +5110,10 @@ function 收起文件抽屉() {
   长期记忆筛选.classList.toggle('收着', 是临时 || 是日记)
   长期记忆视图切换.classList.toggle('收着', !是长期)
   临时记忆筛选.classList.toggle('收着', !是临时)
-  日记筛选.classList.toggle('收着', !是日记)
+  日记视图切换.classList.toggle('收着', !是日记)
+  日记筛选.classList.toggle('收着', !是日记 || 当前日记视图 === '私密')
   记忆管理面板.classList.toggle('图谱模式', 是长期 && 当前长期视图 === '关系图')
-  记忆导出.hidden = 是临时
+  记忆导出.hidden = 是临时 || (是日记 && 当前日记视图 === '私密')
   记忆导出.textContent = 是日记 ? '导出日记' : '导出全部'
   记忆导出.title = 是日记 ? '导出全部记忆日记为 Markdown' : '导出全部长期记忆'
   记忆清空.hidden = 是临时 || 是日记
@@ -4973,6 +5122,13 @@ function 收起文件抽屉() {
     ? '搜索日记、模块或来源摘要……'
     : 是临时 ? '搜索内容、标签或来源会话……' : '搜索内容、来源或会话……'
   void 刷新记忆管理()
+})
+日记视图切换.addEventListener('click', async (事件) => {
+  const 按钮 = 事件.target.closest('button[data-日记视图]')
+  if (!按钮 || 按钮.dataset.日记视图 === 当前日记视图) return
+  if (按钮.dataset.日记视图 === '私密') return void 打开私密日记()
+  锁上私密日记()
+  void 刷新记忆日记()
 })
 长期记忆视图切换.addEventListener('click', (事件) => {
   const 按钮 = 事件.target.closest('button[data-长期视图]')
