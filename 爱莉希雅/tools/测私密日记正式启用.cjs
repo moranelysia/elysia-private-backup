@@ -102,6 +102,22 @@ if (process.argv[2] === '子进程') {
   }
   function 读JSON(文件) { return JSON.parse(fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/, '')) }
   function 哈希(文件) { return crypto.createHash('sha256').update(fs.readFileSync(文件)).digest('hex') }
+  function 目录指纹(根目录) {
+    if (!fs.existsSync(根目录)) return '不存在'
+    const 文件们 = []
+    function 扫描(目录) {
+      for (const 项 of fs.readdirSync(目录, { withFileTypes: true })) {
+        const 完整路径 = path.join(目录, 项.name)
+        if (项.isDirectory()) 扫描(完整路径)
+        else if (项.isFile()) 文件们.push(`${path.relative(根目录, 完整路径)}|${哈希(完整路径)}`)
+      }
+    }
+    扫描(根目录)
+    return 文件们.sort().join('\n')
+  }
+
+  const 正式路径 = path.resolve(__dirname, '..', '记忆', '日记', '私密')
+  const 正式路径测试前 = 目录指纹(正式路径)
 
   ;(async () => {
     try {
@@ -165,8 +181,7 @@ if (process.argv[2] === '子进程') {
       检查('评估索引损坏时失败关闭且不调用模型', 损坏.错误.includes('评估索引读不动') && 损坏.模型次数 === 0 && 损坏.取源次数 === 0)
       检查('损坏索引不会被空账本覆盖也不会创建日记', 哈希(损坏文件) === 损坏前 && !fs.existsSync(损坏.日记路径))
 
-      const 正式路径 = path.resolve(__dirname, '..', '记忆', '日记', '私密')
-      检查('全部正式许可测试都局限在系统临时目录', !path.resolve(临时根).toLowerCase().startsWith(path.resolve(__dirname, '..').toLowerCase()) && !fs.existsSync(正式路径))
+      检查('全部正式许可测试都局限在系统临时目录', !path.resolve(临时根).toLowerCase().startsWith(path.resolve(__dirname, '..').toLowerCase()) && 目录指纹(正式路径) === 正式路径测试前)
 
       console.log(`\n私密日记正式启用隔离验证：${通过}/${总数} 通过`)
     } finally {
