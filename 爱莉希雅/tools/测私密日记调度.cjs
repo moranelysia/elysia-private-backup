@@ -113,7 +113,7 @@ async function main() {
   const 主进程 = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8')
   const 生成器源码 = fs.readFileSync(path.join(__dirname, '..', '脑', '私密日记.cjs'), 'utf8')
   检查('主进程已接入独立调度并在退出时停止', 主进程.includes('私密日记调度.cjs') && 主进程.includes('私密日记调度.启动()') && 主进程.includes('私密日记调度.停止()'))
-  检查('M-36B 前正式目录写入硬门仍然保留', 生成器源码.includes('正式私密日记自动生成尚未启用'))
+  检查('正式写入仍须同时通过配置开关和目录许可', 生成器源码.includes('生产开关关闭') && 生成器源码.includes('只能用于配置的数据目录'))
   检查('本测试没有创建任何伪正式数据目录', !fs.existsSync(path.join(__dirname, '不会写入')))
 
   console.log(`\n私密日记生产调度：${通过}/${总数} 通过`)

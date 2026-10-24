@@ -1,14 +1,15 @@
 /**
- * 私密日记调度.cjs —— 正式启用前的生产调度底座。
+ * 私密日记调度.cjs —— 私密日记的生产调度与双重启用门。
  *
- * 开关默认关闭；关闭时不建生成器、不读来源、也不创建计时器。当前默认生成器仍
- * 保留 `私密日记.cjs` 的正式写入硬门，M-36B 完成隔离验证前即使误开开关也不会落盘。
+ * 开关默认关闭；关闭时不建生成器、不读来源、也不创建计时器。打开后，生成器还会
+ * 再核对配置模块中的同一开关与正式数据目录，避免单一调用参数越过生产边界。
  */
 'use strict'
 
 const path = require('node:path')
 const 配置 = require('./配置.cjs')
 const { 创建私密日记生成器 } = require('./私密日记.cjs')
+const { 默认取来源 } = require('./记忆日记.cjs')
 
 function 正常日期(值) {
   const 日期 = 值 instanceof Date ? new Date(值) : new Date(值)
@@ -33,7 +34,11 @@ function 创建私密日记调度(选项 = {}) {
   const 取连接 = typeof 选项.取连接 === 'function' ? 选项.取连接 : () => ({})
   const 建生成器 = typeof 选项.创建生成器 === 'function'
     ? 选项.创建生成器
-    : ({ 数据目录: 目录 }) => 创建私密日记生成器({ 数据目录: 目录 })
+    : ({ 数据目录: 目录 }) => 创建私密日记生成器({
+      数据目录: 目录,
+      允许正式写入: true,
+      取来源: (期间) => 默认取来源(期间, 目录),
+    })
   const 设延时 = typeof 选项.设延时 === 'function' ? 选项.设延时 : setTimeout
   const 清延时 = typeof 选项.清延时 === 'function' ? 选项.清延时 : clearTimeout
   const 设间隔 = typeof 选项.设间隔 === 'function' ? 选项.设间隔 : setInterval
