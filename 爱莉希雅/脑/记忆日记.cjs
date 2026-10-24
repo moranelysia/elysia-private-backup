@@ -10,6 +10,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
+const 记忆叙述 = require('./记忆叙述.cjs')
 
 const 模块名们 = Object.freeze(['回顾', '学习', '工作', '陪伴片段', '未完事项'])
 const 日记可见性们 = Object.freeze(['shared', 'private'])
@@ -60,10 +61,26 @@ function 规范日记记录(值) {
   return { ...值, 可见性: 规范日记可见性(值.可见性) }
 }
 
+function 面向她的日记(日记) {
+  return {
+    ...日记,
+    标题: 记忆叙述.整理日记正文(日记.标题),
+    模块: (Array.isArray(日记.模块) ? 日记.模块 : []).map((一) => ({
+      ...一,
+      正文: 记忆叙述.整理日记正文(一 && 一.正文),
+    })),
+    来源: (Array.isArray(日记.来源) ? 日记.来源 : []).map((一) => ({
+      ...一,
+      标题: 记忆叙述.整理正文(一 && 一.标题),
+      摘要: 记忆叙述.整理正文(一 && 一.摘要),
+    })),
+  }
+}
+
 /** 所有默认界面、导出和将来的外发渠道都必须先经过这个共享投影。 */
 function 共享日记投影(值) {
   const 日记 = 规范日记记录(值)
-  return 日记.可见性 === 'shared' ? 日记 : null
+  return 日记.可见性 === 'shared' ? 面向她的日记(日记) : null
 }
 
 /** ISO 周：周一到下周一。 */
@@ -418,17 +435,17 @@ function 创建日记系统(选项 = {}) {
           const { 原文, 值 } = 读日记文件(任务)
           const 共享日记 = 共享日记投影(值)
           if (!共享日记) return null
-          基础.标题 = 截(值.标题, 120)
-          基础.生成于 = 截(值.生成于, 40)
-          基础.修改于 = 截(值.修改于, 40)
-          基础.用户修改 = 值.用户修改 === true
+          基础.标题 = 截(共享日记.标题, 120)
+          基础.生成于 = 截(共享日记.生成于, 40)
+          基础.修改于 = 截(共享日记.修改于, 40)
+          基础.用户修改 = 共享日记.用户修改 === true
           基础.版本标记 = 短哈希(原文)
-          基础.模块 = (Array.isArray(值.模块) ? 值.模块 : []).slice(0, 模块名们.length).map((一) => ({
+          基础.模块 = (Array.isArray(共享日记.模块) ? 共享日记.模块 : []).slice(0, 模块名们.length).map((一) => ({
             名字: 模块名们.includes(String(一 && 一.名字 || '')) ? String(一.名字) : '回顾',
             正文: 正文文本(一 && 一.正文, 4000),
             来源: (Array.isArray(一 && 一.来源) ? 一.来源 : []).slice(0, 30).map((编号) => 截(编号, 160)).filter(Boolean),
           })).filter((一) => 一.正文)
-          基础.来源 = (Array.isArray(值.来源) ? 值.来源 : []).slice(0, 120).map((一) => ({
+          基础.来源 = (Array.isArray(共享日记.来源) ? 共享日记.来源 : []).slice(0, 120).map((一) => ({
             编号: 截(一 && 一.编号, 160), 类型: 截(一 && 一.类型, 40), 时间: 截(一 && 一.时间, 40),
             标题: 截(一 && 一.标题, 160), 摘要: 截(一 && 一.摘要, 500),
           })).filter((一) => 一.编号)
@@ -522,7 +539,7 @@ function 校验生成结果(原始, 来源们) {
   const 模块 = []
   for (const 原模块 of (Array.isArray(值.模块) ? 值.模块 : [])) {
     const 名字 = String(原模块 && 原模块.名字 || '')
-    const 正文 = 截(原模块 && 原模块.正文, 4000)
+    const 正文 = 截(记忆叙述.整理日记正文(原模块 && 原模块.正文), 4000)
     const 引用 = [...new Set((Array.isArray(原模块 && 原模块.来源) ? 原模块.来源 : []).map(String))]
     if (!模块名们.includes(名字) || 见过.has(名字) || !正文) continue
     if (!引用.length || 引用.some((编号) => !可用编号.has(编号))) throw new Error(`日记模块“${名字}”引用了不存在的来源`)
@@ -530,7 +547,7 @@ function 校验生成结果(原始, 来源们) {
     模块.push({ 名字, 正文, 来源: 引用.slice(0, 30) })
   }
   if (!模块.length) throw new Error('模型没有生成带有效来源的日记模块')
-  return { 标题: 截(值.标题, 120), 模块 }
+  return { 标题: 截(记忆叙述.整理日记正文(值.标题), 120), 模块 }
 }
 
 async function 生成日记({ 期间, 来源们, 钥匙, 地址 = process.env.ELYSIA_LLM_URL || 'https://api.deepseek.com/v1/chat/completions', 模型 = process.env.ELYSIA_MEMORY_MODEL || process.env.ELYSIA_LLM_MODEL || 'deepseek-chat', fetch函数 = global.fetch, 超时 = 60000 }) {
@@ -544,7 +561,7 @@ async function 生成日记({ 期间, 来源们, 钥匙, 地址 = process.env.EL
       body: JSON.stringify({
         model: 模型, stream: false, temperature: 0.2, max_tokens: 1800,
         messages: [
-          { role: 'system', content: `你是记忆日记整理器。只能根据给出的来源写${期间.类型 === '日' ? '日记' : '周记'}，不能补充、猜测或虚构。输出 JSON：{"标题":"简短标题","模块":[{"名字":"回顾|学习|工作|陪伴片段|未完事项","正文":"简洁事实性文字","来源":["来源编号"]}]}。只输出有内容的模块；每个模块必须引用至少一个真实来源编号。` },
+          { role: 'system', content: `你在整理爱莉希雅自己的${期间.类型 === '日' ? '日记' : '周记'}。只能根据给出的来源，不能补充、猜测或虚构。标题和正文必须站在她自己的视角：她称自己为“我”，称眼前的人为“你”，共同经历称“我们”；禁止把两人写成“用户、用户本人、爱莉、爱莉希雅”，也禁止用“他/她”代指两人。第三方人物要使用来源中的姓名。输出 JSON：{"标题":"简短标题","模块":[{"名字":"回顾|学习|工作|陪伴片段|未完事项","正文":"简洁自然的第一人称文字","来源":["来源编号"]}]}。只输出有内容的模块；每个模块必须引用至少一个真实来源编号。` },
           { role: 'user', content: `周期：${期间.周期}\n开始：${期间.开始.toISOString()}\n结束：${期间.结束.toISOString()}\n来源：\n${JSON.stringify(来源们)}` },
         ],
       }),

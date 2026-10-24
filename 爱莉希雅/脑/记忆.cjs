@@ -34,6 +34,7 @@ const path = require('node:path')
 const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 const 记忆结构 = require('./记忆结构.cjs')
+const 记忆叙述 = require('./记忆叙述.cjs')
 
 const 记忆目录 = 配置.数据目录
 const 事实文件 = path.join(记忆目录, '事实.json')
@@ -91,7 +92,8 @@ function 新编号() {
  * @returns {{编号:string, 时间:string, 类别:string, 内容:string, 来源:string, 对话?:string}|null}
  */
 function 记一条(类别, 内容, 来源 = '她', 上下文 = {}) {
-  const 文本 = String(内容 || '').trim()
+  const 元数据 = 记忆结构.正常元数据(上下文 && 上下文.元数据, { 类别, 来源, 严格: true })
+  const 文本 = 记忆叙述.整理正文(内容, { 人物: 元数据.person, 修正旧代词: true })
   if (!文本) return null
 
   const 表 = { 事实: 事实文件, 经历: 经历文件, 小本子: 小本子文件 }
@@ -102,7 +104,7 @@ function 记一条(类别, 内容, 来源 = '她', 上下文 = {}) {
   const 条 = {
     编号: 新编号(), 时间: 现在(), 类别, 内容: 文本, 来源,
     记忆类型: 记忆结构.正常记忆类型(上下文 && 上下文.记忆类型, 类别, { 严格: true }),
-    元数据: 记忆结构.正常元数据(上下文 && 上下文.元数据, { 类别, 来源, 严格: true }),
+    元数据,
   }
   const 对话 = String((上下文 && 上下文.对话) || '').trim()
   if (对话) 条.对话 = 对话
@@ -140,14 +142,16 @@ function 改一条(类别, 编号, 新内容, 上下文 = {}) {
   const 文件 = 表[类别]
   if (!文件) throw new Error('不认识的记忆类别: ' + 类别)
   const 要改的 = String(编号 || '').trim()
-  const 文本 = String(新内容 || '').trim()
+  const 原文本 = String(新内容 || '').trim()
   if (!要改的) return { 好: false, 说明: '这条记忆没有编号，不能安全修改' }
-  if (!文本) return { 好: false, 说明: '记忆内容不能为空' }
-  if (文本.length > 2000) return { 好: false, 说明: '记忆内容不能超过 2000 字' }
+  if (!原文本) return { 好: false, 说明: '记忆内容不能为空' }
+  if (原文本.length > 2000) return { 好: false, 说明: '记忆内容不能超过 2000 字' }
 
   const 全部 = 读JSON(文件, [])
   const 条 = 全部.find((一) => String(一 && 一.编号 || '') === 要改的)
   if (!条) return { 好: false, 说明: '没找到这条记忆，可能已经被改动或遗忘' }
+  const 结构 = 记忆结构.规范记忆结构(条, 类别, 条.来源)
+  const 文本 = 记忆叙述.整理正文(原文本, { 人物: 结构.元数据.person, 修正旧代词: true })
   if (String(条.内容 || '').trim() === 文本) return { 好: true, 条, 没变化: true }
   条.内容 = 文本
   条.修改于 = 现在()
@@ -192,15 +196,17 @@ function 应用事实整理({ 版本, 合并们 } = {}) {
 
   for (const 一组 of 合并们) {
     const 编号们 = [...new Set((Array.isArray(一组 && 一组.编号们) ? 一组.编号们 : []).map((x) => String(x || '').trim()).filter(Boolean))]
-    const 新内容 = String((一组 && 一组.新内容) || '').trim()
+    const 原新内容 = String((一组 && 一组.新内容) || '').trim()
     if (编号们.length < 2 || 编号们.length > 5) return { 好: false, 说明: '每组必须包含 2 到 5 条事实' }
-    if (!新内容 || 新内容.length > 800 || /[\[【]\s*(记住|经历|更正事实)\s*[:：]/.test(新内容)) {
+    if (!原新内容 || 原新内容.length > 800 || /[\[【]\s*(记住|经历|更正事实)\s*[:：]/.test(原新内容)) {
       return { 好: false, 说明: '整理后的事实内容不合格' }
     }
     if (编号们.some((编号) => !位置.has(编号) || 用过.has(编号))) return { 好: false, 说明: '方案包含不存在或重复使用的编号' }
     编号们.forEach((编号) => 用过.add(编号))
     涉及条数 += 编号们.length
-    方案.push({ 编号们, 新内容 })
+    const 代表 = 原[位置.get(编号们[0])]
+    const 结构 = 记忆结构.规范记忆结构(代表, '事实', 代表 && 代表.来源)
+    方案.push({ 编号们, 新内容: 记忆叙述.整理正文(原新内容, { 人物: 结构.元数据.person, 修正旧代词: true }) })
   }
   if (涉及条数 > 12) return { 好: false, 说明: '一次整理涉及的事实太多' }
 
@@ -229,7 +235,9 @@ function 排成文字(类别, 最多几条 = 30, 带编号 = false) {
   return 取的.map((条) => {
     const 编号 = 带编号 && 条.编号 ? `[事实编号:${条.编号}] ` : ''
     const 结构 = 记忆结构.规范记忆结构(条, 类别, 条.来源)
-    return `· ${编号}[${条.时间}] [${结构.记忆类型} · ${结构.元数据.person} · ${结构.元数据.relationship}] ${条.内容}`
+    const 元数据 = 记忆叙述.面向她的元数据(结构.元数据)
+    const 内容 = 记忆叙述.整理正文(条.内容, { 人物: 结构.元数据.person, 修正旧代词: true })
+    return `· ${编号}[${条.时间}] [${结构.记忆类型} · ${元数据.person} · ${元数据.relationship}] ${内容}`
   }).join('\n')
 }
 
@@ -752,7 +760,7 @@ function 列长期记忆({ 类别 = '', 搜索 = '', 最多 = 500 } = {}) {
     if (!关键词) return true
     return `${一.内容}\n${一.来源}\n${一.对话}\n${一.会话标题}\n${一.记忆类型}\n${一.元数据.backstory}\n${一.元数据.person}\n${一.元数据.relationship}`.toLocaleLowerCase().includes(关键词)
   })
-  return { 列表: 筛过.slice(0, 限量), 总数: 筛过.length, 截断: 筛过.length > 限量 }
+  return { 列表: 筛过.slice(0, 限量).map(记忆叙述.面向她的记录), 总数: 筛过.length, 截断: 筛过.length > 限量 }
 }
 
 /** 打印一份总览，你自己看 */

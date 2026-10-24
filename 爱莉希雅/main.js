@@ -70,6 +70,7 @@ const 声音启动器 = 创建声音启动器({
   状态: (超时毫秒) => TTS.status(超时毫秒),
 })
 const 记忆 = require(path.join(脑, '记忆.cjs'))
+const 记忆叙述 = require(path.join(脑, '记忆叙述.cjs'))
 const 记忆关系图 = require(path.join(脑, '记忆关系图.cjs'))
 const 记忆关系整理 = require(path.join(脑, '记忆关系整理.cjs'))
 const 记忆聚类就绪 = require(path.join(脑, '记忆聚类就绪.cjs'))
@@ -2460,16 +2461,17 @@ function 接对讲机() {
         const 原关系 = 临时记忆.读取关系(一.关系)
         const 关联编号 = String(原关系.目标编号 || 原关系.由编号 || (原关系.替代编号 && 原关系.替代编号[0]) || '')
         const 关联条 = 关联编号 ? 临时记忆.取一条(关联编号) : null
+        const 展示元数据 = 记忆叙述.面向她的元数据(一.元数据 || {})
         return {
         编号: String(一.编号 || ''),
         类别: String(一.类别 || ''),
         记忆类型: String(一.记忆类型 || ''),
         元数据: {
-          backstory: String(一.元数据 && 一.元数据.backstory || '').slice(0, 240),
-          person: String(一.元数据 && 一.元数据.person || '').slice(0, 80),
-          relationship: String(一.元数据 && 一.元数据.relationship || '').slice(0, 80),
+          backstory: String(展示元数据.backstory || '').slice(0, 240),
+          person: String(展示元数据.person || '').slice(0, 80),
+          relationship: String(展示元数据.relationship || '').slice(0, 80),
         },
-        内容: String(一.内容 || ''),
+        内容: 记忆叙述.整理正文(一.内容, { 人物: 一.元数据 && 一.元数据.person, 修正旧代词: true }),
         创建于: String(一.创建于 || ''),
         更新于: String(一.更新于 || ''),
         到期于: String(一.到期于 || ''),
@@ -2490,7 +2492,7 @@ function 接对讲机() {
           替代编号: (Array.isArray(原关系.替代编号) ? 原关系.替代编号 : []).slice(0, 20).map((编号) => String(编号 || '')),
           决定于: String(原关系.决定于 || ''),
           处理: String(原关系.处理 || ''),
-          关联内容: String(关联条 && 关联条.内容 || '').slice(0, 300),
+          关联内容: 记忆叙述.整理正文(关联条 && 关联条.内容, { 人物: 关联条 && 关联条.元数据 && 关联条.元数据.person, 修正旧代词: true }).slice(0, 300),
         },
         晋升: {
           状态: String(一.晋升 && 一.晋升.状态 || ''),

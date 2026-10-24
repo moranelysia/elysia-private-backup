@@ -10,6 +10,7 @@ const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 const 长期记忆 = require('./记忆.cjs')
 const 时间线 = require('./记忆时间线候选.cjs')
+const 记忆叙述 = require('./记忆叙述.cjs')
 
 const 关系类型们 = Object.freeze(['同一主题', '后续发展', '更新', '矛盾', '先于', '后于'])
 const 自动关系类型们 = Object.freeze(['同一主题', '后续发展', '先于'])
@@ -129,11 +130,12 @@ function 创建关系图库({
     const 原 = 长期记忆库.全部长期记忆().filter((一) => 一 && 一.编号 && 一.内容)
     return 原.map((一, 顺序) => {
       const 线 = 时间线.统一记录(一, '长期记忆', 顺序) || {}
+      const 元数据 = 记忆叙述.面向她的元数据(一.元数据 || {})
       return {
         键: 节点键(一.类别, 一.编号), 编号: String(一.编号), 类别: String(一.类别 || ''),
-        内容: String(一.内容 || '').slice(0, 2000), 时间: String(一.时间 || ''),
-        记忆类型: String(一.记忆类型 || ''), 人物: String(一.元数据 && 一.元数据.person || ''),
-        关系语境: String(一.元数据 && 一.元数据.relationship || ''),
+        内容: 记忆叙述.整理正文(一.内容, { 人物: 一.元数据 && 一.元数据.person, 修正旧代词: true }).slice(0, 2000), 时间: String(一.时间 || ''),
+        记忆类型: String(一.记忆类型 || ''), 人物: String(元数据.person || ''),
+        关系语境: String(元数据.relationship || ''),
         事件时间: 线.事件时间 || { 状态: '未知', 排序键: '' },
       }
     })

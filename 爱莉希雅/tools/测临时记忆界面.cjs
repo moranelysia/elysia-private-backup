@@ -75,7 +75,7 @@ async function main() {
   检查('上下文账本显示召回总分、分项和选择原因', js.includes('评分：${一.评分') && js.includes('分项：相关') && js.includes('一.选择原因'))
   检查('上下文账本区分关键词、类型、意图和语义分', js.includes('类型 ${一.分项') && js.includes('意图 ${一.分项') && js.includes('语义 ${一.分项'))
   检查('上下文账本显示可解释的时间分、因子和半衰期', js.includes('时间 ${一.分项') && js.includes('时间因子') && js.includes('半衰期天数'))
-  检查('主进程只暴露关系白名单和关联摘要', main.includes('状态: String(原关系.状态') && main.includes('关联内容: String(关联条') && !main.includes('关系文件路径'))
+  检查('主进程只暴露关系白名单和第一人称关联摘要', main.includes('状态: String(原关系.状态') && main.includes('关联内容: 记忆叙述.整理正文(关联条') && !main.includes('关系文件路径'))
   检查('替代关系必须在界面人工二选一', preload.includes('处理临时记忆关系:') && js.includes("做决定('替代旧条')") && js.includes("做决定('两条并存')"))
   检查('界面明确展示待处理与已替代状态', js.includes('可能更正旧记忆') && js.includes('本条保留用于追溯，不再召回') && css.includes('.临时状态.关系-待处理'))
   检查('界面支持确认、晋升、恢复、编辑和删除', ['确认临时记忆', '晋升临时记忆', '恢复临时记忆', '开始编辑临时记忆', '删除临时记忆'].every((词) => js.includes(词)))

@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const AdmZip = require('adm-zip')
+const 记忆叙述 = require('../脑/记忆叙述.cjs')
 
 function 文本(值) {
   return String(值 == null ? '' : 值)
@@ -33,7 +34,7 @@ function 做Markdown(记录们, 导出时间) {
       行.push(`- 记录者：${Markdown安全(一.来源) || '未记录'}`)
       行.push(`- 记忆类型：${Markdown安全(一.记忆类型) || '未记录'}`)
       行.push(`- 关于谁：${Markdown安全(一.元数据 && 一.元数据.person) || '未记录'}`)
-      行.push(`- 与用户关系：${Markdown安全(一.元数据 && 一.元数据.relationship) || '未记录'}`)
+      行.push(`- 关系：${Markdown安全(一.元数据 && 一.元数据.relationship) || '未记录'}`)
       行.push(`- 记录缘由：${Markdown安全(一.元数据 && 一.元数据.backstory) || '未记录'}`)
       行.push(`- 来源会话：${Markdown安全(一.会话标题) || '未记录'}`)
       if (一.修改于) 行.push(`- 修改于：${Markdown安全(一.修改于)}${一.修改来源 ? `（${Markdown安全(一.修改来源)}）` : ''}`)
@@ -51,7 +52,7 @@ function 创建长期记忆导出({ 目标文件, 记录们, 现在 = new Date()
   if (!Array.isArray(记录们)) throw new Error('长期记忆数据格式不对')
 
   const 导出时间 = 现在.toISOString()
-  const 安全记录 = 记录们.map((一) => ({
+  const 安全记录 = 记录们.map(记忆叙述.面向她的记录).map((一) => ({
     编号: 文本(一 && 一.编号),
     时间: 文本(一 && 一.时间),
     类别: ['事实', '经历', '小本子'].includes(文本(一 && 一.类别)) ? 文本(一.类别) : '未分类',
