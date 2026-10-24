@@ -38,11 +38,20 @@ function 文本值(环境变量, 字段, 默认值) {
   return 原值 === undefined || 原值 === null || 原值 === '' ? 默认值 : String(原值)
 }
 
+/** 只有明确的 true/1 才能打开高影响后台功能；其他值一律失败关闭。 */
+function 布尔值(环境变量, 字段, 默认值 = false) {
+  const 有环境值 = Object.prototype.hasOwnProperty.call(process.env, 环境变量)
+  const 原值 = 有环境值 ? process.env[环境变量] : 文件配置[字段]
+  if (原值 === undefined || 原值 === null || 原值 === '') return 默认值 === true
+  return 原值 === true || 原值 === 1 || String(原值).trim().toLowerCase() === 'true' || String(原值).trim() === '1'
+}
+
 const 角色卡路径 = 路径值('ELYSIA_PERSONA_PATH', 'personaFile', 'elysia.cosplay.v2.json')
 const 学习区根 = 路径值('ELYSIA_学习区', 'learningDir', '学习')
 // 运行数据默认跟着程序目录走；即使程序文件夹改名，也不会跑到别处。
 const 数据目录 = 路径值('ELYSIA_DATA_DIR', 'dataDir', path.join(项目根, '记忆'))
 const 缓存目录 = 路径值('ELYSIA_CACHE_DIR', 'cacheDir', path.join(项目根, '.cache'))
+const 私密日记自动生成 = 布尔值('ELYSIA_PRIVATE_DIARY_ENABLED', 'privateDiaryEnabled', false)
 const 桌宠目录 = 路径值(
   'ELYSIA_PET_DIR',
   'petDir',
@@ -90,6 +99,7 @@ const 出口 = {
   学习区根,
   数据目录,
   缓存目录,
+  私密日记自动生成,
   桌宠目录,
   语音转接层,
   ASR根,

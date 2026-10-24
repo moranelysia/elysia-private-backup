@@ -75,6 +75,14 @@ const 记忆关系整理 = require(path.join(脑, '记忆关系整理.cjs'))
 const 记忆聚类就绪 = require(path.join(脑, '记忆聚类就绪.cjs'))
 const 记忆日记 = require(path.join(脑, '记忆日记.cjs'))
 const 私密日记 = require(path.join(脑, '私密日记.cjs')).创建私密日记库({ 数据目录: 配置.数据目录 })
+const 私密日记调度 = require(path.join(脑, '私密日记调度.cjs')).创建私密日记调度({
+  已启用: 配置.私密日记自动生成,
+  数据目录: 配置.数据目录,
+  取连接: () => {
+    const { 钥匙 } = 拿钥匙()
+    return { 钥匙, 地址: 模型地址, 模型: process.env.ELYSIA_MEMORY_MODEL || 默认模型 }
+  },
+})
 const 临时记忆 = require(path.join(脑, '临时记忆.cjs'))
 const { 晋升到长期 } = require(path.join(脑, '临时记忆晋升.cjs'))
 const 工作索引 = require(path.join(脑, '工作索引.cjs'))
@@ -3490,6 +3498,9 @@ if (!app.requestSingleInstanceLock()) {
     日记检查计时器 = setInterval(() => 唤醒记忆日记(), 15 * 60 * 1000)
     if (日记首次计时器.unref) 日记首次计时器.unref()
     if (日记检查计时器.unref) 日记检查计时器.unref()
+    // M-36A 只接好独立调度底座；配置默认关闭，M-36B 验证正式写入前不会创建私密日记。
+    const 私密调度状态 = 私密日记调度.启动()
+    console.log('私密日记自动生成: ' + (私密调度状态.已启动 ? '调度已启动' : '关闭'))
 
     // 关系整理只做本地计算：启动后检查一次，之后每 30 分钟核对输入指纹。
     // 同一份记忆不会重复整理；新增或修改时另有 45 秒防抖和 10 分钟最小间隔。
@@ -3566,6 +3577,7 @@ if (!app.requestSingleInstanceLock()) {
     app.isQuitting = true
     if (日记首次计时器) clearTimeout(日记首次计时器)
     if (日记检查计时器) clearInterval(日记检查计时器)
+    私密日记调度.停止()
     if (关系整理首次计时器) clearTimeout(关系整理首次计时器)
     if (关系整理检查计时器) clearInterval(关系整理检查计时器)
     if (聚类就绪首次计时器) clearTimeout(聚类就绪首次计时器)
