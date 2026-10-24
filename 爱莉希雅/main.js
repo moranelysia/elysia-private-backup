@@ -72,6 +72,7 @@ const 声音启动器 = 创建声音启动器({
 const 记忆 = require(path.join(脑, '记忆.cjs'))
 const 记忆关系图 = require(path.join(脑, '记忆关系图.cjs'))
 const 记忆关系整理 = require(path.join(脑, '记忆关系整理.cjs'))
+const 记忆聚类就绪 = require(path.join(脑, '记忆聚类就绪.cjs'))
 const 记忆日记 = require(path.join(脑, '记忆日记.cjs'))
 const 临时记忆 = require(path.join(脑, '临时记忆.cjs'))
 const { 晋升到长期 } = require(path.join(脑, '临时记忆晋升.cjs'))
@@ -91,6 +92,8 @@ let 日记首次计时器 = null
 let 日记检查计时器 = null
 let 关系整理首次计时器 = null
 let 关系整理检查计时器 = null
+let 聚类就绪首次计时器 = null
+let 聚类就绪检查计时器 = null
 
 /** 日记只在后台整理已结束的周期；任何失败都不能挡住启动或聊天。 */
 function 唤醒记忆日记() {
@@ -2327,7 +2330,10 @@ function 接对讲机() {
     if (选择.response !== 1) return { 好: false, 取消了: true }
     try {
       const 果 = 记忆.清空全部长期记忆()
-      if (!果.没变化) 记忆关系整理.排队({ 原因: '用户清空长期记忆' })
+      if (!果.没变化) {
+        记忆关系整理.排队({ 原因: '用户清空长期记忆' })
+        记忆聚类就绪.排队({ 原因: '用户清空长期记忆' })
+      }
       return { 好: true, 条数: 果.条数, 没变化: !!果.没变化, 已备份: !!果.备份文件 }
     } catch (错误) {
       console.log('⚠ 长期记忆清空失败：' + 错误.message)
@@ -2345,7 +2351,10 @@ function 接对讲机() {
     if (内容.trim().length > 2000) return { 好: false, 说明: '记忆内容不能超过 2000 字' }
     try {
       const 果 = 记忆.改一条(类别, 编号, 内容)
-      if (果.好 && !果.没变化) 记忆关系整理.排队({ 原因: '用户修改长期记忆' })
+      if (果.好 && !果.没变化) {
+        记忆关系整理.排队({ 原因: '用户修改长期记忆' })
+        记忆聚类就绪.排队({ 原因: '用户修改长期记忆' })
+      }
       return 果.好 ? { 好: true, 没变化: !!果.没变化 } : 果
     } catch (错误) {
       console.log('⚠ 修改长期记忆失败：' + 错误.message)
@@ -2360,7 +2369,10 @@ function 接对讲机() {
     if (!编号) return { 好: false, 说明: '这条记忆没有编号，不能安全遗忘' }
     try {
       const 删了 = 记忆.删一条(类别, 编号)
-      if (删了) 记忆关系整理.排队({ 原因: '用户遗忘长期记忆' })
+      if (删了) {
+        记忆关系整理.排队({ 原因: '用户遗忘长期记忆' })
+        记忆聚类就绪.排队({ 原因: '用户遗忘长期记忆' })
+      }
       return 删了 ? { 好: true } : { 好: false, 说明: '没找到这条记忆，可能已经被改动或遗忘' }
     } catch (错误) {
       console.log('⚠ 遗忘长期记忆失败：' + 错误.message)
@@ -2588,6 +2600,7 @@ function 接对讲机() {
     if (!Number.isInteger(重要性) || 重要性 < 0 || 重要性 > 3) return { 好: false, 说明: '重要性必须是 0 到 3' }
     try {
       const 条 = 临时记忆.新增(类别, 内容, { 保留天数, 重要性, 标签, 记忆类型, 提取方式: '手动' })
+      记忆聚类就绪.排队({ 原因: '用户新增临时记忆' })
       return { 好: true, 编号: 条.编号 }
     } catch (错误) {
       console.log('⚠ 新增临时记忆失败：' + 错误.message)
@@ -2611,6 +2624,7 @@ function 接对讲机() {
     }
     try {
       const 果 = 临时记忆.修改(编号, 改动)
+      if (果.好 && !果.没变化) 记忆聚类就绪.排队({ 原因: '用户修改临时记忆' })
       return 果.好 ? { 好: true, 没变化: !!果.没变化 } : 果
     } catch (错误) {
       console.log('⚠ 修改临时记忆失败：' + 错误.message)
@@ -2626,6 +2640,7 @@ function 接对讲机() {
     if (!['替代旧条', '两条并存'].includes(选择)) return { 好: false, 说明: '关系决定不受支持' }
     try {
       const 果 = 临时记忆.决定替代(编号, 选择)
+      if (果.好) 记忆聚类就绪.排队({ 原因: '用户处理临时记忆关系' })
       return 果.好 ? { 好: true, 选择: 果.选择 } : 果
     } catch (错误) {
       console.log('⚠ 处理临时记忆关系失败：' + 错误.message)
@@ -2638,7 +2653,9 @@ function 接对讲机() {
     const 编号 = String(原编号 || '').trim().slice(0, 120)
     if (!编号) return { 好: false, 说明: '临时记忆编号不能为空' }
     try {
-      return 临时记忆.删除(编号) ? { 好: true } : { 好: false, 说明: '没找到这条临时记忆' }
+      const 删了 = 临时记忆.删除(编号)
+      if (删了) 记忆聚类就绪.排队({ 原因: '用户删除临时记忆' })
+      return 删了 ? { 好: true } : { 好: false, 说明: '没找到这条临时记忆' }
     } catch (错误) {
       console.log('⚠ 删除临时记忆失败：' + 错误.message)
       return { 好: false, 说明: 错误.message || '临时记忆没有删除成功' }
@@ -2651,7 +2668,11 @@ function 接对讲机() {
     const 保留天数 = Number(请求 && 请求.保留天数)
     if (!编号) return { 好: false, 说明: '临时记忆编号不能为空' }
     if (!Number.isInteger(保留天数) || 保留天数 < 1 || 保留天数 > 30) return { 好: false, 说明: '保留天数必须是 1 到 30' }
-    try { return 临时记忆.恢复(编号, 保留天数) } catch (错误) {
+    try {
+      const 果 = 临时记忆.恢复(编号, 保留天数)
+      if (果.好) 记忆聚类就绪.排队({ 原因: '用户恢复临时记忆' })
+      return 果
+    } catch (错误) {
       console.log('⚠ 恢复临时记忆失败：' + 错误.message)
       return { 好: false, 说明: '临时记忆没有恢复成功' }
     }
@@ -2665,7 +2686,10 @@ function 接对讲机() {
     if (!['事实', '经历', '小本子'].includes(去向)) return { 好: false, 说明: '晋升去向不对' }
     try {
       const 果 = 晋升到长期({ 临时库: 临时记忆, 长期库: 记忆, 编号, 去向 })
-      if (果.好 && !果.没变化) 记忆关系整理.排队({ 原因: '用户将临时记忆晋升到长期层' })
+      if (果.好 && !果.没变化) {
+        记忆关系整理.排队({ 原因: '用户将临时记忆晋升到长期层' })
+        记忆聚类就绪.排队({ 原因: '用户将临时记忆晋升到长期层' })
+      }
       return 果
     } catch (错误) {
       console.log('⚠ 晋升临时记忆失败：' + 错误.message)
@@ -3425,6 +3449,12 @@ if (!app.requestSingleInstanceLock()) {
     if (关系整理首次计时器.unref) 关系整理首次计时器.unref()
     if (关系整理检查计时器.unref) 关系整理检查计时器.unref()
 
+    // P2 聚类只重算只读候选和就绪门控，不会启动压缩、二级存储或召回。
+    聚类就绪首次计时器 = setTimeout(() => 记忆聚类就绪.排队({ 原因: '启动后检查', 立即: true }), 45000)
+    聚类就绪检查计时器 = setInterval(() => 记忆聚类就绪.排队({ 原因: '定期聚类就绪检查', 立即: true }), 30 * 60 * 1000)
+    if (聚类就绪首次计时器.unref) 聚类就绪首次计时器.unref()
+    if (聚类就绪检查计时器.unref) 聚类就绪检查计时器.unref()
+
     建窗口()
     接对讲机()
     建账本窗() // 先把面板建出来（藏着），这样点开关的时候是立刻就出来
@@ -3489,7 +3519,10 @@ if (!app.requestSingleInstanceLock()) {
     if (日记检查计时器) clearInterval(日记检查计时器)
     if (关系整理首次计时器) clearTimeout(关系整理首次计时器)
     if (关系整理检查计时器) clearInterval(关系整理检查计时器)
+    if (聚类就绪首次计时器) clearTimeout(聚类就绪首次计时器)
+    if (聚类就绪检查计时器) clearInterval(聚类就绪检查计时器)
     记忆关系整理.取消()
+    记忆聚类就绪.取消()
     if (主动陪伴调度) 主动陪伴调度.停止()
     取消主动陪伴生成()
     for (const 控制器 of 语音识别请求.values()) 控制器.abort()
