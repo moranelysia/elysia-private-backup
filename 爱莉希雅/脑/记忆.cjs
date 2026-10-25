@@ -50,7 +50,7 @@ function 读JSON(文件, 默认值) {
     if (!内容) return 默认值
     return JSON.parse(内容)
   } catch (错误) {
-    if (错误.code !== 'ENOENT') {
+    if (错误.code !== 'ENOENT' && 配置.文件配置.模式 !== 'fake-chat') {
       console.log(`⚠ 记忆文件读不动（${path.basename(文件)}）：${错误.message}`)
     }
     return 默认值
@@ -586,7 +586,8 @@ function 补一次老记录那段() {
  * 读聊天记录。
  * @param {number} 最多几条  取最后这么多条；传 0 就是全读
  */
-function 读聊天记录(最多几条 = 0) {
+function 读聊天记录(最多几条 = 0, 选项 = {}) {
+  if (Object.hasOwn(选项, '对话')) return 读指定聊天(选项.对话, 最多几条)
   并进一个文件()
 
   // 【只挑**这一段**的 —— 别的对话一个字都不掺进来】
@@ -612,9 +613,76 @@ const 是分隔 = (条) => !!条 && 条.角色 === '分隔'
  *
  * @param {number} 最多几条
  */
-function 读最近聊天(最多几条 = 20) {
-  const 这一段 = 读聊天记录(0)
+function 读最近聊天(最多几条 = 20, 选项 = {}) {
+  const 这一段 = 读聊天记录(0, 选项)
   return 最多几条 > 0 ? 这一段.slice(-最多几条) : 这一段
+}
+
+// 独立核心使用显式编号；不切换桌面指针，不触发旧分日记录迁移，损坏时失败关闭。
+function 显式编号(编号) {
+  if (typeof 编号 !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/u.test(编号)) throw new Error('CHAT_ID_INVALID')
+  return 编号
+}
+function 读指定聊天(编号, 最多几条 = 0) {
+  显式编号(编号)
+  try {
+    let 内容
+    try {
+      if (fs.statSync(聊天文件).size > 64 * 1024 * 1024) throw new Error('CHAT_HISTORY_LIMIT')
+      内容 = fs.readFileSync(聊天文件, 'utf8')
+    } catch (错) { if (错.code === 'ENOENT') return []; throw 错 }
+    const 全部 = 内容.replace(/^\uFEFF/u, '').split('\n').filter((行) => 行.trim()).map((行) => JSON.parse(行))
+    if (全部.some((条) => !条 || typeof 条 !== 'object' || !['user', 'assistant', '分隔'].includes(条.角色) || typeof 条.内容 !== 'string' || typeof 条.时间 !== 'string')) throw new Error('CHAT_HISTORY_INVALID')
+    const 结果 = 全部.filter((条) => 这段编号(条) === 编号)
+    return 最多几条 > 0 ? 结果.slice(-最多几条) : 结果
+  } catch { throw new Error('CHAT_HISTORY_UNAVAILABLE') }
+}
+function 登记对话(编号, { 模型 = '', 建于 = new Date().toISOString() } = {}) {
+  let 临时
+  try {
+    显式编号(编号)
+    if (typeof 模型 !== 'string' || 模型.length > 128 || typeof 建于 !== 'string' || !Number.isFinite(Date.parse(建于)) || new Date(建于).toISOString() !== 建于) throw new Error('CHAT_REGISTRATION_INVALID')
+    let 索引
+    try {
+      if (fs.statSync(索引文件).size > 4 * 1024 * 1024) throw new Error('CHAT_INDEX_LIMIT')
+      索引 = JSON.parse(fs.readFileSync(索引文件, 'utf8').replace(/^\uFEFF/u, ''))
+    } catch (错) { if (错.code !== 'ENOENT') throw 错; 索引 = [] }
+    if (!Array.isArray(索引) || 索引.some((条) => !条 || typeof 条.编号 !== 'string') || new Set(索引.map((条) => 条.编号)).size !== 索引.length) throw new Error('CHAT_INDEX_INVALID')
+    if (索引.some((条) => 条.编号 === 编号)) return { 好: true, 对话: 编号, 新建: false }
+    索引.push({ 编号, 标题: '', 建于, 模型, 模式: 'chat', 写长期记忆: false })
+    fs.mkdirSync(聊天目录, { recursive: true })
+    临时 = 索引文件 + '.' + crypto.randomUUID() + '.tmp'
+    fs.writeFileSync(临时, JSON.stringify(索引, null, 2), { encoding: 'utf8', flag: 'wx' })
+    fs.renameSync(临时, 索引文件); 临时 = null
+    return { 好: true, 对话: 编号, 新建: true }
+  } catch { return { 好: false, 代码: 'CHAT_REGISTRATION_FAILED' } }
+  finally { if (临时) { try { fs.unlinkSync(临时) } catch { /* 未提交临时文件，原档保留 */ } } }
+}
+
+/** 单次追加整轮；失败后可能已写入部分字节，回执 unknown，调用方不得自动重做。 */
+function 存对话一轮({ 对话, 用户正文, 回复正文, 发生于 = null, 接收于, 完成于 } = {}) {
+  let fd
+  try {
+    显式编号(对话)
+    const 是UTC = (值) => typeof 值 === 'string' && Number.isFinite(Date.parse(值)) && new Date(值).toISOString() === 值
+    if (typeof 用户正文 !== 'string' || typeof 回复正文 !== 'string' || (发生于 !== null && !是UTC(发生于)) || !是UTC(接收于) || !是UTC(完成于)) throw new Error('CHAT_TURN_INVALID')
+    // 不向已经损坏的历史末尾追加，也不把损坏当成空会话。
+    读指定聊天(对话)
+    const 条们 = [
+      { 时间: 发生于 || 接收于, 角色: 'user', 内容: 用户正文, 对话, 发生于, 接收于 },
+      { 时间: 完成于, 角色: 'assistant', 内容: 回复正文, 对话 },
+    ]
+    fs.mkdirSync(聊天目录, { recursive: true })
+    fd = fs.openSync(聊天文件, 'a+')
+    const 大小 = fs.fstatSync(fd).size, 末字节 = Buffer.alloc(1)
+    if (大小 > 0) fs.readSync(fd, 末字节, 0, 1, 大小 - 1)
+    const 字节 = Buffer.from((大小 > 0 && 末字节[0] !== 10 ? '\n' : '') + 条们.map((条) => JSON.stringify(条) + '\n').join(''))
+    let 偏移 = 0
+    while (偏移 < 字节.length) { const 数 = fs.writeSync(fd, 字节, 偏移, 字节.length - 偏移); if (数 <= 0) throw new Error('CHAT_WRITE_FAILED'); 偏移 += 数 }
+    fs.fsyncSync(fd)
+    return { 好: true, 状态: 'saved', 对话, 条数: 2 }
+  } catch { return { 好: false, 状态: 'unknown', 代码: 'CHAT_TURN_WRITE_FAILED', 对话 } }
+  finally { if (fd !== undefined) { try { fs.closeSync(fd) } catch { /* 回执不暴露原始磁盘错误 */ } } }
 }
 
 /** 这条记录是哪一天（用来在窗口里插"—— 9月27日 ——"那种分隔） */
@@ -802,6 +870,7 @@ module.exports = {
   全部长期记忆,
   清空全部长期记忆,
   存聊天,
+  存对话一轮,
   读最近聊天,
   读聊天记录,
   全部记录,
@@ -812,6 +881,7 @@ module.exports = {
   现在哪一段,
   设当前对话,
   建新对话,
+  登记对话,
   这段的模型,
   这段的模式,
   设这段的模式,

@@ -32,7 +32,7 @@ function 读JSON(文件, 上限) {
   if (!状态.isFile() || 状态.isSymbolicLink() || 状态.size > 上限) 拒绝('HEADLESS_CONFIG_INVALID')
   return JSON.parse(fs.readFileSync(文件, 'utf8').replace(/^\uFEFF/u, ''))
 }
-function 读取健康配置(文件, { 环境 = process.env } = {}) {
+function 读取配置(文件, { 环境 = process.env } = {}, 模式 = 'health') {
   try {
     const 清单路径 = 绝对路径(文件)
     if (path.basename(清单路径) !== 'headless.config.json') 拒绝('HEADLESS_CONFIG_INVALID')
@@ -45,7 +45,7 @@ function 读取健康配置(文件, { 环境 = process.env } = {}) {
     if (保护目录.some((根) => 在内(根, 配置实际))) 拒绝('HEADLESS_PROTECTED_PATH')
     const 清单 = 读JSON(清单路径, 16384)
     精确字段(清单, ['版本', '模式', '隔离根', ...路径字段])
-    if (清单.版本 !== 1 || 清单.模式 !== 'health') 拒绝('HEADLESS_CONFIG_INVALID')
+    if (清单.版本 !== 1 || 清单.模式 !== 模式) 拒绝('HEADLESS_CONFIG_INVALID')
     const 声明根 = 绝对路径(清单.隔离根)
     if (!fs.lstatSync(声明根).isDirectory() || fs.lstatSync(声明根).isSymbolicLink()) 拒绝('HEADLESS_PATH_LINK')
     const 根 = fs.realpathSync(声明根)
@@ -66,7 +66,7 @@ function 读取健康配置(文件, { 环境 = process.env } = {}) {
     const 标记 = 读JSON(标记路径, 1024)
     精确字段(标记, ['版本', '用途'])
     if (标记.版本 !== 1 || 标记.用途 !== 'headless-test') 拒绝('HEADLESS_ROOT_UNMARKED')
-    const 结果 = { 版本: 1, 模式: 'health', 隔离根: 根, 配置文件: 检查路径(清单路径) }
+    const 结果 = { 版本: 1, 模式, 隔离根: 根, 配置文件: 检查路径(清单路径) }
     for (const 字段 of 路径字段) 结果[字段] = 检查路径(清单[字段])
     for (const 字段 of ['工作区', '数据目录', '缓存目录', '学习区', '附件目录', '纸条目录']) {
       if (fs.existsSync(结果[字段]) && !fs.statSync(结果[字段]).isDirectory()) 拒绝('HEADLESS_PATH_TYPE')
@@ -88,4 +88,7 @@ function 读取健康配置(文件, { 环境 = process.env } = {}) {
     throw new Error(代码)
   }
 }
-module.exports = { 读取健康配置 }
+module.exports = {
+  读取健康配置: (文件, 选项) => 读取配置(文件, 选项, 'health'),
+  读取假对话配置: (文件, 选项) => 读取配置(文件, 选项, 'fake-chat'),
+}
