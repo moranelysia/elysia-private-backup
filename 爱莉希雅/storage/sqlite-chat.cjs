@@ -192,4 +192,4 @@ function 创建会话仓储(上下文) {
     }) },
   })
 }
-module.exports = { 创建会话仓储 }
+module.exports = { 创建会话仓储, 内部消息对象: 消息对象 }

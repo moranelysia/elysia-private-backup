@@ -48,7 +48,7 @@ function 原子执行(上下文, 做) {
         try { db.exec('ROLLBACK') } catch { 内部.可用 = false; 失败('SQLITE_CONTEXT_ROLLBACK_FAILED') }
       } else if (正在提交) { 内部.可用 = false; 失败('SQLITE_CONTEXT_COMMIT_UNKNOWN') }
     }
-    if (/^SQLITE_(CHAT|CONTEXT)_[A-Z_]+$/u.test(错?.message || '')) throw 错
+    if (/^SQLITE_(CHAT|MEMORY|CONTEXT)_[A-Z_]+$/u.test(错?.message || '')) throw 错
     失败('SQLITE_CONTEXT_TRANSACTION_FAILED')
   } finally { 内部.写入中 = false }
 }

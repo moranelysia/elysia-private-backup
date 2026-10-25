@@ -35,6 +35,7 @@ const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 const 记忆结构 = require('./记忆结构.cjs')
 const 记忆叙述 = require('./记忆叙述.cjs')
+const { 自动阈值 } = require('./临时记忆自主评估.cjs')
 
 const 记忆目录 = 配置.数据目录
 const 事实文件 = path.join(记忆目录, '事实.json')
@@ -113,7 +114,7 @@ function 记一条(类别, 内容, 来源 = '她', 上下文 = {}) {
   if (上下文 && 上下文.自主评估 && typeof 上下文.自主评估 === 'object') {
     const 分数 = Number(上下文.自主评估.分数)
     const 依据 = Array.isArray(上下文.自主评估.依据) ? 上下文.自主评估.依据.map((一) => String(一 || '').trim()).filter(Boolean).slice(0, 8) : []
-    if (Number.isInteger(分数) && 分数 >= 70 && 分数 <= 100 && 依据.length) {
+    if (Number.isInteger(分数) && 分数 >= 自动阈值 && 分数 <= 100 && 依据.length) {
       条.自主评估 = { 分数, 依据, 提及次数: Math.max(1, Math.min(99, Number(上下文.自主评估.提及次数) || 1)), 确认于: String(上下文.自主评估.确认于 || '') }
     }
   }
