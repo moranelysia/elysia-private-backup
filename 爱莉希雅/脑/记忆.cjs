@@ -50,7 +50,7 @@ function 读JSON(文件, 默认值) {
     if (!内容) return 默认值
     return JSON.parse(内容)
   } catch (错误) {
-    if (错误.code !== 'ENOENT' && 配置.文件配置.模式 !== 'fake-chat') {
+    if (错误.code !== 'ENOENT' && !['fake-chat', 'real-chat'].includes(配置.文件配置.模式)) {
       console.log(`⚠ 记忆文件读不动（${path.basename(文件)}）：${错误.message}`)
     }
     return 默认值

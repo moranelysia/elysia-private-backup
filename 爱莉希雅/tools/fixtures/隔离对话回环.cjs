@@ -1,6 +1,6 @@
 'use strict'
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path')
-const { 创建假模型连接, 创建严格凭据 } = require('../../脑/模型连接.cjs')
+const { 创建假模型连接, 创建严格凭据, 创建真实模型连接 } = require('../../脑/模型连接.cjs')
 const { 创建隔离对话核心 } = require('../../core/隔离对话核心.cjs')
 const { 创建渠道权限, 创建渠道权限守卫 } = require('../../脑/渠道权限.cjs')
 const { 创建假渠道适配器 } = require('../../脑/假渠道适配器.cjs')
@@ -26,7 +26,36 @@ function 渠道(处理 = 核心.处理) {
   调度.启动()
 }
 async function main() {
-  if (场景 === 'credentials') {
+  if (场景 === 'real-core' || 场景 === 'real-http-failure' || 场景 === 'real-cancel') {
+    fs.writeFileSync(配置文件, JSON.stringify({ ...配置, 模式: 'real-chat' })); process.env.TZ = 'UTC'
+    let 开始; const 已开始 = new Promise((好) => { 开始 = 好 })
+    const 连接 = 创建真实模型连接({ 凭据: 创建严格凭据({ 读取: () => 'fixture-core-key-only-123456789' }),
+      fetch函数: async () => {
+        开始()
+        if (场景 === 'real-http-failure') return new Response('PRIVATE-HTTP-SENTINEL', { status: 401 })
+        if (场景 === 'real-cancel') return new Response(new ReadableStream({ start() {} }), { headers: { 'content-type': 'application/json' } })
+        return new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: '固定回复。' } }], usage: { prompt_tokens: 100, completion_tokens: 8, total_tokens: 108 } }), { headers: { 'content-type': 'application/json' } })
+      },
+    })
+    核心 = 创建隔离对话核心({ 配置文件, 模型连接: 连接 }); assert.equal(process.env.TZ, 'Asia/Shanghai')
+    if (场景 === 'real-core') {
+      渠道(); await 适配器.注入接收(来信()); assert.equal(调度.取任务状态()[0].状态, 'sent'); assert.equal(读历史().length, 2)
+      await 适配器.注入接收(来信('m2')); assert.equal(调度.取任务状态()[1].状态, 'failed'); assert.equal(连接.取状态().已发请求, 1)
+      assert(!fs.existsSync(path.join(配置.数据目录, '用量.jsonl')))
+    } else if (场景 === 'real-cancel') {
+      const 控制 = new AbortController(), 本次 = 核心.处理(来信(), 上下文('channel-cancel', 控制.signal)); await 已开始; 控制.abort(); await assert.rejects(本次, /CORE_ABORTED/u); assert.equal(读历史().length, 0)
+    } else await assert.rejects(核心.处理(来信(), 上下文()), /CORE_AUTH_FAILED/u)
+    const 账 = fs.readFileSync(path.join(配置.数据目录, '核心用量.jsonl'), 'utf8'); assert(!账.includes('PRIVATE-HTTP-SENTINEL')); assert(!账.includes('fixture-core-key')); assert(账.includes('started'))
+    if (场景 === 'real-core') assert(账.includes('108'))
+  } else if (场景 === 'background-core') {
+    const 时 = Date.parse(现在), 生成 = async (消息) => 消息[0].content.includes('短期记忆候选提取器') ? '{"候选":[]}' : '固定回复。'
+    核心 = 创建隔离对话核心({ 配置文件, 模型连接: 创建假模型连接({ 生成 }), 后台设置: { extract: true, relations: true, clusters: true }, 后台时钟: { 现在: () => new Date(时), 设延时: () => 1, 清延时: () => {} } })
+    for (let i = 0; i < 3; i++) await 核心.处理(来信('m' + i), 上下文())
+    assert.equal(核心.取状态().后台.待提取轮数, 3); await 核心.推进后台(); assert.equal(核心.取状态().后台.待提取轮数, 0)
+    await 核心.关闭(); assert.equal(核心.取状态().后台.计时器, 0); assert(!fs.existsSync(path.join(配置.数据目录, '.headless-fake.lock')))
+  } else if (场景 === 'timezone-changed') {
+    建(async () => { process.env.TZ = 'UTC'; return '固定回复。' }); await assert.rejects(核心.处理(来信(), 上下文()), /CORE_TIMEZONE_CHANGED/u); assert.equal(读历史().length, 0)
+  } else if (场景 === 'credentials') {
     assert.throws(() => 创建严格凭据(), /CORE_CREDENTIAL_PROVIDER_REQUIRED/u)
     for (const 值 of [null, '', 'short', Promise.resolve('fake'), { 钥匙: 'fake' }, 'x'.repeat(5000), 'x'.repeat(24) + '\n']) assert.throws(() => 创建严格凭据({ 读取: () => 值 }).取(), /CORE_CREDENTIAL_UNAVAILABLE/u)
     assert.throws(() => 创建严格凭据({ 读取: () => { throw new Error('PRIVATE-SENTINEL') } }).取(), /^Error: CORE_CREDENTIAL_UNAVAILABLE$/u)

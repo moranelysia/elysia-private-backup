@@ -5,6 +5,7 @@
  * “同一主题 / 后续发展 / 先于”；更新、矛盾、反向时间边和低置信候选始终留给人工。
  */
 'use strict'
+const { 检查任务 } = require('./任务控制.cjs')
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -111,7 +112,8 @@ function 创建整理器({
     return { 节点们, 记录们, 输入指纹 }
   }
 
-  function 整理一次({ 原因 = '后台检查', 强制 = false } = {}) {
+  function 整理一次({ 原因 = '后台检查', 强制 = false, 中止, 检查写入 } = {}) {
+    检查任务({ 中止, 检查写入 })
     if (正在整理) { 待补一次 = true; return { 好: true, 已排队: true } }
     正在整理 = true
     try {

@@ -26,6 +26,7 @@ try {
   for (const 名 of ['credentials', 'invalid-model', 'early-import', 'wrong-mode', 'env-conflict', 'locked', 'roundtrip', 'timestamps', 'concurrent', 'corrupt-history', 'corrupt-index', 'write-failure', 'partial-write', 'fsync-failure', 'no-final-newline', 'missing-history', 'missing-index', 'junction-before', 'junction-during', 'disabled-tools', 'bad-input', 'abort-before', 'abort-during', 'close-during', 'revoke-during', 'changed-path', 'changed-config', 'model-error', 'bad-output', 'legacy', 'shutdown']) 执行(名)
   const 跨进程 = 执行('restart-first'); 执行('restart-second', 跨进程)
   执行('model-error-prefix'); 执行('lost-lock')
+  for (const 名 of ['real-core', 'real-http-failure', 'real-cancel', 'background-core', 'timezone-changed']) 执行(名)
   console.log(`隔离对话核心：${总数}/${总数} 通过`)
 } finally {
   const 绝对根 = path.resolve(根), 临时根 = path.resolve(os.tmpdir()), 相对 = path.relative(临时根, 绝对根)

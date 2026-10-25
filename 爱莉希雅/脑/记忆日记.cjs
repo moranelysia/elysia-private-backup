@@ -11,6 +11,7 @@ const path = require('node:path')
 const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 const 记忆叙述 = require('./记忆叙述.cjs')
+const { 检查任务 } = require('./任务控制.cjs')
 
 const 模块名们 = Object.freeze(['回顾', '学习', '工作', '陪伴片段', '未完事项'])
 const 日记可见性们 = Object.freeze(['shared', 'private'])
@@ -319,9 +320,11 @@ function 创建日记系统(选项 = {}) {
   }
 
   async function 执行待办(连接 = {}, 最多 = 8) {
+    检查任务(连接)
     const 现在 = 正常日期(取现在())
     let 已处理 = 0
     while (已处理 < 最多) {
+      检查任务(连接)
       const 索引 = 读索引()
       const 任务 = 索引.任务.find((一) => 可执行(一, 现在))
       if (!任务) break
@@ -332,6 +335,7 @@ function 创建日记系统(选项 = {}) {
       try {
         const 期间 = { 类型: 任务.类型, 周期: 任务.周期, 开始: new Date(任务.开始), 结束: new Date(任务.结束) }
         const 来源们 = 规整来源(await 取来源(期间))
+        检查任务(连接)
         const 最新 = 读索引()
         const 当前 = 最新.任务.find((一) => 一.编号 === 任务.编号)
         if (!当前) throw new Error('日记任务在执行期间消失')
@@ -348,6 +352,7 @@ function 创建日记系统(选项 = {}) {
         }
 
         const 原始结果 = await 生成({ 期间, 来源们, ...连接 })
+        检查任务(连接)
         const 内容 = 校验生成结果(原始结果, 来源们)
         const 文件 = 日记路径(任务.类型, 任务.周期)
         let 旧 = null
@@ -373,6 +378,8 @@ function 创建日记系统(选项 = {}) {
         当前.状态 = '已完成'
         写索引(最新)
       } catch (错误) {
+        // 停止后保留此前处理中记录，重启再恢复；不能迟到写失败/重试状态。
+        检查任务(连接)
         const 最新 = 读索引()
         const 当前 = 最新.任务.find((一) => 一.编号 === 任务.编号)
         if (当前) {
@@ -550,7 +557,7 @@ function 校验生成结果(原始, 来源们) {
   return { 标题: 截(记忆叙述.整理日记正文(值.标题), 120), 模块 }
 }
 
-async function 生成日记({ 期间, 来源们, 钥匙, 地址 = process.env.ELYSIA_LLM_URL || 'https://api.deepseek.com/v1/chat/completions', 模型 = process.env.ELYSIA_MEMORY_MODEL || process.env.ELYSIA_LLM_MODEL || 'deepseek-chat', fetch函数 = global.fetch, 超时 = 60000 }) {
+async function 生成日记({ 期间, 来源们, 钥匙, 地址 = process.env.ELYSIA_LLM_URL || 'https://api.deepseek.com/v1/chat/completions', 模型 = process.env.ELYSIA_MEMORY_MODEL || process.env.ELYSIA_LLM_MODEL || 'deepseek-chat', fetch函数 = global.fetch, 超时 = 60000, 中止 }) {
   if (!钥匙) throw new Error('没有模型 API Key')
   const 控制器 = new AbortController()
   const 闹钟 = setTimeout(() => 控制器.abort(), 超时)
@@ -565,7 +572,7 @@ async function 生成日记({ 期间, 来源们, 钥匙, 地址 = process.env.EL
           { role: 'user', content: `周期：${期间.周期}\n开始：${期间.开始.toISOString()}\n结束：${期间.结束.toISOString()}\n来源：\n${JSON.stringify(来源们)}` },
         ],
       }),
-      signal: 控制器.signal,
+      signal: 中止 ? AbortSignal.any([控制器.signal, 中止]) : 控制器.signal,
     })
     if (!回应.ok) throw new Error('日记模型请求失败：HTTP ' + 回应.status)
     const 包 = await 回应.json()

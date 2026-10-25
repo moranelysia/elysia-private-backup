@@ -5,6 +5,7 @@
  * 模型只能提出候选；是否自主确认由独立本地评分决定，冲突候选仍必须人工处理。
  */
 'use strict'
+const { 检查任务 } = require('./任务控制.cjs')
 
 const crypto = require('node:crypto')
 const 临时记忆 = require('./临时记忆.cjs')
@@ -132,7 +133,7 @@ function 规整候选(值, { 用户原话 = '', 对话轮次 = [], 已有内容 
   return 结果
 }
 
-async function 问模型({ 钥匙, 地址, 模型, 消息们, fetch函数, 超时 = 45000 }) {
+async function 问模型({ 钥匙, 地址, 模型, 消息们, fetch函数, 超时 = 45000, 中止 }) {
   const 掐 = new AbortController()
   const 闹钟 = setTimeout(() => 掐.abort(), 超时)
   try {
@@ -140,7 +141,7 @@ async function 问模型({ 钥匙, 地址, 模型, 消息们, fetch函数, 超�
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + 钥匙 },
       body: JSON.stringify({ model: 模型, messages: 消息们, stream: false, temperature: 0, max_tokens: 1200 }),
-      signal: 掐.signal,
+      signal: 中止 ? AbortSignal.any([掐.signal, 中止]) : 掐.signal,
     })
     if (!回应.ok) throw new Error('HTTP ' + 回应.status)
     const 包 = await 回应.json()
@@ -198,7 +199,8 @@ function 创建提取器({
     return { 处理: 晋升.好, 评估, 晋升, 复活: 记账.复活 }
   }
 
-  async function 提取批次({ 钥匙, 地址, 模型 = 'deepseek-chat', fetch函数, 用户原话 = '', 她的回复 = '', 对话 = '', 消息时间, 排除内容 = [], 对话轮次 = [] } = {}) {
+  async function 提取批次({ 钥匙, 地址, 模型 = 'deepseek-chat', fetch函数, 用户原话 = '', 她的回复 = '', 对话 = '', 消息时间, 排除内容 = [], 对话轮次 = [], 中止, 检查写入, 通知 } = {}) {
+    const 任务 = { 中止, 检查写入 }; 检查任务(任务)
     const 原轮次 = Array.isArray(对话轮次) && 对话轮次.length ? 对话轮次 : [{ 用户原话, 她的回复, 消息时间 }]
     const 轮次们 = 原轮次.slice(0, 有效批量阈值).map((一, 下标) => ({
       轮次: 下标 + 1,
@@ -228,7 +230,7 @@ function 创建提取器({
     const 已有摘要 = 已有.filter((一) => 一.确认状态 === '已确认' && (!一.关系 || 一.关系.状态 === '当前'))
       .slice(0, 30).map((一) => ({ 编号: 一.编号, 类别: 一.类别, 记忆类型: 一.记忆类型, 人物: 一.元数据 && 一.元数据.person, 内容: String(一.内容 || '').slice(0, 300) }))
     const 返回 = await 问模型({
-      钥匙, 地址, 模型, fetch函数: fetch函数 || 固定fetch || global.fetch,
+      钥匙, 地址, 模型, fetch函数: fetch函数 || 固定fetch || global.fetch, 中止,
       消息们: [
         {
           role: 'system',
@@ -245,6 +247,7 @@ function 创建提取器({
         },
       ],
     })
+    检查任务(任务)
     const 候选 = 规整候选(返回, { 对话轮次: 轮次们, 已有内容, 已有记录: 已有, 排除内容, 临时记忆库 })
     const 新增 = []
     for (const 一 of 候选) {
@@ -274,10 +277,12 @@ function 创建提取器({
       if (处理.复活) 复活编号.add(旧条.编号)
       if (处理.处理) 自主处理.push({ 编号: 旧条.编号, ...处理 })
     }
-    if (自主处理.some((一) => 一.晋升 && 一.晋升.好 && !一.晋升.没变化) && process.versions.electron) {
+    const 长期变化 = 自主处理.some((一) => 一.晋升 && 一.晋升.好 && !一.晋升.没变化)
+    if (typeof 通知 === 'function') 通知({ 长期变化, 临时变化: !!(新增.length || 自主处理.length) })
+    if (typeof 通知 !== 'function' && 长期变化 && process.versions.electron) {
       记忆关系整理.排队({ 原因: '临时记忆自主晋升到长期层' })
     }
-    if ((新增.length || 自主处理.length) && process.versions.electron) {
+    if (typeof 通知 !== 'function' && (新增.length || 自主处理.length) && process.versions.electron) {
       记忆聚类就绪.排队({ 原因: '后台临时记忆提取或自主评估' })
     }
     return { 好: true, 批次轮数: 轮次们.length, 候选数: 候选.length, 新增数: 新增.length, 新增,

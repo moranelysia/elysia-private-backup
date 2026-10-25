@@ -1,28 +1,31 @@
-/** S-12B：专用Node进程内，显式隔离配置先于业务require；仅假连接，无生产入口。 */
+/** S-12B/C：专用Node进程内，显式隔离配置先于业务require，无生产入口。 */
 'use strict'
 const fs = require('node:fs')
 const path = require('node:path')
 const { randomUUID } = require('node:crypto')
-const { 读取假对话配置 } = require('./运行配置.cjs')
-const { 是假模型连接 } = require('../脑/模型连接.cjs')
+const { 读取假对话配置, 读取真实对话配置 } = require('./运行配置.cjs')
+const { 是假模型连接, 是真实模型连接 } = require('../脑/模型连接.cjs')
 const { 校验接收消息 } = require('../脑/渠道契约.cjs')
 const 环境字段 = { ELYSIA_WORKSPACE_ROOT: '工作区', ELYSIA_CONFIG_FILE: '配置文件', ELYSIA_PERSONA_PATH: '角色卡', ELYSIA_DATA_DIR: '数据目录', ELYSIA_CACHE_DIR: '缓存目录', ELYSIA_学习区: '学习区', ELYSIA_附件目录: '附件目录', ELYSIA_纸条目录: '纸条目录', ELYSIA_进度文件: '进度文件' }
 let 已使用进程 = false
 function 失败(代码) { throw new Error(代码) }
-function 创建隔离对话核心({ 配置文件, 模型连接 } = {}) {
+function 创建隔离对话核心({ 配置文件, 模型连接, 后台设置 = null, 后台时钟 } = {}) {
   if (process.versions.electron || 已使用进程 || require.cache[require.resolve('../脑/配置.cjs')]) 失败('CORE_DEDICATED_PROCESS_REQUIRED')
-  if (!是假模型连接(模型连接)) 失败('CORE_MODEL_REQUIRED')
+  const 真实 = 是真实模型连接(模型连接), 读取配置 = 真实 ? 读取真实对话配置 : 读取假对话配置
+  if (!是假模型连接(模型连接) && !真实) 失败('CORE_MODEL_REQUIRED')
   for (const 键 of Object.keys(process.env)) if (键.startsWith('ELYSIA_') && !Object.hasOwn(环境字段, 键) && !(键 === 'ELYSIA_USE_USER_DATA' && process.env[键] === '0')) 失败('CORE_ENV_CONFLICT')
-  const 配置 = 读取假对话配置(配置文件)
+  const 配置 = 读取配置(配置文件)
   const 写入根 = [配置.数据目录, 配置.缓存目录, 配置.学习区]
   let 已关闭 = false, 处理数 = 0, 链 = Promise.resolve(), 锁fd
   const 中止 = new AbortController(), 锁文件 = path.join(配置.数据目录, '.headless-fake.lock'), 锁令牌 = randomUUID()
   const 已见文件 = new Set()
+  let 后台 = null, 关闭承诺 = null
   const 预期环境 = Object.fromEntries(Object.entries(环境字段).map(([键, 字段]) => [键, 配置[字段]]))
   Object.assign(预期环境, { ELYSIA_USE_USER_DATA: '0', ELYSIA_PRIVATE_DIARY_ENABLED: '0' })
   function 检查存储() {
     if (已关闭) 失败('CORE_CLOSED')
-    if (JSON.stringify(读取假对话配置(配置文件)) !== JSON.stringify(配置)) 失败('CORE_CONFIG_CHANGED')
+    if (JSON.stringify(读取配置(配置文件)) !== JSON.stringify(配置)) 失败('CORE_CONFIG_CHANGED')
+    if (process.env.TZ !== 'Asia/Shanghai') 失败('CORE_TIMEZONE_CHANGED')
     for (const [键, 值] of Object.entries(预期环境)) if (process.env[键] !== 值) 失败('CORE_ENV_CONFLICT')
     for (const 键 of Object.keys(process.env)) if (键.startsWith('ELYSIA_') && !Object.hasOwn(预期环境, 键)) 失败('CORE_ENV_CONFLICT')
     // 每次实际操作前复查业务子路径，不能仅依赖启动时的配置快照。
@@ -46,7 +49,7 @@ function 创建隔离对话核心({ 配置文件, 模型连接 } = {}) {
     try { fs.closeSync(锁fd) } finally { 锁fd = undefined }
     // 只释放自己仍持有的常规文件；残锁接管另属S-16。
     try {
-      if (JSON.stringify(读取假对话配置(配置文件, { 环境: {} })) !== JSON.stringify(配置)) return
+      if (JSON.stringify(读取配置(配置文件, { 环境: {} })) !== JSON.stringify(配置)) return
       const 状态 = fs.lstatSync(锁文件)
       if (状态.isFile() && !状态.isSymbolicLink() && 状态.nlink === 1 && fs.readFileSync(锁文件, 'utf8') === 锁令牌) fs.unlinkSync(锁文件)
     } catch { /* 保留不确定状态 */ }
@@ -54,6 +57,7 @@ function 创建隔离对话核心({ 配置文件, 模型连接 } = {}) {
   let 记忆, 对话
   try {
     Object.assign(process.env, 预期环境)
+    process.env.TZ = 'Asia/Shanghai'
     已使用进程 = true
     检查存储()
     fs.mkdirSync(配置.数据目录, { recursive: true })
@@ -62,6 +66,16 @@ function 创建隔离对话核心({ 配置文件, 模型连接 } = {}) {
     检查存储()
     记忆 = require('../脑/记忆.cjs')
     对话 = require('../脑/对话.cjs')
+    if (真实) 模型连接.绑定记录((条) => {
+      检查存储()
+      const fd = fs.openSync(path.join(配置.数据目录, '核心用量.jsonl'), 'a')
+      try { fs.writeFileSync(fd, JSON.stringify({ 时间: new Date().toISOString(), ...条 }) + '\n'); fs.fsyncSync(fd) }
+      finally { fs.closeSync(fd) }
+    })
+    if (后台设置 !== null) {
+      后台 = require('./记忆后台.cjs').创建记忆后台({ 所有者: 中止, 配置, 模型连接, 检查写入: 检查存储, 设置: 后台设置, ...后台时钟 })
+      后台.启动()
+    }
   } catch (错) { 释放锁(); throw new Error(/^HEADLESS_[A-Z_]+$|^CORE_[A-Z_]+$/u.test(错.message) ? 错.message : 'CORE_BOOT_FAILED') }
   async function 执行(消息, 上下文) {
     if (已关闭) 失败('CORE_CLOSED')
@@ -71,17 +85,18 @@ function 创建隔离对话核心({ 配置文件, 模型连接 } = {}) {
     const 历史 = 记忆.读最近聊天(400, { 对话: 上下文.内部对话编号 })
       .filter((条) => ['user', 'assistant'].includes(条.角色))
       .map((条) => ({ role: 条.角色, content: 条.内容, 时间: 条.时间 }))
-    const 登记 = 记忆.登记对话(上下文.内部对话编号, { 模型: 'fake', 建于: 消息.接收于 })
+    const 登记 = 记忆.登记对话(上下文.内部对话编号, { 模型: 模型连接.模型 || 'fake', 建于: 消息.接收于 })
     if (!登记.好) 失败('CHAT_REGISTRATION_FAILED')
     检查存储()
     const 果 = await 对话.说话({
-      他说的话: 消息.正文, 历史, 对话编号: 上下文.内部对话编号, 模式: 'chat', 模型: 'fake', 模型连接,
+      他说的话: 消息.正文, 历史, 对话编号: 上下文.内部对话编号, 模式: 'chat', 模型: 模型连接.模型 || 'fake', 模型连接,
       记进记忆: true, 写长期记忆: false, 后台整理: false, 后台关系整理: false, 后台提取: false,
       严格会话保存: true, 保存前检查: 检查存储, 发生于: 消息.发生于, 接收于: 消息.接收于, 中止: 信号,
     })
     if (信号.aborted || 已关闭) 失败('CORE_ABORTED')
     if (!果.聊天保存?.好 || 果.聊天保存.状态 !== 'saved') 失败('CHAT_TURN_WRITE_FAILED')
     检查存储()
+    后台?.记录轮次({ 对话: 上下文.内部对话编号, 消息编号: 消息.消息编号, 用户原话: 消息.正文, 她的回复: 果.她说的话, 发生于: 消息.发生于, 接收于: 消息.接收于 })
     处理数++
     // 严格白名单，原始模型文字/标记、工具日志、召回资料、保存回执均不进入渠道。
     return { 可见性: 'shared', 正文: 果.她说的话, 附件: [] }
@@ -101,8 +116,17 @@ function 创建隔离对话核心({ 配置文件, 模型连接 } = {}) {
     })
     链 = 本次.catch(() => {}); return 本次
   }
-  return Object.freeze({ 处理, 关闭() { if (已关闭) return; 中止.abort(); 已关闭 = true; 释放锁() },
-    取状态: () => ({ 版本: 1, 模式: 'fake-chat', 已关闭, 处理数, 后台任务: 0, 真实模型: false }),
+  return Object.freeze({ 处理,
+    关闭() {
+      if (已关闭) return 关闭承诺
+      中止.abort(); 已关闭 = true; if (真实) 模型连接.关闭()
+      if (后台) 关闭承诺 = 后台.停止().finally(释放锁)
+      else 释放锁()
+      return 关闭承诺
+    },
+    推进后台: () => 后台?.推进() || Promise.resolve({ 已执行: false }),
+    取状态: () => ({ 版本: 1, 模式: 配置.模式, 已关闭, 处理数, 后台任务: 后台?.取状态().任务.length || 0, 真实模型: 真实,
+      ...(后台 ? { 后台: 后台.取状态() } : {}) }),
   })
 }
 module.exports = { 创建隔离对话核心 }

@@ -5,6 +5,7 @@
  * `允许正式写入`。评估账本只保存日期、状态和退避时间，不保存正文或来源。
  */
 'use strict'
+const { 检查任务 } = require('./任务控制.cjs')
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -216,7 +217,7 @@ function 校验私密生成结果(原始, 来源们) {
   return { 标题, 正文: 原正文, 微妙情绪: 原情绪, 来源: 来源.slice(0, 30) }
 }
 
-async function 生成私密日记({ 期间, 来源们, 钥匙, 地址 = process.env.ELYSIA_LLM_URL || 'https://api.deepseek.com/v1/chat/completions', 模型 = process.env.ELYSIA_MEMORY_MODEL || process.env.ELYSIA_LLM_MODEL || 'deepseek-chat', fetch函数 = global.fetch, 超时 = 60000 }) {
+async function 生成私密日记({ 期间, 来源们, 钥匙, 地址 = process.env.ELYSIA_LLM_URL || 'https://api.deepseek.com/v1/chat/completions', 模型 = process.env.ELYSIA_MEMORY_MODEL || process.env.ELYSIA_LLM_MODEL || 'deepseek-chat', fetch函数 = global.fetch, 超时 = 60000, 中止 }) {
   if (!钥匙) throw new Error('没有模型 API Key')
   if (typeof fetch函数 !== 'function') throw new Error('没有可用的网络请求函数')
   const 控制器 = new AbortController()
@@ -232,7 +233,7 @@ async function 生成私密日记({ 期间, 来源们, 钥匙, 地址 = process.
           { role: 'user', content: `日期：${期间.周期}\n来源（已做本地脱敏）：\n${JSON.stringify(来源们)}` },
         ],
       }),
-      signal: 控制器.signal,
+      signal: 中止 ? AbortSignal.any([控制器.signal, 中止]) : 控制器.signal,
     })
     if (!回应.ok) throw new Error('私密日记模型请求失败：HTTP ' + 回应.status)
     const 包 = await 回应.json()
@@ -278,6 +279,7 @@ function 创建私密日记生成器(选项 = {}) {
   }
 
   async function 实际整理({ 日期, 连接 = {}, 期间: 已算期间 } = {}) {
+    检查任务(连接)
     if (!允许写入) return { 好: true, 写入: false, 状态: '正式写入未启用' }
     const 期间 = 已算期间 || 日期间(正常日期(日期))
     const 现在 = 正常日期(取现在(), '当前时间')
@@ -307,11 +309,13 @@ function 创建私密日记生成器(选项 = {}) {
     }
 
     const 来源们 = 规整私密来源(await 取来源(期间), 期间)
+    检查任务(连接)
     if (!来源们.length) {
       写评估状态(数据目录, 期间.周期, '无可用同日对话', 现在)
       return { 好: true, 写入: false, 状态: '无可用同日对话', 编号 }
     }
     const 原始结果 = await 生成({ 期间: { ...期间, 类型: '私密日' }, 来源们, ...连接 })
+    检查任务(连接)
     const 内容 = 校验私密生成结果(原始结果, 来源们)
     if (!内容) {
       写评估状态(数据目录, 期间.周期, '没有微妙情绪波动', 现在)
@@ -357,6 +361,7 @@ function 创建私密日记生成器(选项 = {}) {
       try {
         return await 实际整理({ ...参数, 期间 })
       } catch (错误) {
+        检查任务(参数.连接 || {})
         if (错误.code === 'PRIVATE_DIARY_INDEX_INVALID') throw 错误
         const 现在 = 正常日期(取现在(), '当前时间')
         const 索引 = 读评估索引(数据目录)

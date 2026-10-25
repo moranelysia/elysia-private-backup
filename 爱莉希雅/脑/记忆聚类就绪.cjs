@@ -5,6 +5,7 @@
  * 压缩、归档或召回任何记忆，也不会因为出现候选就自行开启生产闭环。
  */
 'use strict'
+const { 检查任务 } = require('./任务控制.cjs')
 
 const 聚类候选 = require('./记忆聚类候选.cjs')
 
@@ -26,7 +27,8 @@ function 创建检查器({
   let 最近结果 = null
   const 原因们 = new Set()
 
-  function 检查一次({ 原因 = '后台检查', 强制 = false } = {}) {
+  function 检查一次({ 原因 = '后台检查', 强制 = false, 中止, 检查写入 } = {}) {
+    检查任务({ 中止, 检查写入 })
     if (正在检查) { 待补一次 = true; return { 好: true, 已排队: true } }
     正在检查 = true
     try {

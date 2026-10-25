@@ -10,6 +10,7 @@ const path = require('node:path')
 const 配置 = require('./配置.cjs')
 const { 创建私密日记生成器 } = require('./私密日记.cjs')
 const { 默认取来源 } = require('./记忆日记.cjs')
+const { 检查任务 } = require('./任务控制.cjs')
 
 function 正常日期(值) {
   const 日期 = 值 instanceof Date ? new Date(值) : new Date(值)
@@ -53,6 +54,7 @@ function 创建私密日记调度(选项 = {}) {
   let 已启动 = false
   let 运行中 = null
   let 运行周期 = ''
+  let 轮次控制 = new AbortController()
   const 本次已检查 = new Set()
 
   function 取生成器() {
@@ -63,20 +65,28 @@ function 创建私密日记调度(选项 = {}) {
 
   function 唤醒() {
     if (!已启用) return Promise.resolve({ 好: true, 已排队: false, 状态: '私密日记自动生成已关闭' })
+    if (轮次控制.signal.aborted) return Promise.resolve({ 好: true, 已排队: false, 状态: '私密日记调度已停止' })
     let 日期
     try { 日期 = 前一自然日(取现在()) } catch { return Promise.resolve({ 好: false, 已排队: false, 状态: '调度时间无效' }) }
     const 周期 = 周期字(日期)
     if (本次已检查.has(周期)) return Promise.resolve({ 好: true, 已排队: false, 状态: '本次运行已经检查', 周期 })
-    if (运行中 && 运行周期 === 周期) return 运行中
+    if (运行中) return 运行中
 
     运行周期 = 周期
+    const 本轮控制 = 轮次控制
     运行中 = (async () => {
       try {
-        const 结果 = await 取生成器().整理一天({ 日期, 连接: 取连接() })
+        const 原连接 = 取连接(), 连接 = { ...原连接,
+          中止: 原连接.中止 ? AbortSignal.any([原连接.中止, 本轮控制.signal]) : 本轮控制.signal,
+          检查写入: () => { 检查任务({ 中止: 本轮控制.signal }); if (typeof 原连接.检查写入 === 'function') 原连接.检查写入() },
+        }
+        const 结果 = await 取生成器().整理一天({ 日期, 连接 })
+        检查任务(连接)
         本次已检查.add(周期)
         if (结果 && 结果.写入 === true) 记录(`  🔒 私密日记后台完成了 ${周期} 的本机整理`)
         return { ...(结果 || { 好: true }), 已排队: true, 周期 }
       } catch {
+        if (本轮控制.signal.aborted) return { 好: true, 已排队: false, 状态: '私密日记调度已停止', 周期 }
         // 不输出原始异常，避免来源、路径或模型响应被带进普通日志；下一次检查可以重试。
         记录('⚠ 私密日记后台失败（不影响启动或聊天）')
         return { 好: false, 已排队: true, 状态: '后台处理失败', 周期 }
@@ -91,6 +101,7 @@ function 创建私密日记调度(选项 = {}) {
   function 启动() {
     if (!已启用) return { 已启动: false, 状态: '私密日记自动生成已关闭' }
     if (已启动) return { 已启动: true, 重复: true }
+    if (轮次控制.signal.aborted) 轮次控制 = new AbortController()
     已启动 = true
     首次计时器 = 设延时(() => { void 唤醒() }, 首次延迟)
     检查计时器 = 设间隔(() => { void 唤醒() }, 检查间隔)
@@ -100,6 +111,7 @@ function 创建私密日记调度(选项 = {}) {
   }
 
   function 停止() {
+    轮次控制.abort()
     if (首次计时器) 清延时(首次计时器)
     if (检查计时器) 清间隔(检查计时器)
     首次计时器 = null
