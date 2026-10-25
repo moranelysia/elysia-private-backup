@@ -6,7 +6,8 @@
 
 const crypto = require('node:crypto')
 
-const 自动阈值 = 70
+const 自动阈值 = 60
+const 同主题阈值 = 0.55
 
 function 归一(值) {
   return String(值 || '').normalize('NFKC').toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, '')
@@ -44,7 +45,10 @@ function 是同一主题(候选, 记录) {
   const 甲人 = 候选.元数据 && 候选.元数据.person
   const 乙人 = 记录.元数据 && 记录.元数据.person
   if (甲人 && 乙人 && 甲人 !== 乙人) return false
-  return 相似度(候选.内容, 记录.内容) >= 0.62
+  const 甲关系 = 候选.元数据 && 候选.元数据.relationship
+  const 乙关系 = 记录.元数据 && 记录.元数据.relationship
+  if (甲关系 && 乙关系 && 甲关系 !== 乙关系) return false
+  return 相似度(候选.内容, 记录.内容) >= 同主题阈值
 }
 
 function 命中强烈情感(原话) {
@@ -85,7 +89,7 @@ function 评估({ 候选, 对话轮次 = [], 已有记录 = [], 既有提及 = 0
   for (const 一 of 轮次) {
     const 相似 = 相似度(候选 && 候选.内容, 一 && 一.用户原话)
     最高相似度 = Math.max(最高相似度, 相似)
-    if (相似 < 0.62) continue
+    if (相似 < 同主题阈值) continue
     const 本轮原话 = String(一 && 一.用户原话 || '').trim()
     const 候选依据 = String(候选 && 候选.依据原文 || '').trim()
     const 逐字依据 = 候选依据 && 本轮原话.includes(候选依据) ? 候选依据 : 本轮原话.slice(0, 500)
@@ -121,6 +125,8 @@ function 评估({ 候选, 对话轮次 = [], 已有记录 = [], 既有提及 = 0
   if (明确记忆) { 分数 += 80; 依据.push('用户明确要求记住') }
   if (强烈情感) { 分数 += 50; 依据.push('原话含强烈情感表达') }
   if (稳定类型) { 分数 += 10; 依据.push('属于稳定语义或可复用做法') }
+  if (候选 && 候选.类别 === '候选偏好') { 分数 += 40; 依据.push('候选被明确分类为个人偏好') }
+  if (候选 && 候选.记忆类型 === 'procedural') { 分数 += 40; 依据.push('属于可长期复用的做法') }
   分数 = Math.min(100, 分数)
   const 关系安全 = !候选.关系 || candidateRelationState(候选.关系) === '当前'
   const 可自主 = 关系安全 && 分数 >= 自动阈值
@@ -143,4 +149,4 @@ function candidateRelationState(关系) {
   return 关系 && typeof 关系 === 'object' && 关系.状态 ? String(关系.状态) : '当前'
 }
 
-module.exports = { 自动阈值, 归一, 相似度, 是同一主题, 命中强烈情感, 命中明确记忆意图, 默认去向, 证据指纹, 有敏感或内部内容, 评估 }
+module.exports = { 自动阈值, 同主题阈值, 归一, 相似度, 是同一主题, 命中强烈情感, 命中明确记忆意图, 默认去向, 证据指纹, 有敏感或内部内容, 评估 }

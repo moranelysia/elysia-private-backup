@@ -15,6 +15,7 @@ const crypto = require('node:crypto')
 const 配置 = require('./配置.cjs')
 const 记忆结构 = require('./记忆结构.cjs')
 const 记忆叙述 = require('./记忆叙述.cjs')
+const { 自动阈值 } = require('./临时记忆自主评估.cjs')
 
 const 数据版本 = 1
 const 固定分类 = Object.freeze(['近期状态', '近期计划', '未完话题', '候选偏好', '近期事件', '关系语境'])
@@ -23,11 +24,11 @@ const 确认状态们 = new Set(['已确认', '待确认'])
 const 晋升去向们 = new Set(['事实', '经历', '小本子', '学习进度', '工作摘要'])
 const 关系状态们 = new Set(['当前', '待处理', '已被替代'])
 const 默认保留天数 = Object.freeze({
-  近期状态: 3,
-  近期计划: 7,
-  未完话题: 7,
+  近期状态: 2,
+  近期计划: 5,
+  未完话题: 5,
   候选偏好: 7,
-  近期事件: 7,
+  近期事件: 5,
   关系语境: 7,
 })
 
@@ -371,7 +372,7 @@ function 创建临时记忆库(选项 = {}) {
     if (条.生命周期 !== '有效' || 条.确认状态 !== '待确认') return { 好: false, 说明: '只有有效的待确认候选可以自主确认' }
     if (读取关系(条.关系).状态 !== '当前') return { 好: false, 说明: '存在关系冲突，必须人工处理' }
     const 分数 = Number(评估.分数)
-    if (!Number.isInteger(分数) || 分数 < 70 || 分数 > 100) return { 好: false, 说明: '自主评估分数未达到安全阈值' }
+    if (!Number.isInteger(分数) || 分数 < 自动阈值 || 分数 > 100) return { 好: false, 说明: '自主评估分数未达到安全阈值' }
     const 依据 = Array.isArray(评估.依据) ? 评估.依据.map((一) => 干净文本(一, 120, '评估依据')).slice(0, 8) : []
     if (!依据.length) return { 好: false, 说明: '自主评估缺少可解释依据' }
     const 现在 = 正常日期(取现在(), '确认时间').toISOString()
