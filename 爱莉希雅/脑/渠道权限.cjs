@@ -83,6 +83,17 @@ function 创建渠道权限({ 绑定 = [], 回复许可毫秒 = 600000, 取现�
     if (定位(来源.端点, 来源.会话, 来源.本人编号) !== 定位(消息.端点, 消息.会话, 消息.接收者编号) || 来源.消息编号 !== 消息.回复消息编号) return 拒绝('REPLY_CONTEXT_MISMATCH')
     return 允许('OWNER_REPLY')
   }
+  /** C-14在创建/读取映射前验证已有许可，不能通过重新审查原始ID自行补发许可。 */
+  function 核对接收许可(输入, { 回复许可 } = {}) {
+    if (已关闭) return 拒绝('POLICY_CLOSED')
+    let 消息
+    try { 消息 = 契约.校验接收消息(输入) } catch { return 拒绝('INVALID_CONTRACT') }
+    if (消息.会话.类型 !== 'private') return 拒绝('GROUP_DISABLED')
+    if (!查本人(消息.端点, 消息.会话, 消息.发送者编号)) return 拒绝('OWNER_NOT_BOUND')
+    const 来源 = 查许可(回复许可)
+    if (!来源 || 来源.消息编号 !== 消息.消息编号 || 定位(来源.端点, 来源.会话, 来源.本人编号) !== 定位(消息.端点, 消息.会话, 消息.发送者编号)) return 拒绝('REPLY_CONTEXT_INVALID')
+    return 允许('OWNER_CONTEXT')
+  }
   function 审查取消(输入, { 回复许可 } = {}) {
     if (已关闭) return 拒绝('POLICY_CLOSED')
     let 请求
@@ -102,7 +113,7 @@ function 创建渠道权限({ 绑定 = [], 回复许可毫秒 = 600000, 取现�
     通知变更()
     监听们.clear()
   }
-  return Object.freeze({ 审查接收, 审查发送, 审查取消, 更新绑定, 订阅变更, 取状态, 关闭 })
+  return Object.freeze({ 审查接收, 核对接收许可, 审查发送, 审查取消, 更新绑定, 订阅变更, 取状态, 关闭 })
 }
 
 /** 守卫只组合策略与已有适配器；输入身份须由受信适配器验证，禁止把它作为匿名网络API。 */
