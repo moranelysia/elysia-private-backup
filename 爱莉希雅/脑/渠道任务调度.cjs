@@ -5,6 +5,7 @@ const path = require('node:path')
 const { createHash, randomUUID } = require('node:crypto')
 const 契约 = require('./渠道契约.cjs')
 const 已挂接守卫 = new WeakSet()
+const 已挂接存储 = new WeakSet()
 const 拷贝 = (值) => JSON.parse(JSON.stringify(值))
 const 哈希 = (值) => createHash('sha256').update(JSON.stringify(值)).digest('hex')
 const 状态们 = ['processing', 'queued', 'sending', 'sent', 'failed', 'unknown', 'cancelled', 'interrupted', 'blocked', 'expired']
@@ -26,7 +27,7 @@ function 输入指纹(消息) {
     消息.附件.map((一) => [一.编号, 一.类型, 一.名称, 一.媒体类型, 一.字节数])])
 }
 
-function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = null, 取现在 = () => new Date(), 最小间隔毫秒 = 1000, 重试延迟毫秒 = 2000, 最大尝试 = 3, 任务有效毫秒 = 600000, 最大记录数 = 4096 } = {}) {
+function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = null, 存储 = null, 取现在 = () => new Date(), 最小间隔毫秒 = 1000, 重试延迟毫秒 = 2000, 最大尝试 = 3, 任务有效毫秒 = 600000, 最大记录数 = 4096 } = {}) {
   for (const [对象, 方法们] of [[守卫, ['取能力', '订阅接收', '发送']], [权限, ['核对接收许可', '审查发送', '订阅变更']], [映射, ['解析接收']]]) {
     if (!对象 || 方法们.some((名) => typeof 对象[名] !== 'function')) 失败('TASK_DEPENDENCY_INVALID')
   }
@@ -35,6 +36,8 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
     if (!Number.isSafeInteger(值) || 值 < 下限 || 值 > 上限) 失败('TASK_OPTIONS_INVALID')
   }
   if (文件 !== null && (typeof 文件 !== 'string' || !path.isAbsolute(文件) || path.extname(文件) !== '.json')) 失败('TASK_FILE_INVALID')
+  if (存储 !== null && (文件 !== null || ['读取', '保存', '关闭'].some((名) => typeof 存储[名] !== 'function'))) 失败('TASK_BACKEND_INVALID')
+  if (存储 !== null && 已挂接存储.has(存储)) 失败('TASK_BACKEND_IN_USE')
   const 端点 = 契约.校验渠道能力(守卫.取能力()).端点
   const 同端点 = (一) => 一.渠道 === 端点.渠道 && 一.账号 === 端点.账号
   function 现在() { const 值 = 取现在(); if (!(值 instanceof Date) || !Number.isFinite(值.getTime()) || !时间有效(值.toISOString())) 失败('TASK_CLOCK_INVALID'); return 值.toISOString() }
@@ -81,6 +84,9 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
   function 释放锁() { if (锁 !== null) { try { fs.closeSync(锁) } catch {}; 锁 = null; try { fs.unlinkSync(文件 + '.lock') } catch {} } }
   function 存盘(新) {
     核对数据(新)
+    if (存储 !== null) {
+      try { 存储.保存(拷贝(新)); 数据 = 新; return } catch { 故障 = 'TASK_STORE_WRITE_FAILED'; 失败(故障) }
+    }
     if (文件 === null) { 数据 = 新; return }
     let 句柄 = null, 临时 = null
     try {
@@ -107,6 +113,9 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
   }
   function 本地未知(一) { return 契约.校验发送结果({ 版本: 1, 端点, 请求编号: 一.发送.请求编号, 状态: 'unknown', 渠道消息编号: null, 错误代码: 'DELIVERY_UNKNOWN', 可重试: false, 结束于: 现在() }) }
   try {
+    if (存储 !== null) {
+      try { const 已存 = 存储.读取(); if (已存 !== null) 数据 = 核对数据(已存) } catch { 失败('TASK_STORE_CORRUPT') }
+    }
     if (文件 !== null) {
       fs.mkdirSync(path.dirname(文件), { recursive: true })
       try { 锁 = fs.openSync(文件 + '.lock', 'wx', 0o600) } catch (错) { 失败(错.code === 'EEXIST' ? 'TASK_STORE_BUSY' : 'TASK_STORE_UNAVAILABLE') }
@@ -124,8 +133,9 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
       if (一.状态 === 'sending') { 一.状态 = 'unknown'; 一.代码 = 'DELIVERY_UNKNOWN'; 一.回执 = 本地未知(一); 一.更新于 = 现在(); 记录事件(新, 'unknown', 一) }
     }
     存盘(新)
-  } catch (错) { 释放锁(); throw new Error(['TASK_STORE_BUSY', 'TASK_STORE_UNAVAILABLE', 'TASK_STORE_CORRUPT', 'TASK_STORE_WRITE_FAILED'].includes(错.message) ? 错.message : 'TASK_STORE_UNAVAILABLE') }
+  } catch (错) { 释放锁(); 存储?.关闭(); throw new Error(['TASK_STORE_BUSY', 'TASK_STORE_UNAVAILABLE', 'TASK_STORE_CORRUPT', 'TASK_STORE_WRITE_FAILED'].includes(错.message) ? 错.message : 'TASK_STORE_UNAVAILABLE') }
 
+  if (存储 !== null) 已挂接存储.add(存储)
   function 可运行() { if (已关闭) 失败('TASK_CLOSED'); if (故障) 失败(故障) }
   async function 排空() {
     let 发送数 = 0
@@ -228,7 +238,7 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
     const 新 = 拷贝(数据)
     for (const 一 of 新.记录) if (一.状态 === 'queued') { 一.状态 = 'blocked'; 一.代码 = 'FORBIDDEN'; 一.下次尝试于 = null; 一.更新于 = 现在(); 记录事件(新, 'blocked', 一) }
     try { 存盘(新) } catch { 故障 ||= 'TASK_STORE_WRITE_FAILED' }
-  }) } catch { 释放锁(); 失败('TASK_POLICY_CLOSED') }
+  }) } catch { 释放锁(); if (存储) 已挂接存储.delete(存储); 存储?.关闭(); 失败('TASK_POLICY_CLOSED') }
   function 关闭() {
     if (已关闭) return
     已关闭 = true
@@ -243,10 +253,10 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
         }
         存盘(新)
       }
-    } finally { 释放锁() }
+    } finally { 释放锁(); if (存储) 已挂接存储.delete(存储); 存储?.关闭() }
   }
   return Object.freeze({ 启动, 推进, 关闭,
-    取状态: () => ({ 已关闭, 故障, 持久化: 文件 !== null, 总任务: 数据.记录.length, 状态数: Object.fromEntries(状态们.map((状态) => [状态, 数据.记录.filter((一) => 一.状态 === 状态).length])) }),
+    取状态: () => ({ 已关闭, 故障, 持久化: 文件 !== null || 存储 !== null, 总任务: 数据.记录.length, 状态数: Object.fromEntries(状态们.map((状态) => [状态, 数据.记录.filter((一) => 一.状态 === 状态).length])) }),
     取任务状态: () => 数据.记录.map(({ 编号, 状态, 尝试, 代码, 下次尝试于 }) => ({ 编号, 状态, 尝试, 代码, 下次尝试于 })),
     取日志: () => 拷贝(数据.日志),
   })

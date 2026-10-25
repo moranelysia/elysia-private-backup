@@ -13,21 +13,23 @@ function 故障(代码) { throw new Error(代码) }
 function 失败(代码) { return { 好: false, 错误代码: 代码 } }
 function 定位(消息) { return 契约.会话定位键({ 端点: 消息.端点, 会话: 消息.会话, 发送者编号: 消息.发送者编号 }) }
 
-function 创建渠道会话映射({ 权限, 文件 = null, 生成编号 = () => 'channel-' + randomUUID(), 最大记录数 = 4096 } = {}) {
+function 创建渠道会话映射({ 权限, 文件 = null, 存储 = null, 生成编号 = () => 'channel-' + randomUUID(), 最大记录数 = 4096 } = {}) {
   if (!权限 || typeof 权限.核对接收许可 !== 'function') throw new TypeError('CHANNEL_MAP_POLICY_INVALID')
   if (文件 !== null && (typeof 文件 !== 'string' || !path.isAbsolute(文件) || path.extname(文件) !== '.json')) throw new TypeError('CHANNEL_MAP_FILE_INVALID')
   if (typeof 生成编号 !== 'function' || !Number.isSafeInteger(最大记录数) || 最大记录数 < 1 || 最大记录数 > 4096) throw new TypeError('CHANNEL_MAP_OPTIONS_INVALID')
+  if (存储 !== null && (文件 !== null || ['读取', '保存', '关闭'].some((名) => typeof 存储[名] !== 'function'))) throw new TypeError('CHANNEL_MAP_BACKEND_INVALID')
   let 已关闭 = false
   let 已见文件 = false
   let 内存 = new Map()
   function 读文件() {
-    if (文件 === null) return 内存
+    if (文件 === null && 存储 === null) return 内存
     let 原文
-    try {
+    try { if (存储 !== null) { const 已存 = 存储.读取(); if (已存 === null) return new Map(); 原文 = JSON.stringify(已存) } else {
       const 大小 = fs.statSync(文件).size
       已见文件 = true
       if (大小 > 8 * 1024 * 1024) 故障('STORE_CORRUPT')
       原文 = fs.readFileSync(文件, 'utf8')
+    }
     } catch (错) {
       if (错.code === 'ENOENT' && !已见文件) return new Map()
       if (错.message === 'STORE_CORRUPT') throw 错
@@ -61,6 +63,12 @@ function 创建渠道会话映射({ 权限, 文件 = null, 生成编号 = () => 
     故障('ID_CONFLICT')
   }
   function 写新映射(消息) {
+    if (存储 !== null) {
+      try {
+        const 表 = 读文件(), 已有 = 表.get(定位(消息)); if (已有) return { 条: 已有, 新建: false }
+        const 果 = 分配(表, 消息); 存储.保存({ 版本: 1, 记录: [...果.新表.values()] }); return { 条: 果.条, 新建: true }
+      } catch (错) { if (固定错误.has(错.message)) throw 错; 故障('STORE_WRITE_FAILED') }
+    }
     if (文件 === null) {
       const 果 = 分配(内存, 消息); 内存 = 果.新表
       return { 条: 果.条, 新建: true }
@@ -108,11 +116,11 @@ function 创建渠道会话映射({ 权限, 文件 = null, 生成编号 = () => 
       return { 好: true, 存在: true, 内部对话编号: 果.条.内部对话编号, 新建: 果.新建 }
     } catch (错) { return 失败(固定错误.has(错.message) ? 错.message : 'STORE_UNAVAILABLE') }
   }
-  function 关闭() { 已关闭 = true; 内存.clear() }
+  function 关闭() { if (已关闭) return; 已关闭 = true; 内存.clear(); 存储?.关闭() }
   return Object.freeze({
     解析接收: (消息, 上下文 = {}) => 解析(消息, 上下文, true),
     查询接收: (消息, 上下文 = {}) => 解析(消息, 上下文, false),
-    取状态: () => ({ 已关闭, 持久化: 文件 !== null }),
+    取状态: () => ({ 已关闭, 持久化: 文件 !== null || 存储 !== null }),
     关闭,
   })
 }

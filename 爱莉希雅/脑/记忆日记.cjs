@@ -13,8 +13,7 @@ const 配置 = require('./配置.cjs')
 const 记忆叙述 = require('./记忆叙述.cjs')
 const { 检查任务 } = require('./任务控制.cjs')
 
-const 模块名们 = Object.freeze(['回顾', '学习', '工作', '陪伴片段', '未完事项'])
-const 日记可见性们 = Object.freeze(['shared', 'private'])
+const { 模块名们, 日记可见性们, 规范日记可见性, 规范日记记录, 共享日记投影 } = require('./日记共用规则.cjs')
 const 格式版本 = 1
 
 function 是对象(值) { return !!值 && typeof 值 === 'object' && !Array.isArray(值) }
@@ -44,44 +43,6 @@ function 导出安全文本(值) {
   return String(值 == null ? '' : 值)
     .replace(/\b[A-Za-z]:[\\/][^\s<>"|?*]+/g, '[本机路径已省略]')
     .replace(/\\\\[^\s\\/]+[\\/][^\s<>"|?*]+/g, '[网络路径已省略]')
-}
-
-/**
- * 旧日记没有可见性字段时按 shared 只读兼容；显式但非法的值必须拒绝，
- * 不能因为拼写错误把本应私密的内容降级成共享内容。
- */
-function 规范日记可见性(值) {
-  if (值 === undefined) return 'shared'
-  const 可见性 = String(值).trim()
-  if (!日记可见性们.includes(可见性)) throw new Error('日记可见性无效')
-  return 可见性
-}
-
-function 规范日记记录(值) {
-  if (!是对象(值)) throw new Error('日记记录无效')
-  return { ...值, 可见性: 规范日记可见性(值.可见性) }
-}
-
-function 面向她的日记(日记) {
-  return {
-    ...日记,
-    标题: 记忆叙述.整理日记正文(日记.标题),
-    模块: (Array.isArray(日记.模块) ? 日记.模块 : []).map((一) => ({
-      ...一,
-      正文: 记忆叙述.整理日记正文(一 && 一.正文),
-    })),
-    来源: (Array.isArray(日记.来源) ? 日记.来源 : []).map((一) => ({
-      ...一,
-      标题: 记忆叙述.整理正文(一 && 一.标题),
-      摘要: 记忆叙述.整理正文(一 && 一.摘要),
-    })),
-  }
-}
-
-/** 所有默认界面、导出和将来的外发渠道都必须先经过这个共享投影。 */
-function 共享日记投影(值) {
-  const 日记 = 规范日记记录(值)
-  return 日记.可见性 === 'shared' ? 面向她的日记(日记) : null
 }
 
 /** ISO 周：周一到下周一。 */
