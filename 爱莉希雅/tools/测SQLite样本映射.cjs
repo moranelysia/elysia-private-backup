@@ -141,6 +141,7 @@ const 样本 = 创建样本包()
 测('必须显式样本范围，拒绝路径式来源和未配对代理项', () => {
   拒绝({ ...样本, 用途: 'production' }, 'SQLITE_FIXTURE_SCOPE_REQUIRED')
   const 路径包 = 小包('facts', []); 路径包.文档[0].名称 = '../facts.json'; 拒绝(路径包, 'SQLITE_FIXTURE_DATA_INVALID')
+  const 换行包 = 小包('facts', []); 换行包.文档[0].名称 = 'single\n'; 拒绝(换行包, 'SQLITE_FIXTURE_DATA_INVALID')
   const 坏字符 = 小包('auxiliary', null, '{"值":"\uD800"}'); 拒绝(坏字符, 'SQLITE_FIXTURE_DATA_INVALID')
 })
 测('包的额外字段/getter/稀疏数组一律拒绝，不执行getter', () => {

@@ -100,7 +100,7 @@ function 创建样本库() {
     const 版本对象 = (值, 键, 号) => { if (!对象(值) || 值[键] !== 号) 失败('SQLITE_FIXTURE_VERSION_UNSUPPORTED') }
     for (const [位置, 源] of 文档.entries()) {
       精确对象(源, ['名称', '类型', '原文'])
-      if (typeof 源.名称 !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,79}$/u.test(源.名称) || 源.名称.includes('..') || typeof 源.原文 !== 'string' || Buffer.from(源.原文).toString('utf8') !== 源.原文 || typeof 源.类型 !== 'string') 失败()
+      if (typeof 源.名称 !== 'string' || /^[a-z0-9][a-z0-9._-]{0,79}$/u.exec(源.名称)?.[0] !== 源.名称 || 源.名称.includes('..') || typeof 源.原文 !== 'string' || Buffer.from(源.原文).toString('utf8') !== 源.原文 || typeof 源.类型 !== 'string') 失败()
       const 字节 = Buffer.byteLength(源.原文); 总字节 += 字节
       if (字节 > 2 * 1024 * 1024 || 总字节 > 8 * 1024 * 1024) 失败('SQLITE_FIXTURE_LIMIT')
       结果.sources.push({ document_id: 源.名称, position: 位置, source_type: 源.类型, original_text: 源.原文, sha256: 哈希(源.原文) })
