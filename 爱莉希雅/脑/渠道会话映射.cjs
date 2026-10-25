@@ -37,15 +37,7 @@ function 创建渠道会话映射({ 权限, 文件 = null, 存储 = null, 生成
     }
     try {
       const 数据 = JSON.parse(原文)
-      if (!数据 || Object.keys(数据).length !== 2 || 数据.版本 !== 1 || !Array.isArray(数据.记录) || 数据.记录.length > 最大记录数) 故障('STORE_CORRUPT')
-      const 表 = new Map(), 编号们 = new Set()
-      for (const 一 of 数据.记录) {
-        if (!一 || Object.keys(一).length !== 4 || !编号有效(一.内部对话编号)) 故障('STORE_CORRUPT')
-        const 键 = 定位(一)
-        if (一.会话.类型 !== 'private' || 表.has(键) || 编号们.has(一.内部对话编号)) 故障('STORE_CORRUPT')
-        表.set(键, 一); 编号们.add(一.内部对话编号)
-      }
-      return 表
+      return 校验渠道映射存档(数据, 最大记录数)
     } catch { 故障('STORE_CORRUPT') }
   }
   function 分配(表, 消息) {
@@ -150,4 +142,16 @@ function 创建渠道会话路由({ 守卫, 映射 } = {}) {
   return Object.freeze({ 订阅接收, 关闭 })
 }
 
-module.exports = { 创建渠道会话映射, 创建渠道会话路由 }
+function 校验渠道映射存档(数据, 最大记录数 = 4096) {
+  if (!数据 || Object.keys(数据).length !== 2 || 数据.版本 !== 1 || !Array.isArray(数据.记录) || 数据.记录.length > 最大记录数) 故障('STORE_CORRUPT')
+  const 表 = new Map(), 编号们 = new Set()
+  for (const 一 of 数据.记录) {
+    if (!一 || Object.keys(一).length !== 4 || !编号有效(一.内部对话编号)) 故障('STORE_CORRUPT')
+    const 键 = 定位(一)
+    if (一.会话.类型 !== 'private' || 表.has(键) || 编号们.has(一.内部对话编号)) 故障('STORE_CORRUPT')
+    表.set(键, 一); 编号们.add(一.内部对话编号)
+  }
+  return 表
+}
+
+module.exports = { 创建渠道会话映射, 创建渠道会话路由, 校验渠道映射存档 }

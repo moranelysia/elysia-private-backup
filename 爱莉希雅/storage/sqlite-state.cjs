@@ -60,6 +60,7 @@ function 投影(类型, 值) {
     case 'diary-index': 版('格式版本', 1); for (const 一 of 数组(值.任务)) { 对象(一); 加('diary-task', 字(一.编号, 160), 一, { status: 一.状态 ?? null }) }; break
     case 'extraction-buffer': 版('版本', 1); for (const 一 of 数组(值.轮次)) { 对象(一); 加('buffer-turn', JSON.stringify([字(一.对话, 160), 字(一.消息编号, 160)]), 一) }; break
     case 'usage': 数组(值).forEach((一, i) => { 对象(一); 加('usage', String(i), 一, { status: 一.状态 ?? null }) }); break
+    case 'work-index': 数组(值).forEach((一, i) => { 对象(一); 加('work-item', String(i), 一, { status: 一.状态 ?? null }) }); break
     default: 对象(值)
   }
   return 行们

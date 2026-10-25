@@ -158,6 +158,7 @@ function 创建样本库() {
         case 'extraction-buffer':
           版本对象(值, '版本', 1)
           记录们(值.轮次, 名, 'extraction_buffer', (条) => ({ conversation_id: 文本(条.对话), message_id: 文本(条.消息编号), source_time_raw: 文本(条.消息时间), received_raw: 文本(条.接收于) })); break
+        case 'work-index': 记录们(值, 名, 'auxiliary_state', () => ({ state_type: 'work-index' })); break
         case 'auxiliary': if (!对象(值)) 失败(); 加('auxiliary_state', 名, 0, 值, { state_type: 名 }); break
         default: 失败('SQLITE_FIXTURE_TYPE_UNSUPPORTED')
       }

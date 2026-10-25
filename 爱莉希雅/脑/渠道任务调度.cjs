@@ -47,40 +47,7 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
   const 许可们 = new Map(), 中止 = new AbortController(), 核心中止们 = new Set()
   let 数据 = { 版本: 1, 端点: 拷贝(端点), 最近发送于: null, 记录: [], 日志: [] }
 
-  function 核对数据(值) {
-    严格键(值, ['版本', '端点', '最近发送于', '记录', '日志'])
-    if (值.版本 !== 1 || !同端点(值.端点) || (值.最近发送于 !== null && !时间有效(值.最近发送于)) || !Array.isArray(值.记录) || 值.记录.length > 4096 || !Array.isArray(值.日志) || 值.日志.length > 100) 失败('TASK_DATA_INVALID')
-    严格键(值.端点, ['渠道', '账号'])
-    const 键们 = new Set(), 编号们 = new Set()
-    for (const 一 of 值.记录) {
-      严格键(一, 任务字段); 严格键(一.来源, 接收字段)
-      const 源 = 契约.校验接收消息({ 版本: 1, ...一.来源, 发生于: null, 接收于: 一.创建于, 回复消息编号: null, 正文: 'metadata', 附件: [] })
-      if (!同端点(源.端点) || 源.会话.类型 !== 'private' || 一.来源键 !== 哈希(契约.接收去重键(源)) || typeof 一.输入指纹 !== 'string' || /^[a-f0-9]{64}$/u.exec(一.输入指纹)?.[0] !== 一.输入指纹 || !安全编号(一.编号, 'task-') || !安全编号(一.内部对话编号, 'channel-') || 键们.has(一.来源键) || 编号们.has(一.编号)) 失败('TASK_DATA_INVALID')
-      if (!状态们.includes(一.状态) || !代码们.includes(一.代码) || !Number.isSafeInteger(一.尝试) || 一.尝试 < 0 || 一.尝试 > 5 || !时间有效(一.更新于) || (一.下次尝试于 !== null && !时间有效(一.下次尝试于))) 失败('TASK_DATA_INVALID')
-      键们.add(一.来源键); 编号们.add(一.编号)
-      if (一.发送 !== null) {
-        const 发 = 契约.校验发送消息(一.发送)
-        if (!同端点(发.端点) || 发.会话.类型 !== 源.会话.类型 || 发.会话.编号 !== 源.会话.编号 || 发.接收者编号 !== 源.发送者编号 || 发.回复消息编号 !== 源.消息编号 || 发.用途 !== 'reply' || 发.请求编号 !== 'c15-' + 一.来源键 || 发.截止于 === null) 失败('TASK_DATA_INVALID')
-      }
-      if (一.回执 !== null) {
-        const 果 = 契约.校验发送结果(一.回执)
-        if (!一.发送 || !同端点(果.端点) || 果.请求编号 !== 一.发送.请求编号) 失败('TASK_DATA_INVALID')
-        if (['sent', 'unknown', 'cancelled'].includes(一.状态) && 一.状态 !== 果.状态) 失败('TASK_DATA_INVALID')
-      }
-      if (['queued', 'sending', 'sent', 'unknown', 'cancelled', 'expired'].includes(一.状态) && !一.发送) 失败('TASK_DATA_INVALID')
-      if (一.状态 === 'queued' && (!一.下次尝试于 || 一.尝试 >= 5 || (一.回执 && (一.回执.状态 !== 'failed' || !一.回执.可重试)))) 失败('TASK_DATA_INVALID')
-      if (一.状态 !== 'queued' && 一.下次尝试于 !== null) 失败('TASK_DATA_INVALID')
-      if (['processing', 'interrupted'].includes(一.状态) && (一.发送 || 一.尝试 || 一.回执)) 失败('TASK_DATA_INVALID')
-      if (['sending', 'sent', 'unknown', 'cancelled'].includes(一.状态) && 一.尝试 < 1) 失败('TASK_DATA_INVALID')
-      if (['sent', 'unknown', 'cancelled'].includes(一.状态) && !一.回执) 失败('TASK_DATA_INVALID')
-      if (一.尝试 > 0 && 值.最近发送于 === null) 失败('TASK_DATA_INVALID')
-    }
-    for (const 一 of 值.日志) {
-      严格键(一, ['于', '事件', '任务', '代码', '尝试'])
-      if (!时间有效(一.于) || !事件们.includes(一.事件) || (一.任务 !== null && !安全编号(一.任务, 'task-')) || !代码们.includes(一.代码) || !Number.isSafeInteger(一.尝试) || 一.尝试 < 0 || 一.尝试 > 5) 失败('TASK_DATA_INVALID')
-    }
-    return 值
-  }
+  const 核对数据 = (值) => 校验渠道任务存档(值, 端点)
   function 释放锁() { if (锁 !== null) { try { fs.closeSync(锁) } catch {}; 锁 = null; try { fs.unlinkSync(文件 + '.lock') } catch {} } }
   function 存盘(新) {
     核对数据(新)
@@ -262,4 +229,40 @@ function 创建渠道任务调度({ 守卫, 权限, 映射, 处理, 文件 = nul
   })
 }
 
-module.exports = { 创建渠道任务调度 }
+function 校验渠道任务存档(值, 端点) {
+  const 同端点 = (一) => 一.渠道 === 端点.渠道 && 一.账号 === 端点.账号
+  严格键(值, ['版本', '端点', '最近发送于', '记录', '日志'])
+  if (值.版本 !== 1 || !同端点(值.端点) || (值.最近发送于 !== null && !时间有效(值.最近发送于)) || !Array.isArray(值.记录) || 值.记录.length > 4096 || !Array.isArray(值.日志) || 值.日志.length > 100) 失败('TASK_DATA_INVALID')
+  严格键(值.端点, ['渠道', '账号'])
+  const 键们 = new Set(), 编号们 = new Set()
+  for (const 一 of 值.记录) {
+    严格键(一, 任务字段); 严格键(一.来源, 接收字段)
+    const 源 = 契约.校验接收消息({ 版本: 1, ...一.来源, 发生于: null, 接收于: 一.创建于, 回复消息编号: null, 正文: 'metadata', 附件: [] })
+    if (!同端点(源.端点) || 源.会话.类型 !== 'private' || 一.来源键 !== 哈希(契约.接收去重键(源)) || typeof 一.输入指纹 !== 'string' || /^[a-f0-9]{64}$/u.exec(一.输入指纹)?.[0] !== 一.输入指纹 || !安全编号(一.编号, 'task-') || !安全编号(一.内部对话编号, 'channel-') || 键们.has(一.来源键) || 编号们.has(一.编号)) 失败('TASK_DATA_INVALID')
+    if (!状态们.includes(一.状态) || !代码们.includes(一.代码) || !Number.isSafeInteger(一.尝试) || 一.尝试 < 0 || 一.尝试 > 5 || !时间有效(一.更新于) || (一.下次尝试于 !== null && !时间有效(一.下次尝试于))) 失败('TASK_DATA_INVALID')
+    键们.add(一.来源键); 编号们.add(一.编号)
+    if (一.发送 !== null) {
+      const 发 = 契约.校验发送消息(一.发送)
+      if (!同端点(发.端点) || 发.会话.类型 !== 源.会话.类型 || 发.会话.编号 !== 源.会话.编号 || 发.接收者编号 !== 源.发送者编号 || 发.回复消息编号 !== 源.消息编号 || 发.用途 !== 'reply' || 发.请求编号 !== 'c15-' + 一.来源键 || 发.截止于 === null) 失败('TASK_DATA_INVALID')
+    }
+    if (一.回执 !== null) {
+      const 果 = 契约.校验发送结果(一.回执)
+      if (!一.发送 || !同端点(果.端点) || 果.请求编号 !== 一.发送.请求编号) 失败('TASK_DATA_INVALID')
+      if (['sent', 'unknown', 'cancelled'].includes(一.状态) && 一.状态 !== 果.状态) 失败('TASK_DATA_INVALID')
+    }
+    if (['queued', 'sending', 'sent', 'unknown', 'cancelled', 'expired'].includes(一.状态) && !一.发送) 失败('TASK_DATA_INVALID')
+    if (一.状态 === 'queued' && (!一.下次尝试于 || 一.尝试 >= 5 || (一.回执 && (一.回执.状态 !== 'failed' || !一.回执.可重试)))) 失败('TASK_DATA_INVALID')
+    if (一.状态 !== 'queued' && 一.下次尝试于 !== null) 失败('TASK_DATA_INVALID')
+    if (['processing', 'interrupted'].includes(一.状态) && (一.发送 || 一.尝试 || 一.回执)) 失败('TASK_DATA_INVALID')
+    if (['sending', 'sent', 'unknown', 'cancelled'].includes(一.状态) && 一.尝试 < 1) 失败('TASK_DATA_INVALID')
+    if (['sent', 'unknown', 'cancelled'].includes(一.状态) && !一.回执) 失败('TASK_DATA_INVALID')
+    if (一.尝试 > 0 && 值.最近发送于 === null) 失败('TASK_DATA_INVALID')
+  }
+  for (const 一 of 值.日志) {
+    严格键(一, ['于', '事件', '任务', '代码', '尝试'])
+    if (!时间有效(一.于) || !事件们.includes(一.事件) || (一.任务 !== null && !安全编号(一.任务, 'task-')) || !代码们.includes(一.代码) || !Number.isSafeInteger(一.尝试) || 一.尝试 < 0 || 一.尝试 > 5) 失败('TASK_DATA_INVALID')
+  }
+  return 值
+}
+
+module.exports = { 创建渠道任务调度, 校验渠道任务存档 }
