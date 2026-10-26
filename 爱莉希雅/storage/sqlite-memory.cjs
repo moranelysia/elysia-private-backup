@@ -3,6 +3,7 @@
 const { randomUUID, createHash } = require('node:crypto')
 const { 取内部, 原子执行 } = require('./sqlite-context.cjs')
 const { 创建会话仓储, 内部消息对象 } = require('./sqlite-chat.cjs')
+const { 读取旧来源 } = require('./sqlite-legacy-source.cjs')
 const 状态 = require('../脑/临时记忆状态.cjs')
 const 自评 = require('../脑/临时记忆自主评估.cjs')
 const 结构 = require('../脑/记忆结构.cjs')
@@ -86,7 +87,12 @@ function 创建记忆仓储(上下文) {
   }
   function 来源(db, 号, 要许可 = false) {
     编号(号); const 行 = db.prepare('SELECT * FROM chat_messages WHERE message_id=?').get(号)
-    if (!行 || 行.role !== 'user') 失败('SQLITE_MEMORY_SOURCE_INVALID')
+    if (!行) {
+      try { const 旧 = 读取旧来源(上下文, 号, 要许可); if (旧) return 旧 }
+      catch (错) { if (错.message === 'SQLITE_LEGACY_SWITCH_OFF') 失败('SQLITE_MEMORY_SWITCH_OFF'); throw 错 }
+      失败('SQLITE_MEMORY_SOURCE_INVALID')
+    }
+    if (行.role !== 'user') 失败('SQLITE_MEMORY_SOURCE_INVALID')
     const 条 = 内部消息对象(行), 段 = db.prepare('SELECT write_memory FROM chat_sessions WHERE conversation_id=?').get(条.对话)
     if (要许可 && 段?.write_memory !== 1) 失败('SQLITE_MEMORY_SWITCH_OFF')
     return 条
@@ -127,7 +133,7 @@ function 创建记忆仓储(上下文) {
         db.prepare('INSERT INTO memory_operations VALUES(?,?,?,?,?)').run(一.操作编号, 类型, 摘要, JSON.stringify(回执), 指纹(回执)); return 回执
       })
     } catch (错) {
-      const 代码 = /^SQLITE_(MEMORY|CONTEXT|CHAT)_[A-Z_]+$/u.test(错.message || '') ? 错.message : 'SQLITE_MEMORY_WRITE_FAILED'
+      const 代码 = /^SQLITE_(MEMORY|CONTEXT|CHAT|LEGACY)_[A-Z_]+$/u.test(错.message || '') ? 错.message : 'SQLITE_MEMORY_WRITE_FAILED'
       return { 好: false, 状态: ['SQLITE_CONTEXT_COMMIT_UNKNOWN', 'SQLITE_CONTEXT_ROLLBACK_FAILED', 'SQLITE_CONTEXT_UNUSABLE'].includes(代码) ? 'unknown' : 代码 === 'SQLITE_CONTEXT_TRANSACTION_FAILED' ? 'rolled-back' : 'rejected', 代码 }
     }
   }
@@ -142,7 +148,7 @@ function 创建记忆仓储(上下文) {
       const 默认天数 = 状态.默认保留天数[一.类别], 天数 = 细节.保留天数 === undefined ? 默认天数 : 整数(细节.保留天数, 1, 手动 ? 30 : 默认天数)
       const 条 = 状态调用(() => 库.新增(一.类别, 一.内容, { ...细节, 保留天数: 天数, 创建于: 一.时间, 提取方式: 手动 ? '手动' : '模型提取', 来源对话: 源?.对话 ?? '', 来源消息时间: 源?.时间 ?? '' }))
       const 数据 = 读数据(db), 存 = 数据.记录.find((x) => x.编号 === 条.编号)
-      if (源) 存.来源.消息编号 = 源.编号
+      if (源) { 存.来源.消息编号 = 源.编号; if (源.旧档内部定位) 存.来源.旧档内部定位 = 源.旧档内部定位 }
       if (一.依据原文 !== undefined) 存.依据原文 = 一.依据原文
       if (一.扩展 !== undefined) 存.扩展 = 一.扩展
       保存数据(db, 数据, 一.时间); return { 临时编号: 条.编号 }

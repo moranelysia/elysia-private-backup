@@ -4,7 +4,7 @@ const assert = require('node:assert/strict')
 const Module = require('node:module')
 const 原加载 = Module._load, 依赖 = []
 Module._load = function (名, 父, 主) {
-  if (!['node:sqlite', 'node:crypto', '../../storage/sqlite-context.cjs', '../../storage/sqlite-chat.cjs', './sqlite-context.cjs'].includes(名)) throw new Error('SQLITE_AUDIT_UNEXPECTED_DEPENDENCY')
+  if (!['node:sqlite', 'node:crypto', '../../storage/sqlite-context.cjs', '../../storage/sqlite-chat.cjs', './sqlite-context.cjs', './sqlite-legacy-source.cjs'].includes(名)) throw new Error('SQLITE_AUDIT_UNEXPECTED_DEPENDENCY')
   依赖.push(名); return 原加载.call(this, 名, 父, 主)
 }
 global.fetch = () => { throw new Error('SQLITE_AUDIT_NETWORK_FORBIDDEN') }

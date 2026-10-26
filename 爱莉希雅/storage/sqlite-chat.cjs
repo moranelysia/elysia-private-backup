@@ -2,6 +2,7 @@
 'use strict'
 const { createHash, createHmac, randomUUID, timingSafeEqual } = require('node:crypto')
 const { 取内部, 原子执行 } = require('./sqlite-context.cjs')
+const { 更新旧元数据 } = require('./sqlite-legacy-source.cjs')
 const 定义 = [
   ['chat_sessions', `CREATE TABLE chat_sessions (
     registration_sequence INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,7 +141,9 @@ function 创建会话仓储(上下文) {
         const 模式 = Object.hasOwn(选项, '模式') ? 选项.模式 : 旧.mode, 要写 = Object.hasOwn(选项, '写长期记忆') ? 选项.写长期记忆 : 旧.write_memory === 1
         if (!模式们.has(模式) || typeof 要写 !== 'boolean') 失败()
         const 扩展 = Object.hasOwn(选项, '扩展') ? 扩展JSON(选项.扩展) : 旧.extension_json
+        const 保存旧字段 = 更新旧元数据(上下文, 号, 选项, 旧.metadata_version + 1)
         db.prepare('UPDATE chat_sessions SET title=?,model=?,mode=?,write_memory=?,extension_json=?,metadata_version=metadata_version+1 WHERE conversation_id=?').run(标题, 模型, 模式, Number(要写), 扩展, 号)
+        保存旧字段?.()
         return { 好: true, 对话: 号, 元数据版本: 旧.metadata_version + 1 }
       })
     }) },

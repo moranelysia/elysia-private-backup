@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict'), Module = require('node:module')
 const 原 = Module._load
 const 允许 = new Set(['node:sqlite', 'node:crypto', '../../storage/sqlite-context.cjs', '../../storage/sqlite-chat.cjs', '../../storage/sqlite-memory.cjs', './sqlite-context.cjs', './sqlite-chat.cjs', '../脑/临时记忆状态.cjs', '../脑/临时记忆自主评估.cjs', '../脑/记忆结构.cjs', '../脑/记忆叙述.cjs', '../脑/临时记忆晋升.cjs', './记忆结构.cjs', './记忆叙述.cjs', './临时记忆自主评估.cjs'])
+允许.add('./sqlite-legacy-source.cjs')
 Module._load = function (名, 父, 主) { if (!允许.has(名)) throw new Error('SQLITE_MEMORY_AUDIT_DEPENDENCY'); return 原.call(this, 名, 父, 主) }
 global.fetch = () => { throw new Error('SQLITE_MEMORY_AUDIT_NETWORK') }
 const { 创建内存上下文 } = require('../../storage/sqlite-context.cjs'), { 创建会话仓储 } = require('../../storage/sqlite-chat.cjs'), { 创建记忆仓储 } = require('../../storage/sqlite-memory.cjs')

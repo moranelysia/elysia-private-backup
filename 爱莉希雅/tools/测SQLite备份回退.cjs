@@ -18,8 +18,8 @@ function 原文基线(s) {
   for (const 一 of 基线.文档) 一.原文 = (['channel-map', 'channel-tasks', 'extraction-buffer', 'usage'].includes(一.类型) ? '' : '\uFEFF') + 一.原文.replace(/\n/gu, '\r\n') + (['messages', 'usage'].includes(一.类型) ? '\r\n' : '')
   s.仓.封存原格式基线(基线, 备份范围); return 基线
 }
-测('fake权限任务→聊天整轮→证据晋升→日记状态在同库，18表可恢复', () => 用场景((s) => {
-  const 包 = s.备份(); assert.equal(包.快照.表.length, 18); assert.equal(包.文档.length, 24)
+测('fake权限任务→聊天整轮→证据晋升→日记状态在同库，含旧格式共20表可恢复', () => 用场景((s) => {
+  const 包 = s.备份(); assert.equal(包.快照.表.length, 20); assert.equal(包.文档.length, 24)
   用恢复(包, (r) => { assert.deepEqual(备(r, { 外部文件: s.文件, 必须文件: s.文件.map((x) => x.路径) }), 包); assert.equal(r.记忆.取统计().证据数, 1); assert.equal(r.日记.读取本机私密(本机).length, 1) })
 }))
 测('恢复后的整轮和晋升原请求幂等，回执/编号/顺序不变', () => 用场景((s) => 用恢复(s.备份(), (r) => {

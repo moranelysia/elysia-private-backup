@@ -7,6 +7,7 @@ const { 创建记忆仓储 } = require('./sqlite-memory.cjs')
 const { 创建状态仓储, 纯数据 } = require('./sqlite-state.cjs')
 const { 创建日记仓储 } = require('./sqlite-diary.cjs')
 const { 创建样本库 } = require('./sqlite-fixture.cjs')
+const { 创建旧格式仓储, 旧格式范围 } = require('./sqlite-legacy.cjs')
 const { 校验渠道映射存档 } = require('../脑/渠道会话映射.cjs')
 const { 校验渠道任务存档 } = require('../脑/渠道任务调度.cjs')
 const { 校验后台缓冲 } = require('../core/后台缓冲格式.cjs')
@@ -65,7 +66,7 @@ function 日记路径(一, 可见性) {
   if (!['日', '周'].includes(一.类型) || !/^\d{4}-(?:\d\d-\d\d|W\d\d)$/u.test(一.周期)) 失败('DIARY_PATH_INVALID')
   return 可见性 === 'private' ? `data/日记/私密/${一.周期.slice(0, 4)}/${一.周期}.json` : `data/日记/${一.类型}/${一.周期.slice(0, 4)}/${一.周期}.json`
 }
-function 投影文档(db, 会话) {
+function 投影文档(db, 会话, 旧格式) {
   const 文档们 = [], 加 = (路径, 类型, 值) => 文档们.push(文档(路径, 类型, 值))
   加('data/聊天记录/对话索引.json', 'conversations', db.prepare('SELECT conversation_id FROM chat_sessions ORDER BY registration_sequence').all().map((x) => 会话.读取对话(x.conversation_id)))
   加('data/聊天记录/聊天记录.jsonl', 'messages', db.prepare('SELECT payload_json FROM chat_messages ORDER BY rowid').all().map((x) => JSON.parse(x.payload_json)))
@@ -79,7 +80,7 @@ function 投影文档(db, 会话) {
   }
   加('data/日记/私密/评估索引.json', 'private-evaluations', { 格式版本: 1, 任务: db.prepare('SELECT record_json FROM diary_private_evaluations ORDER BY period').all().map((x) => JSON.parse(x.record_json)) })
   加('data/日记/私密/已删除.json', 'private-deletions', { 格式版本: 1, 周期: db.prepare("SELECT period FROM diary_deleted WHERE visibility='private' ORDER BY period").all().map((x) => x.period) })
-  return 文档们.sort((a, b) => 排(a.路径, b.路径))
+  return (旧格式 ? 旧格式.合并回退文档(文档们, 旧格式范围) : 文档们).sort((a, b) => 排(a.路径, b.路径))
 }
 function 核对文档(文档们, 预期) {
   if (!Array.isArray(文档们) || 文档们.length !== 预期.length) 失败('DOCUMENT_SET_MISMATCH')
@@ -115,7 +116,7 @@ function 创建隔离仓储(选项) {
   try { return 组合(上下文) } catch (错) { 上下文.关闭(); throw 错 }
 }
 function 组合(上下文) {
-  const 会话 = 创建会话仓储(上下文), 记忆 = 创建记忆仓储(上下文), 状态 = 创建状态仓储(上下文), 日记 = 创建日记仓储(上下文)
+  const 会话 = 创建会话仓储(上下文), 记忆 = 创建记忆仓储(上下文), 状态 = 创建状态仓储(上下文), 日记 = 创建日记仓储(上下文), 旧格式 = 创建旧格式仓储(上下文)
   const db = 取内部(上下文).db
   const 架构 = db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x }))
   const 表们 = 架构.filter((x) => x.type === 'table').map((x) => ({ 名称: x.name, 列: db.prepare(`PRAGMA table_info("${x.name}")`).all().map((y) => y.name) }))
@@ -123,7 +124,7 @@ function 组合(上下文) {
   function 核验() {
     取内部(上下文)
     if (!相等(架构, db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x })))) 失败('SCHEMA_MISMATCH')
-    会话.核验(); 记忆.核验(); 状态.核验(); 日记.核验()
+    会话.核验(); 记忆.核验(); 状态.核验(); 日记.核验(); 旧格式.核验()
     for (const 一 of db.prepare('SELECT kind,body_json FROM state_documents').all()) {
       const 值 = JSON.parse(一.body_json)
       if (一.kind === 'channel-map') 校验渠道映射存档(值)
@@ -134,7 +135,7 @@ function 组合(上下文) {
     return { 好: true }
   }
   function 当前文档() {
-    const 新 = 投影文档(db, 会话), 旧 = new Map(原文档.map((x) => [x.路径, x]))
+    const 新 = 投影文档(db, 会话, 旧格式), 旧 = new Map(原文档.map((x) => [x.路径, x]))
     return 新.map((x) => { const 原 = 旧.get(x.路径); return 原 && 相等(原文值(原), 原文值(x)) ? 克隆(原) : x })
   }
   function 取快照() {
@@ -142,12 +143,12 @@ function 组合(上下文) {
     return { 架构指纹: 摘要(架构), 表: 表们.map((一) => ({ ...一, 行: db.prepare(`SELECT * FROM "${一.名称}" ORDER BY rowid`).all().map((行) => 一.列.map((列) => 行[列])) })) }
   }
   const 句柄 = Object.freeze({
-    会话, 记忆, 状态, 日记, 核验, 关闭: () => 上下文.关闭(), 取状态: () => 上下文.取状态(),
-    导出原格式(范围值) { 授权(范围值); return 原子执行(上下文, () => { 核验(); const 文档 = 当前文档(); 核对文档(文档, 投影文档(db, 会话)); return { 版本: 1, 用途: 'synthetic-json-rollback', 文档 } }) },
+    会话, 记忆, 状态, 日记, 旧格式, 核验, 关闭: () => 上下文.关闭(), 取状态: () => 上下文.取状态(),
+    导出原格式(范围值) { 授权(范围值); return 原子执行(上下文, () => { 核验(); const 文档 = 当前文档(); 核对文档(文档, 投影文档(db, 会话, 旧格式)); return { 版本: 1, 用途: 'synthetic-json-rollback', 文档 } }) },
     封存原格式基线(原, 范围值) {
       授权(范围值); const 一 = 纯数据(原)
       if (!相等(Object.keys(一).sort(), ['版本', '用途', '文档'].sort()) || 一.版本 !== 1 || 一.用途 !== 'synthetic-json-rollback') 失败('BASELINE_INVALID')
-      原子执行(上下文, () => { 核验(); 核对文档(一.文档, 投影文档(db, 会话)) })
+      原子执行(上下文, () => { 核验(); 核对文档(一.文档, 投影文档(db, 会话, 旧格式)) })
       原文档 = 克隆(一.文档); return { 好: true, 文档数: 原文档.length }
     },
     创建备份(输入, 范围值) {
@@ -156,9 +157,9 @@ function 组合(上下文) {
       const 文件 = 核对外部文件(一.外部文件)
       if (!Array.isArray(一.必须文件) || !相等([...一.必须文件].sort(), 文件.map((x) => x.路径).sort())) 失败('FILES_INCOMPLETE')
       return 原子执行(上下文, () => {
-        const 快照 = 取快照(), 文档 = 当前文档(); 核对文档(文档, 投影文档(db, 会话))
+        const 快照 = 取快照(), 文档 = 当前文档(); 核对文档(文档, 投影文档(db, 会话, 旧格式))
         // 原档只用于保留未变更文档的字节格式；删除的文档和旧正文不带入新备份。
-        const 内容 = { 版本: 1, 用途: 'synthetic-sqlite-backup', 时间: 一.时间, 快照, 文档, 外部文件: 文件 }
+        const 内容 = { 版本: 2, 用途: 'synthetic-sqlite-backup', 时间: 一.时间, 快照, 文档, 外部文件: 文件 }
         const 包 = { ...内容, 指纹: 摘要(内容) }; 纯数据(包); return 包
       })
     },
@@ -169,7 +170,8 @@ function 组合(上下文) {
 const 内部们 = new WeakMap()
 function 恢复隔离仓储(原, 范围值) {
   授权(范围值); const 包 = 纯数据(原), { 指纹, ...内容 } = 包
-  if (!相等(Object.keys(包).sort(), ['版本', '用途', '时间', '快照', '文档', '外部文件', '指纹'].sort()) || 包.版本 !== 1 || 包.用途 !== 'synthetic-sqlite-backup' || 指纹 !== 摘要(内容)) 失败('HASH_MISMATCH')
+  if (!相等(Object.keys(包).sort(), ['版本', '用途', '时间', '快照', '文档', '外部文件', '指纹'].sort()) || 包.用途 !== 'synthetic-sqlite-backup' || 指纹 !== 摘要(内容)) 失败('HASH_MISMATCH')
+  if (包.版本 !== 2) 失败('VERSION_UNSUPPORTED')
   if (!是时间(包.时间)) 失败('INPUT_INVALID')
   const 仓 = 创建隔离仓储({ 用途: 'synthetic-sqlite-repository' }), { 上下文, 架构, 表们, db } = 内部们.get(仓)
   try {
@@ -188,7 +190,7 @@ function 恢复隔离仓储(原, 范围值) {
       }
       db.exec('DELETE FROM sqlite_sequence')
       for (const 行 of 包.快照.表.find((x) => x.名称 === 'sqlite_sequence').行) db.prepare('INSERT INTO sqlite_sequence(name,seq) VALUES(?,?)').run(...行)
-      仓.核验(); 核对文档(包.文档, 投影文档(db, 仓.会话))
+      仓.核验(); 核对文档(包.文档, 投影文档(db, 仓.会话, 仓.旧格式))
     })
     仓.封存原格式基线({ 版本: 1, 用途: 'synthetic-json-rollback', 文档: 包.文档 }, 范围)
     return 仓
