@@ -3,7 +3,7 @@
 const { randomUUID, createHash } = require('node:crypto')
 const { 取内部, 原子执行 } = require('./sqlite-context.cjs')
 const { 创建会话仓储, 内部消息对象 } = require('./sqlite-chat.cjs')
-const { 读取旧来源 } = require('./sqlite-legacy-source.cjs')
+const { 读取旧来源, 保留旧长期口吻, 核验旧记忆基线 } = require('./sqlite-legacy-source.cjs')
 const 状态 = require('../脑/临时记忆状态.cjs')
 const 自评 = require('../脑/临时记忆自主评估.cjs')
 const 结构 = require('../脑/记忆结构.cjs')
@@ -62,7 +62,7 @@ function 创建记忆仓储(上下文) {
       db.prepare('INSERT INTO repository_meta VALUES(?,?)').run('memory_schema', '1'); db.prepare('INSERT INTO repository_meta VALUES(?,?)').run('memory_revision', '0')
     })
   } catch (错) { if (/^SQLITE_[A-Z_]+$/u.test(错.message || '')) throw 错; 失败('SQLITE_MEMORY_SCHEMA_INVALID') }
-  function 连接() { const db = 取内部(上下文).db; 架构(db); return db }
+  function 连接() { const db = 取内部(上下文).db; 架构(db); 核验旧记忆基线(上下文); return db }
   function 版本(db) { const 文 = db.prepare("SELECT value FROM repository_meta WHERE key='memory_revision'").get()?.value, 数 = Number(文); if (!Number.isSafeInteger(数) || 数 < 0 || 数 >= Number.MAX_SAFE_INTEGER || String(数) !== 文) 失败('SQLITE_MEMORY_INTEGRITY_FAILED'); return 数 }
   function 读数据(db) { return { 版本: 1, 记录: db.prepare('SELECT record_json FROM memory_temporary ORDER BY rowid').all().map((一) => JSON.parse(一.record_json)) } }
   function 保存数据(db, 数据, 时间) {
@@ -137,7 +137,7 @@ function 创建记忆仓储(上下文) {
       return { 好: false, 状态: ['SQLITE_CONTEXT_COMMIT_UNKNOWN', 'SQLITE_CONTEXT_ROLLBACK_FAILED', 'SQLITE_CONTEXT_UNUSABLE'].includes(代码) ? 'unknown' : 代码 === 'SQLITE_CONTEXT_TRANSACTION_FAILED' ? 'rolled-back' : 'rejected', 代码 }
     }
   }
-  function 读(做) { try { return 做(连接()) } catch (错) { if (/^SQLITE_(MEMORY|CONTEXT|CHAT)_[A-Z_]+$/u.test(错.message || '')) throw 错; 失败('SQLITE_MEMORY_READ_FAILED') } }
+  function 读(做) { try { return 做(连接()) } catch (错) { if (/^SQLITE_(MEMORY|CONTEXT|CHAT|LEGACY)_[A-Z_]+$/u.test(错.message || '')) throw 错; 失败('SQLITE_MEMORY_READ_FAILED') } }
   return Object.freeze({
     新增临时(原) { return 写操作('create-temp', 原, ['类别', '内容', '细节', '来源消息编号', '依据原文', '扩展'], (db, 一, 库) => {
       if (!状态.固定分类.includes(一.类别)) 失败(); 文本(一.内容)
@@ -235,7 +235,7 @@ function 创建记忆仓储(上下文) {
       const 长期身份 = new Set(), 临时来源 = new Set()
       for (const 行 of 全长期) {
         const 身份 = JSON.stringify([行.category, 行.memory_id]); if (长期身份.has(身份) || (行.source_temporary && 临时来源.has(行.source_temporary))) 失败('SQLITE_MEMORY_INTEGRITY_FAILED'); 长期身份.add(身份); if (行.source_temporary) 临时来源.add(行.source_temporary)
-        const 条 = JSON.parse(行.record_json); if (条.编号 !== 行.memory_id || 条.类别 !== 行.category || (条.临时记忆 ?? null) !== 行.source_temporary || 叙述.有第三方系统称呼(条.内容)) 失败('SQLITE_MEMORY_INTEGRITY_FAILED')
+        const 条 = JSON.parse(行.record_json); if (条.编号 !== 行.memory_id || 条.类别 !== 行.category || (条.临时记忆 ?? null) !== 行.source_temporary || (叙述.有第三方系统称呼(条.内容) && !保留旧长期口吻(上下文, 行.category, 行.memory_id, 条.内容))) 失败('SQLITE_MEMORY_INTEGRITY_FAILED')
         if (行.source_temporary) {
           const 源 = db.prepare('SELECT record_json FROM memory_temporary WHERE memory_id=?').get(行.source_temporary) || db.prepare('SELECT record_json FROM memory_tombstones WHERE memory_id=?').get(行.source_temporary)
           if (!源) 失败('SQLITE_MEMORY_INTEGRITY_FAILED')

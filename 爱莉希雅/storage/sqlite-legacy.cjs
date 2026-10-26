@@ -1,11 +1,13 @@
-/** F2：同库旧格式定位与统一读取。原字段不承载合成身份；无文件/网络入口。 */
+/** F2/F3A：同库旧格式定位、统一读取和显式可变记忆接线；无文件/网络入口。 */
 'use strict'
 const { createHash, createHmac, timingSafeEqual } = require('node:crypto')
 const { 取内部, 原子执行 } = require('./sqlite-context.cjs')
 const { 创建会话仓储 } = require('./sqlite-chat.cjs')
 const { 纯数据 } = require('./sqlite-state.cjs')
 const { 创建影子档案 } = require('./sqlite-fixture.cjs')
-const { 登记旧来源, 登记旧元数据 } = require('./sqlite-legacy-source.cjs')
+const { 登记旧来源, 登记旧元数据, 登记旧记忆基线 } = require('./sqlite-legacy-source.cjs')
+const { 创建记忆仓储 } = require('./sqlite-memory.cjs')
+const 临时规则 = require('../脑/临时记忆状态.cjs')
 const 范围 = Object.freeze({ 用途: 'local-legacy-adapter', 包含私密: true })
 const 句柄们 = new WeakMap(), 哈希 = (x) => createHash('sha256').update(x).digest('hex'), 拷 = (x) => JSON.parse(JSON.stringify(x))
 const 映射 = { 'data/聊天记录/对话索引.json': 'conversations', 'data/聊天记录/聊天记录.jsonl': 'messages', 'data/事实.json': 'facts', 'data/经历.json': 'episodes', 'data/小本子.json': 'notebook', 'data/临时记忆.json': 'temporary' }
@@ -18,6 +20,8 @@ function 授权(x) { const s = 纯数据(x); if (Object.keys(s).length !== 2 || 
 function 精确(x, keys, 必须 = keys) { if (!x || Object.getPrototypeOf(x) !== Object.prototype || Object.keys(x).some((k) => !keys.includes(k)) || 必须.some((k) => !Object.hasOwn(x, k))) 失败('INPUT_INVALID') }
 const 文本 = (v) => typeof v === 'string' ? v : null
 const 位置键 = (p, n) => 'legacy-' + 哈希(JSON.stringify([p, n]))
+const 长期类别 = { facts: '事实', episodes: '经历', notebook: '小本子' }
+const 有编号 = (x) => typeof x === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/u.exec(x)?.[0] === x
 function 准备(原) {
   const 包 = 纯数据(原); 精确(包, ['版本', '用途', '文档'])
   if (包.版本 !== 1 || 包.用途 !== 范围.用途 || !Array.isArray(包.文档) || !包.文档.length) 失败('INPUT_INVALID')
@@ -52,12 +56,20 @@ function 创建旧格式仓储(上下文) {
   function 原包() { return { 版本: 1, 用途: 范围.用途, 文档: db.prepare('SELECT * FROM legacy_documents ORDER BY path').all().map((x) => ({ 路径: x.path, 类型: x.kind, 原文: x.original_text })) } }
   function 核验() {
     架构(); const 包 = 原包(), 指 = db.prepare("SELECT value FROM repository_meta WHERE key='legacy_import_hash'").get()?.value
-    if (!包.文档.length) { if (指 || db.prepare('SELECT 1 FROM legacy_records').get() || db.prepare("SELECT 1 FROM repository_meta WHERE key GLOB 'legacy_patch_*'").get()) 失败('INTEGRITY_FAILED'); return { 好: true, 文档数: 0 } }
+    if (!包.文档.length) { if (指 || db.prepare('SELECT 1 FROM legacy_records').get() || db.prepare("SELECT 1 FROM repository_meta WHERE key GLOB 'legacy_patch_*' OR key='legacy_memory_binding'").get()) 失败('INTEGRITY_FAILED'); return { 好: true, 文档数: 0 } }
     const p = 准备(包)
     if (p.指纹 !== 指) 失败('INTEGRITY_FAILED')
     for (const d of db.prepare('SELECT * FROM legacy_documents').all()) if (哈希(d.original_text) !== d.sha256) 失败('INTEGRITY_FAILED')
     const 现 = db.prepare('SELECT * FROM legacy_records ORDER BY path,position').all().map((x) => ({ ...x }))
     if (JSON.stringify(现) !== JSON.stringify(p.行)) 失败('INTEGRITY_FAILED')
+    const 绑定 = db.prepare("SELECT value FROM repository_meta WHERE key='legacy_memory_binding'").get()?.value
+    if (绑定 !== undefined && 绑定 !== 指) 失败('MEMORY_BINDING_INVALID')
+    for (const r of 现.filter((x) => x.kind === 'temporary' || Object.hasOwn(长期类别, x.kind))) {
+      if (!r.original_id) { if (绑定) 失败('MEMORY_ID_REQUIRED'); continue }
+      const 临 = r.kind === 'temporary', 表 = 临 ? ['memory_temporary', 'memory_tombstones'] : ['memory_long', 'memory_long_deleted']
+      const 命中 = 表.filter((t) => db.prepare('SELECT 1 FROM sqlite_schema WHERE name=?').get(t)).flatMap((t) => db.prepare(`SELECT record_json FROM ${t} WHERE memory_id=?${临 ? '' : ' AND category=?'}`).all(...(临 ? [r.original_id] : [r.original_id, 长期类别[r.kind]])))
+      if (绑定 ? 命中.length !== 1 : 命中.length > 0) 失败('MEMORY_BINDING_INVALID')
+    }
     for (const r of db.prepare("SELECT key,value FROM repository_meta WHERE key GLOB 'legacy_patch_*'").all()) {
       let x; try { x = JSON.parse(r.value) } catch { 失败('INTEGRITY_FAILED') }
       if (typeof x.对话 !== 'string' || r.key !== 改键(x.对话)) 失败('INTEGRITY_FAILED')
@@ -92,6 +104,35 @@ function 创建旧格式仓储(上下文) {
   }
   const api = Object.freeze({
     核验,
+    接入旧记忆(scope) {
+      授权(scope); const 记忆 = 创建记忆仓储(上下文)
+      return 原子执行(上下文, () => {
+        核验(); const 指 = db.prepare("SELECT value FROM repository_meta WHERE key='legacy_import_hash'").get()?.value
+        if (!指) 失败('MEMORY_SOURCE_REQUIRED')
+        if (db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get()) { 记忆.核验(); return { 好: true, 新接入: false } }
+        const 表们 = ['memory_temporary', 'memory_evidence', 'memory_assessments', 'memory_long', 'memory_operations', 'memory_tombstones', 'memory_long_deleted']
+        if (记忆.取统计().版本 !== 0 || 表们.some((t) => db.prepare(`SELECT 1 FROM ${t}`).get())) 失败('MEMORY_NOT_EMPTY')
+        // 与旧JSON的三类读取次序一致；每份原文件内仍按物理位置，不能按旧时间猜排序。
+        const rows = db.prepare("SELECT * FROM legacy_records WHERE kind IN ('facts','episodes','notebook','temporary') ORDER BY CASE kind WHEN 'facts' THEN 1 WHEN 'episodes' THEN 2 WHEN 'notebook' THEN 3 ELSE 4 END,position").all()
+        if (!原包().文档.some((d) => d.类型 === 'temporary' || Object.hasOwn(长期类别, d.类型))) 失败('MEMORY_SOURCE_REQUIRED')
+        for (const r of rows) {
+          const x = JSON.parse(r.payload_json)
+          if (!有编号(x.编号)) 失败('MEMORY_ID_REQUIRED')
+          if (typeof x.内容 !== 'string' || !x.内容.trim()) 失败('MEMORY_RECORD_INVALID')
+          if (r.kind === 'temporary') {
+            if (!临时规则.固定分类.includes(x.类别) || !['有效','已归档','已晋升'].includes(x.生命周期) || !['待确认','已确认'].includes(x.确认状态) || typeof x.到期于 !== 'string' || !Number.isFinite(Date.parse(x.到期于))) 失败('MEMORY_RECORD_INVALID')
+            db.prepare('INSERT INTO memory_temporary VALUES(?,?,?,?,?)').run(x.编号, x.生命周期, x.确认状态, x.到期于, r.payload_json)
+            for (const [i, e] of (x.评估账本?.证据 || []).entries()) { if (typeof e.指纹 !== 'string' || !e.指纹) 失败('MEMORY_RECORD_INVALID'); db.prepare('INSERT INTO memory_evidence VALUES(?,?,?,?)').run(x.编号, e.指纹, i, JSON.stringify(e)) }
+            for (const [i, e] of (x.评估账本?.评估历史 || []).entries()) db.prepare('INSERT INTO memory_assessments VALUES(?,?,?)').run(x.编号, i, JSON.stringify(e))
+          } else {
+            if (x.类别 !== 长期类别[r.kind] || (x.临时记忆 !== undefined && x.临时记忆 !== null && !有编号(x.临时记忆))) 失败('MEMORY_RECORD_INVALID')
+            db.prepare('INSERT INTO memory_long VALUES(?,?,?,?)').run(x.类别, x.编号, x.临时记忆 ?? null, r.payload_json)
+          }
+        }
+        db.prepare('INSERT INTO repository_meta VALUES(?,?)').run('legacy_memory_binding', 指)
+        核验(); 记忆.核验(); return { 好: true, 新接入: true, 记录数: rows.length }
+      })
+    },
     导入(原, scope) {
       授权(scope); const p = 准备(原)
       return 原子执行(上下文, () => {
@@ -139,6 +180,11 @@ function 创建旧格式仓储(上下文) {
           const ids = new Set(old.map((x) => x.编号)); let changed = false
           const 改 = old.map((x) => { const p = 补丁(x.编号), n = fresh.find((v) => v.编号 === x.编号); if (n && n.元数据版本 > 1 && !p) 失败('METADATA_EDIT_NOT_ADAPTED'); if (p) changed = true; return p ? { ...x, ...p.字段 } : x })
           值 = 改.concat(fresh.filter((x) => !ids.has(x.编号))); unchanged = !changed && 值.length === old.length
+        } else if (db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get()) {
+          const a = d.类型 === 'temporary' ? old.记录 : old, b = d.类型 === 'temporary' ? fresh.记录 : fresh
+          const 当前们 = new Map(b.map((x) => [x.编号, x])), ids = new Set(a.map((x) => x.编号))
+          const 记录 = a.flatMap((x) => 当前们.has(x.编号) ? [当前们.get(x.编号)] : []).concat(b.filter((x) => !ids.has(x.编号)))
+          值 = d.类型 === 'temporary' ? { ...old, 记录 } : 记录; unchanged = JSON.stringify(值) === JSON.stringify(old)
         } else {
           const a = d.类型 === 'temporary' ? old.记录 : old, b = d.类型 === 'temporary' ? fresh.记录 : fresh
           const ids = new Set(a.map((x) => x.编号).filter(Boolean)); if (b.some((x) => ids.has(x.编号))) 失败('RECORD_ID_CONFLICT')
@@ -150,6 +196,11 @@ function 创建旧格式仓储(上下文) {
     },
   })
   句柄们.set(上下文, { api, 旧对话 })
+  登记旧记忆基线(上下文, (类, 号, 正文) => {
+    核验(); if (!db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get()) return false
+    const r = db.prepare('SELECT payload_json FROM legacy_records WHERE kind=? AND original_id=?').get(Object.keys(长期类别).find((k) => 长期类别[k] === 类) || '', 号)
+    return !!r && JSON.parse(r.payload_json).内容 === 正文
+  }, 核验)
   登记旧来源(上下文, (号, 要许可) => 读取旧来源(上下文, 号, 要许可))
   登记旧元数据(上下文, (号, 选项, 版本) => {
     if (!旧对话(号)) return

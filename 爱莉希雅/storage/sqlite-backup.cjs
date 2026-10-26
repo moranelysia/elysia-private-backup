@@ -158,8 +158,10 @@ function 组合(上下文) {
       if (!Array.isArray(一.必须文件) || !相等([...一.必须文件].sort(), 文件.map((x) => x.路径).sort())) 失败('FILES_INCOMPLETE')
       return 原子执行(上下文, () => {
         const 快照 = 取快照(), 文档 = 当前文档(); 核对文档(文档, 投影文档(db, 会话, 旧格式))
-        // 原档只用于保留未变更文档的字节格式；删除的文档和旧正文不带入新备份。
-        const 内容 = { 版本: 2, 用途: 'synthetic-sqlite-backup', 时间: 一.时间, 快照, 文档, 外部文件: 文件 }
+        // 原文基线只保留未变更业务文档的格式，删除正文不回到回退文档；
+        // 完整逻辑快照仍含记忆删除档案及legacy来源原文，不是物理擦除备份。
+        // v3标记已接入可变旧记忆；旧v2实现不能将它误当原档追加模式恢复。
+        const 内容 = { 版本: db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get() ? 3 : 2, 用途: 'synthetic-sqlite-backup', 时间: 一.时间, 快照, 文档, 外部文件: 文件 }
         const 包 = { ...内容, 指纹: 摘要(内容) }; 纯数据(包); return 包
       })
     },
@@ -171,7 +173,7 @@ const 内部们 = new WeakMap()
 function 恢复隔离仓储(原, 范围值) {
   授权(范围值); const 包 = 纯数据(原), { 指纹, ...内容 } = 包
   if (!相等(Object.keys(包).sort(), ['版本', '用途', '时间', '快照', '文档', '外部文件', '指纹'].sort()) || 包.用途 !== 'synthetic-sqlite-backup' || 指纹 !== 摘要(内容)) 失败('HASH_MISMATCH')
-  if (包.版本 !== 2) 失败('VERSION_UNSUPPORTED')
+  if (![2, 3].includes(包.版本)) 失败('VERSION_UNSUPPORTED')
   if (!是时间(包.时间)) 失败('INPUT_INVALID')
   const 仓 = 创建隔离仓储({ 用途: 'synthetic-sqlite-repository' }), { 上下文, 架构, 表们, db } = 内部们.get(仓)
   try {
@@ -190,6 +192,7 @@ function 恢复隔离仓储(原, 范围值) {
       }
       db.exec('DELETE FROM sqlite_sequence')
       for (const 行 of 包.快照.表.find((x) => x.名称 === 'sqlite_sequence').行) db.prepare('INSERT INTO sqlite_sequence(name,seq) VALUES(?,?)').run(...行)
+      if (!!db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get() !== (包.版本 === 3)) 失败('VERSION_UNSUPPORTED')
       仓.核验(); 核对文档(包.文档, 投影文档(db, 仓.会话, 仓.旧格式))
     })
     仓.封存原格式基线({ 版本: 1, 用途: 'synthetic-json-rollback', 文档: 包.文档 }, 范围)
