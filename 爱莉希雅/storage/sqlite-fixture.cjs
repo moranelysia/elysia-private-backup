@@ -1,4 +1,4 @@
-/** S-15A候选：只接受显式虚构字符串，只建立内存SQLite；无磁盘/业务模块依赖。 */
+/** A样本档案及F1显式本机只读影子档案：用途隔离，仅内存；无文件/业务依赖。 */
 'use strict'
 const { DatabaseSync } = require('node:sqlite')
 const { createHash } = require('node:crypto')
@@ -49,7 +49,13 @@ function 安全数值(值, 深度 = 0) {
   if (typeof 值 === 'number' && (!Number.isFinite(值) || (Number.isInteger(值) && !Number.isSafeInteger(值)))) 失败('SQLITE_FIXTURE_NUMBER_UNSAFE')
   if (值 && typeof 值 === 'object') for (const 一 of Object.values(值)) 安全数值(一, 深度 + 1)
 }
-function 创建样本库() {
+function 创建样本库() { return 创建档案('synthetic-sqlite-fixture') }
+function 创建影子档案(范围) {
+  精确对象(范围, ['用途', '包含私密'])
+  if (范围.用途 !== 'local-readonly-shadow' || 范围.包含私密 !== true) 失败('SQLITE_FIXTURE_SCOPE_REQUIRED')
+  return 创建档案('local-readonly-shadow')
+}
+function 创建档案(用途) {
   const db = new DatabaseSync(':memory:', { enableForeignKeyConstraints: true, enableDoubleQuotedStringLiterals: false, allowExtension: false })
   let 已关闭 = false
   const 检查 = () => { if (已关闭) 失败('SQLITE_FIXTURE_CLOSED') }
@@ -84,7 +90,7 @@ function 创建样本库() {
   }
   function 投影(包) {
     精确对象(包, ['版本', '用途', '文档'])
-    if (包.版本 !== 1 || 包.用途 !== 'synthetic-sqlite-fixture') 失败('SQLITE_FIXTURE_SCOPE_REQUIRED')
+    if (包.版本 !== 1 || 包.用途 !== 用途) 失败('SQLITE_FIXTURE_SCOPE_REQUIRED')
     const 文档 = 密数组(包.文档)
     if (!文档.length || 文档.length > 64) 失败('SQLITE_FIXTURE_LIMIT')
     const 结果 = { sources: [], tables: Object.fromEntries(表们.map((一) => [一, []])), issues: [] }
@@ -166,7 +172,7 @@ function 创建样本库() {
     return 结果
   }
   function 行们(表) { return db.prepare(`SELECT * FROM ${表} ORDER BY document_id,ordinal`).all().map((一) => ({ ...一 })) }
-  function 快照() { return { 版本: 1, 用途: 'synthetic-sqlite-fixture', 文档: db.prepare('SELECT * FROM source_documents ORDER BY position').all().map((一) => ({ 名称: 一.document_id, 类型: 一.source_type, 原文: 一.original_text })) } }
+  function 快照() { return { 版本: 1, 用途, 文档: db.prepare('SELECT * FROM source_documents ORDER BY position').all().map((一) => ({ 名称: 一.document_id, 类型: 一.source_type, 原文: 一.original_text })) } }
   function 核验() {
     检查()
     if (db.prepare('PRAGMA quick_check').get().quick_check !== 'ok' || db.prepare('PRAGMA foreign_key_check').all().length) 失败('SQLITE_FIXTURE_INTEGRITY_FAILED')
@@ -182,7 +188,7 @@ function 创建样本库() {
   }
   return Object.freeze({
     导入(包) {
-      检查(); const 投 = 投影(包), 规范包 = { 版本: 1, 用途: 'synthetic-sqlite-fixture', 文档: 投.sources.map((一) => ({ 名称: 一.document_id, 类型: 一.source_type, 原文: 一.original_text })) }, 指纹 = 哈希(JSON.stringify(规范包)), 已有 = db.prepare('SELECT value FROM fixture_meta WHERE key=?').get('bundle_hash')?.value
+      检查(); const 投 = 投影(包), 规范包 = { 版本: 1, 用途, 文档: 投.sources.map((一) => ({ 名称: 一.document_id, 类型: 一.source_type, 原文: 一.original_text })) }, 指纹 = 哈希(JSON.stringify(规范包)), 已有 = db.prepare('SELECT value FROM fixture_meta WHERE key=?').get('bundle_hash')?.value
       if (已有) { if (已有 !== 指纹) 失败('SQLITE_FIXTURE_NOT_EMPTY'); 核验(); return { 好: true, 新导入: false, 指纹 } }
       db.exec('BEGIN IMMEDIATE')
       try {
@@ -202,4 +208,4 @@ function 创建样本库() {
     关闭() { if (!已关闭) { 已关闭 = true; db.close() } },
   })
 }
-module.exports = { 创建样本库, 版本, 表们 }
+module.exports = { 创建样本库, 创建影子档案, 版本, 表们 }
