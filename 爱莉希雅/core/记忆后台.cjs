@@ -2,6 +2,7 @@
 'use strict'
 const fs = require('node:fs'), path = require('node:path'), { randomUUID } = require('node:crypto')
 const { 创建后台任务 } = require('./后台任务.cjs')
+const { 校验后台缓冲 } = require('./后台缓冲格式.cjs')
 function 创建记忆后台({ 所有者, 配置, 模型连接, 检查写入, 设置 = {}, 现在 = () => new Date(), 设延时, 清延时 } = {}) {
   const 名字们 = ['diary', 'private', 'relations', 'clusters', 'facts', 'extract']
   if (!设置 || Object.keys(设置).some((键) => !名字们.includes(键) || typeof 设置[键] !== 'boolean') || 设置.private) throw new Error('BACKGROUND_POLICY_INVALID')
@@ -13,7 +14,7 @@ function 创建记忆后台({ 所有者, 配置, 模型连接, 检查写入, 设
     try {
       if (fs.statSync(文件).size > 4 * 1024 * 1024) throw new Error('BACKGROUND_BUFFER_INVALID')
       const 包 = JSON.parse(fs.readFileSync(文件, 'utf8'))
-      if (包.版本 !== 1 || !Array.isArray(包.轮次) || 包.轮次.length > 100 || 包.轮次.some((一) => !一 || !/^channel-[a-zA-Z0-9_-]+$/u.test(一.对话) || typeof 一.消息编号 !== 'string' || typeof 一.用户原话 !== 'string' || 一.用户原话.length > 6000 || typeof 一.她的回复 !== 'string' || 一.她的回复.length > 6000 || !Number.isFinite(Date.parse(一.接收于)) || !Number.isFinite(Date.parse(一.消息时间)))) throw new Error('BACKGROUND_BUFFER_INVALID')
+      校验后台缓冲(包)
       已见缓冲 = true; return 包.轮次
     } catch (错) { if (错.code === 'ENOENT' && !已见缓冲) return []; throw new Error('BACKGROUND_BUFFER_INVALID') }
   }

@@ -17,6 +17,7 @@ function 写入隔离回退(原, 范围) {
   } finally { 仓.关闭() }
   const 临时父 = fs.realpathSync(os.tmpdir()), 根 = fs.mkdtempSync(path.join(临时父, 'elysia-sqlite-E-'))
   const 临时 = path.join(根, 'staging'), 完成 = path.join(根, 'ready'), 已见 = new Set(), 清单 = []
+  let 发布中 = false
   try {
     核对目录(根); fs.mkdirSync(临时, { mode: 0o700 }); 核对目录(临时)
     function 写(相对, 字节) {
@@ -44,11 +45,14 @@ function 写入隔离回退(原, 范围) {
     写('migration/manifest.json', Buffer.from(JSON.stringify(核验清单, null, 2), 'utf8'))
     核对目录(根); 核对目录(临时)
     if (path.dirname(path.resolve(完成)) !== 根 || fs.existsSync(完成)) 失败()
-    fs.renameSync(临时, 完成)
+    发布中 = true; fs.renameSync(临时, 完成)
     return { 好: true, 根, 目录: 完成, 数据目录: path.join(完成, 'data'), 缓存目录: path.join(完成, 'cache'), 文件数: 清单.length, 指纹: 包.指纹 }
   } catch {
-    // 失败不发布ready；只留下本次新建的staging供定位，没有旧目标需要回滚。
-    const 错 = new Error('SQLITE_BACKUP_FILE_WRITE_FAILED'); 错.隔离目录 = 根; throw 错
+    // rename可能已生效而调用方未得到成功；这时必须报告不确定，不能声称没有ready。
+    let 不确定 = false
+    if (发布中) { try { 不确定 = fs.existsSync(完成) } catch { 不确定 = true } }
+    const 错 = new Error(不确定 ? 'SQLITE_BACKUP_PUBLICATION_UNKNOWN' : 'SQLITE_BACKUP_FILE_WRITE_FAILED')
+    错.隔离目录 = 根; 错.状态 = 不确定 ? 'unknown' : 'not-published'; throw 错
   }
 }
 module.exports = { 写入隔离回退 }

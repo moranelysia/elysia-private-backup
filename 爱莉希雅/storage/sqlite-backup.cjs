@@ -9,11 +9,13 @@ const { 创建日记仓储 } = require('./sqlite-diary.cjs')
 const { 创建样本库 } = require('./sqlite-fixture.cjs')
 const { 校验渠道映射存档 } = require('../脑/渠道会话映射.cjs')
 const { 校验渠道任务存档 } = require('../脑/渠道任务调度.cjs')
+const { 校验后台缓冲 } = require('../core/后台缓冲格式.cjs')
 const 范围 = Object.freeze({ 用途: 'local-migration-backup', 包含私密: true })
 const 哈希 = (值) => createHash('sha256').update(值).digest('hex')
 const 摘要 = (值) => 哈希(JSON.stringify(值))
 const 克隆 = (值) => JSON.parse(JSON.stringify(值))
 const 排 = (a, b) => a < b ? -1 : a > b ? 1 : 0
+const 是时间 = (值) => typeof 值 === 'string' && Number.isFinite(Date.parse(值)) && new Date(值).toISOString() === 值
 function 失败(码) { throw new Error('SQLITE_BACKUP_' + 码) }
 function 授权(值) {
   const 一 = 纯数据(值)
@@ -48,6 +50,7 @@ const 固定来源 = Object.freeze({
   'usage:headless': ['data/核心用量.jsonl', 'usage'],
   'work-index:main': ['data/工作索引.json', 'work-index'],
   'background-state:relations': ['cache/记忆关系整理状态.json', 'auxiliary'],
+  'background-state:relations-headless': ['data/关系整理状态.json', 'auxiliary'],
   'cluster-state:clusters': ['cache/记忆聚类候选.json', 'auxiliary'],
   'cluster-state:timeline': ['cache/记忆时间线候选.json', 'auxiliary'],
 })
@@ -86,6 +89,11 @@ function 核对文档(文档们, 预期) {
     for (let i = 0; i < 预期.length; i++) {
       const a = 文档们[i], b = 预期[i]
       if (!相等(Object.keys(a).sort(), ['名称', '类型', '路径', '原文'].sort()) || a.名称 !== b.名称 || a.类型 !== b.类型 || a.路径 !== b.路径 || !相等(原文值(a), 原文值(b))) 失败('DOCUMENT_CONTENT_MISMATCH')
+      // 原读取器不剥BOM的来源必须逐字可读，不能只在我们的宽松解析器里相等。
+      if (a.类型 === 'channel-map') 校验渠道映射存档(JSON.parse(a.原文))
+      if (a.类型 === 'channel-tasks') { const 值 = JSON.parse(a.原文); 校验渠道任务存档(值, 值.端点) }
+      if (a.类型 === 'extraction-buffer') { if (Buffer.byteLength(a.原文) > 4 * 1024 * 1024) 失败('DOCUMENT_CONTENT_MISMATCH'); 校验后台缓冲(JSON.parse(a.原文)) }
+      if (a.类型 === 'usage') for (const 行 of a.原文.split('\n').filter((x) => x.trim())) JSON.parse(行)
     }
   } finally { 原.关闭() }
 }
@@ -96,7 +104,7 @@ function 核对外部文件(原 = []) {
     if (!相等(Object.keys(一).sort(), ['路径', 'base64'].sort())) 失败('FILES_INVALID')
     const 路径 = 相对路径(一.路径), 键 = 路径.toLowerCase()
     // 附件/产物/原Markdown保持外部文件；不把密钥或学习进度塞进假造JSON槽位。
-    if (!/^(data\/附件\/|data\/整理历史\/|workspace\/工作\/|workspace\/学习\/)/u.test(路径) || 已见.has(键)) 失败('FILES_INVALID')
+    if (!/^(data\/附件\/|data\/整理历史\/|data\/清空历史\/|workspace\/工作\/|workspace\/学习\/)/u.test(路径) || 已见.has(键)) 失败('FILES_INVALID')
     if (typeof 一.base64 !== 'string' || Buffer.from(一.base64, 'base64').toString('base64') !== 一.base64) 失败('FILES_INVALID')
     已见.add(键)
   }
@@ -144,7 +152,7 @@ function 组合(上下文) {
     },
     创建备份(输入, 范围值) {
       授权(范围值); const 一 = 纯数据(输入)
-      if (!相等(Object.keys(一).sort(), ['时间', '外部文件', '必须文件'].sort()) || typeof 一.时间 !== 'string' || !Number.isFinite(Date.parse(一.时间)) || new Date(一.时间).toISOString() !== 一.时间) 失败('INPUT_INVALID')
+      if (!相等(Object.keys(一).sort(), ['时间', '外部文件', '必须文件'].sort()) || !是时间(一.时间)) 失败('INPUT_INVALID')
       const 文件 = 核对外部文件(一.外部文件)
       if (!Array.isArray(一.必须文件) || !相等([...一.必须文件].sort(), 文件.map((x) => x.路径).sort())) 失败('FILES_INCOMPLETE')
       return 原子执行(上下文, () => {
@@ -162,6 +170,7 @@ const 内部们 = new WeakMap()
 function 恢复隔离仓储(原, 范围值) {
   授权(范围值); const 包 = 纯数据(原), { 指纹, ...内容 } = 包
   if (!相等(Object.keys(包).sort(), ['版本', '用途', '时间', '快照', '文档', '外部文件', '指纹'].sort()) || 包.版本 !== 1 || 包.用途 !== 'synthetic-sqlite-backup' || 指纹 !== 摘要(内容)) 失败('HASH_MISMATCH')
+  if (!是时间(包.时间)) 失败('INPUT_INVALID')
   const 仓 = 创建隔离仓储({ 用途: 'synthetic-sqlite-repository' }), { 上下文, 架构, 表们, db } = 内部们.get(仓)
   try {
     if (包.快照.架构指纹 !== 摘要(架构) || !相等(Object.keys(包.快照).sort(), ['架构指纹', '表'].sort()) || !Array.isArray(包.快照.表) || 包.快照.表.length !== 表们.length) 失败('SCHEMA_MISMATCH')
