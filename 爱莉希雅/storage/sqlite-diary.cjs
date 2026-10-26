@@ -155,4 +155,4 @@ function 创建日记仓储(上下文) {
     },
   })
 }
-module.exports = { 创建日记仓储 }
+module.exports = { 创建日记仓储, 校验迁移日记: 校验 }

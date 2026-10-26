@@ -1,0 +1,6191 @@
+{
+  "盘点日期": "2026-10-26",
+  "版本": 1,
+  "用途": "local-source-inventory-report",
+  "可切换": false,
+  "来源登记完整": true,
+  "一致性": "双次元数据诊断，未冻结且未读取内容",
+  "清单指纹": "b3e20e26cae1ddf71f5b9b1eb99d680e47c96a4dba3b0d3b578d62a4b0b814c7",
+  "根": [
+    {
+      "域": "data",
+      "路径": "F:\\elysia\\爱莉希雅\\记忆",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "cache",
+      "路径": "F:\\elysia\\爱莉希雅\\.cache",
+      "模式": "cache",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "channels",
+      "路径": null,
+      "模式": "tree",
+      "允许缺省": true,
+      "缺省说明": "尚未接入正式渠道，无正式独立渠道存档根"
+    },
+    {
+      "域": "workspace/学习",
+      "路径": "F:\\elysia\\学习",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "workspace/工作",
+      "路径": null,
+      "模式": "tree",
+      "允许缺省": true,
+      "缺省说明": "本次工作索引没有工作区引用"
+    },
+    {
+      "域": "resource/persona",
+      "路径": "F:\\elysia\\elysia.cosplay.v2.json",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "local/configuration",
+      "路径": "F:\\elysia\\elysia.config.json",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/脑",
+      "路径": "F:\\elysia\\爱莉希雅\\脑",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/core",
+      "路径": "F:\\elysia\\爱莉希雅\\core",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/main",
+      "路径": "F:\\elysia\\爱莉希雅\\main",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/storage",
+      "路径": "F:\\elysia\\爱莉希雅\\storage",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/renderer",
+      "路径": "F:\\elysia\\爱莉希雅\\renderer",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/tools",
+      "路径": "F:\\elysia\\爱莉希雅\\tools",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/icon-source",
+      "路径": "F:\\elysia\\爱莉希雅\\icon-source",
+      "模式": "tree",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/main.js",
+      "路径": "F:\\elysia\\爱莉希雅\\main.js",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/preload.js",
+      "路径": "F:\\elysia\\爱莉希雅\\preload.js",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/package.json",
+      "路径": "F:\\elysia\\爱莉希雅\\package.json",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/package-lock.json",
+      "路径": "F:\\elysia\\爱莉希雅\\package-lock.json",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/icon.ico",
+      "路径": "F:\\elysia\\爱莉希雅\\icon.ico",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "source/desktop-icon.ico",
+      "路径": "F:\\elysia\\爱莉希雅\\desktop-icon.ico",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "workspace/start-all.cmd",
+      "路径": "F:\\elysia\\start-all.cmd",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    },
+    {
+      "域": "workspace/start-all.cjs",
+      "路径": "F:\\elysia\\start-all.cjs",
+      "模式": "file",
+      "允许缺省": false,
+      "缺省说明": ""
+    }
+  ],
+  "来源": [
+    {
+      "来源": "data/临时记忆.json",
+      "目录": false,
+      "字节数": 73524,
+      "去向": "legacy",
+      "类型": "temporary"
+    },
+    {
+      "来源": "data/事实.json",
+      "目录": false,
+      "字节数": 6728,
+      "去向": "legacy",
+      "类型": "facts"
+    },
+    {
+      "来源": "data/关系图.json",
+      "目录": false,
+      "字节数": 650,
+      "去向": "state",
+      "类型": "relations",
+      "业务类型": "relations",
+      "号": "main"
+    },
+    {
+      "来源": "data/小本子.json",
+      "目录": false,
+      "字节数": 3,
+      "去向": "legacy",
+      "类型": "notebook"
+    },
+    {
+      "来源": "data/小测试.txt",
+      "目录": false,
+      "字节数": 122,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/尺子对账.jsonl",
+      "目录": false,
+      "字节数": 79666,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/工作索引.json",
+      "目录": false,
+      "字节数": 9749,
+      "去向": "state",
+      "类型": "work-index",
+      "业务类型": "work-index",
+      "号": "main"
+    },
+    {
+      "来源": "data/日记/周/2026/2026-W41.json",
+      "目录": false,
+      "字节数": 39070,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "周",
+      "周期": "2026-W41"
+    },
+    {
+      "来源": "data/日记/周/2026/2026-W42.json",
+      "目录": false,
+      "字节数": 45494,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "周",
+      "周期": "2026-W42"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-14.json",
+      "目录": false,
+      "字节数": 14068,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-14"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-15.json",
+      "目录": false,
+      "字节数": 11526,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-15"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-16.json",
+      "目录": false,
+      "字节数": 14420,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-16"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-17.json",
+      "目录": false,
+      "字节数": 1698,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-17"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-18.json",
+      "目录": false,
+      "字节数": 2756,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-18"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-19.json",
+      "目录": false,
+      "字节数": 18504,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-19"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-21.json",
+      "目录": false,
+      "字节数": 5828,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-21"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-22.json",
+      "目录": false,
+      "字节数": 17385,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-22"
+    },
+    {
+      "来源": "data/日记/日/2026/2026-10-24.json",
+      "目录": false,
+      "字节数": 2287,
+      "去向": "diary",
+      "类型": "diary",
+      "可见性": "shared",
+      "日记类型": "日",
+      "周期": "2026-10-24"
+    },
+    {
+      "来源": "data/日记/私密/2026/2026-10-24.json",
+      "目录": false,
+      "字节数": 2284,
+      "去向": "diary",
+      "类型": "private-diary",
+      "可见性": "private",
+      "日记类型": "日",
+      "周期": "2026-10-24"
+    },
+    {
+      "来源": "data/日记/私密/评估索引.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "private-evaluations",
+      "类型": "private-evaluations"
+    },
+    {
+      "来源": "data/日记/索引.json",
+      "目录": false,
+      "字节数": 5618,
+      "去向": "state",
+      "类型": "diary-index",
+      "业务类型": "diary-index",
+      "号": "main"
+    },
+    {
+      "来源": "data/用量.jsonl",
+      "目录": false,
+      "字节数": 76310,
+      "去向": "state",
+      "类型": "usage",
+      "业务类型": "usage",
+      "号": "desktop"
+    },
+    {
+      "来源": "data/经历.json",
+      "目录": false,
+      "字节数": 5152,
+      "去向": "legacy",
+      "类型": "episodes"
+    },
+    {
+      "来源": "data/聊天记录/2026-09-26.jsonl.已并入",
+      "目录": false,
+      "字节数": 6804,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/聊天记录/2026-09-27.jsonl.已并入",
+      "目录": false,
+      "字节数": 631,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/聊天记录/对话索引.json",
+      "目录": false,
+      "字节数": 1648,
+      "去向": "legacy",
+      "类型": "conversations"
+    },
+    {
+      "来源": "data/聊天记录/对话索引.清空对话前.json",
+      "目录": false,
+      "字节数": 608,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/聊天记录/聊天记录.jsonl",
+      "目录": false,
+      "字节数": 139007,
+      "去向": "legacy",
+      "类型": "messages"
+    },
+    {
+      "来源": "data/聊天记录/聊天记录.换多对话前-20261003202309.jsonl",
+      "目录": false,
+      "字节数": 33311,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/聊天记录/聊天记录.测试前的备份.jsonl",
+      "目录": false,
+      "字节数": 36462,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/聊天记录/聊天记录.清测试前-20261001203542.jsonl",
+      "目录": false,
+      "字节数": 33900,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/聊天记录/聊天记录.清理前.jsonl",
+      "目录": false,
+      "字节数": 33900,
+      "去向": "external",
+      "类型": "historical"
+    },
+    {
+      "来源": "data/附件/20261004-164802-72ca1c1ab7dd8685e347d48755f456bb.jpg",
+      "目录": false,
+      "字节数": 181038,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/附件/20261007-142121-c538cd9a1e5268e62a79bfb61b73de77.jpg",
+      "目录": false,
+      "字节数": 655977,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/附件/20261010-164622-1.1 映射与函数.pdf",
+      "目录": false,
+      "字节数": 2054278,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/附件/20261010-171358-image.png",
+      "目录": false,
+      "字节数": 101055,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/附件/20261010-175153-image.png",
+      "目录": false,
+      "字节数": 67856,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "data/附件/20261010-175256-image.png",
+      "目录": false,
+      "字节数": 24420,
+      "去向": "external",
+      "类型": "external"
+    },
+    {
+      "来源": "cache/Live2D-native-headwear-v13",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/Live2D交互备份",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/Live2D接入备份",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/UI-新建对话模型选择.png",
+      "目录": false,
+      "字节数": 439087,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI-模式文字修复.png",
+      "目录": false,
+      "字节数": 1848151,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI-退出确认.png",
+      "目录": false,
+      "字节数": 366424,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段1-前后对比.png",
+      "目录": false,
+      "字节数": 1208410,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段1-改造前.json",
+      "目录": false,
+      "字节数": 2914,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段1-改造前.png",
+      "目录": false,
+      "字节数": 578042,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段1-改造后.json",
+      "目录": false,
+      "字节数": 4679,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段1-改造后.png",
+      "目录": false,
+      "字节数": 755235,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-前后对比.png",
+      "目录": false,
+      "字节数": 2470936,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造前-任务.png",
+      "目录": false,
+      "字节数": 401058,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造前-开场.png",
+      "目录": false,
+      "字节数": 726550,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造前-聊天.png",
+      "目录": false,
+      "字节数": 666967,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造前.json",
+      "目录": false,
+      "字节数": 4307,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造后-任务.png",
+      "目录": false,
+      "字节数": 583579,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造后-开场.png",
+      "目录": false,
+      "字节数": 759030,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造后-聊天.png",
+      "目录": false,
+      "字节数": 746453,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-改造后.json",
+      "目录": false,
+      "字节数": 6071,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-预览-任务.png",
+      "目录": false,
+      "字节数": 744453,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-预览-开场.png",
+      "目录": false,
+      "字节数": 758911,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-预览-聊天.png",
+      "目录": false,
+      "字节数": 746225,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段2-预览.json",
+      "目录": false,
+      "字节数": 6071,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-前后对比.png",
+      "目录": false,
+      "字节数": 3153736,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-夹具调试.js",
+      "目录": false,
+      "字节数": 8715,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前-上下文.png",
+      "目录": false,
+      "字节数": 315697,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前-工作索引.png",
+      "目录": false,
+      "字节数": 337879,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前-工具记录.png",
+      "目录": false,
+      "字节数": 306999,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前-文件.png",
+      "目录": false,
+      "字节数": 353885,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前-表达反馈.png",
+      "目录": false,
+      "字节数": 115667,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前-设置.png",
+      "目录": false,
+      "字节数": 284614,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造前.json",
+      "目录": false,
+      "字节数": 4417,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后-上下文.png",
+      "目录": false,
+      "字节数": 399498,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后-工作索引.png",
+      "目录": false,
+      "字节数": 557905,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后-工具记录.png",
+      "目录": false,
+      "字节数": 374066,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后-文件.png",
+      "目录": false,
+      "字节数": 562729,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后-表达反馈.png",
+      "目录": false,
+      "字节数": 377585,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后-设置.png",
+      "目录": false,
+      "字节数": 428511,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段3-改造后.json",
+      "目录": false,
+      "字节数": 6161,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-前后对比.png",
+      "目录": false,
+      "字节数": 2368601,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造前-临时记忆.png",
+      "目录": false,
+      "字节数": 837773,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造前-关系图.png",
+      "目录": false,
+      "字节数": 821407,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造前-日记.png",
+      "目录": false,
+      "字节数": 829226,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造前-长期列表.png",
+      "目录": false,
+      "字节数": 830263,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造前.json",
+      "目录": false,
+      "字节数": 7311,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造后-临时记忆.png",
+      "目录": false,
+      "字节数": 954659,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造后-关系图.png",
+      "目录": false,
+      "字节数": 979480,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造后-日记.png",
+      "目录": false,
+      "字节数": 963073,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造后-长期列表.png",
+      "目录": false,
+      "字节数": 979973,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-改造后.json",
+      "目录": false,
+      "字节数": 9465,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-模式调试-临时记忆.png",
+      "目录": false,
+      "字节数": 903846,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-模式调试-关系图.png",
+      "目录": false,
+      "字节数": 972716,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-模式调试-日记.png",
+      "目录": false,
+      "字节数": 913984,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-模式调试-长期列表.png",
+      "目录": false,
+      "字节数": 1733148,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-模式调试.json",
+      "目录": false,
+      "字节数": 9465,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-调试-临时记忆.png",
+      "目录": false,
+      "字节数": 904008,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-调试-关系图.png",
+      "目录": false,
+      "字节数": 972716,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-调试-日记.png",
+      "目录": false,
+      "字节数": 913977,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-调试-长期列表.png",
+      "目录": false,
+      "字节数": 1733148,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段4-调试.json",
+      "目录": false,
+      "字节数": 9406,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-前后对比.png",
+      "目录": false,
+      "字节数": 411635,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-改造前-加载提示.png",
+      "目录": false,
+      "字节数": 3460,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-改造前-快聊.png",
+      "目录": false,
+      "字节数": 92755,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-改造前.json",
+      "目录": false,
+      "字节数": 5043,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-改造后-加载提示.png",
+      "目录": false,
+      "字节数": 13140,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-改造后-快聊.png",
+      "目录": false,
+      "字节数": 234243,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-Live2D-改造后.json",
+      "目录": false,
+      "字节数": 6151,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-账本-前后对比.png",
+      "目录": false,
+      "字节数": 374179,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-账本-改造前.json",
+      "目录": false,
+      "字节数": 2481,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-账本-改造前.png",
+      "目录": false,
+      "字节数": 18176,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-账本-改造后.json",
+      "目录": false,
+      "字节数": 3728,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段5-账本-改造后.png",
+      "目录": false,
+      "字节数": 87031,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段6-全局收口.json",
+      "目录": false,
+      "字节数": 292,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/UI阶段6-全界面总览.png",
+      "目录": false,
+      "字节数": 1064397,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/asr",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/asr-candidates",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/atlas-v10-neck-area.png",
+      "目录": false,
+      "字节数": 33309,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/atlas-v12-neck-area.png",
+      "目录": false,
+      "字节数": 60486,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/blink-line-preview.png",
+      "目录": false,
+      "字节数": 1669180,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/eye_close_line_l.png",
+      "目录": false,
+      "字节数": 27626,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/eye_close_line_r.png",
+      "目录": false,
+      "字节数": 34197,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/hair-test",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/hf-token.txt",
+      "目录": false,
+      "字节数": 38,
+      "去向": "separate-secret",
+      "类型": "metadata-only"
+    },
+    {
+      "来源": "cache/live2d-blink-generated-420.png",
+      "目录": false,
+      "字节数": 323368,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-blink-side-by-side.png",
+      "目录": false,
+      "字节数": 674131,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-blink-target.png",
+      "目录": false,
+      "字节数": 292800,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-after.png",
+      "目录": false,
+      "字节数": 436048,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-before.png",
+      "目录": false,
+      "字节数": 433247,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-final-2.png",
+      "目录": false,
+      "字节数": 425148,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-final-backgrounds.png",
+      "目录": false,
+      "字节数": 648596,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-final.png",
+      "目录": false,
+      "字节数": 425148,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-refined-clean.png",
+      "目录": false,
+      "字节数": 432820,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-edge-refined.png",
+      "目录": false,
+      "字节数": 475215,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-neckfix-generated-384.png",
+      "目录": false,
+      "字节数": 267182,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-neckfix-generated.png",
+      "目录": false,
+      "字节数": 1698621,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-neckfix-target.png",
+      "目录": false,
+      "字节数": 238989,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-no-bottom-frame.png",
+      "目录": false,
+      "字节数": 427531,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-player",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/live2d-v12-direct-gesture-smoke.png",
+      "目录": false,
+      "字节数": 429132,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-v12-gesture-smoke.png",
+      "目录": false,
+      "字节数": 431608,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/live2d-v12-smoke.png",
+      "目录": false,
+      "字节数": 430862,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/m36a-diary-hashes-before.txt",
+      "目录": false,
+      "字节数": 1391,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/m36b-diary-hashes-before.txt",
+      "目录": false,
+      "字节数": 1391,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/m36c-diary-hashes-before.txt",
+      "目录": false,
+      "字节数": 1391,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-closed-0.png",
+      "目录": false,
+      "字节数": 1175158,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-closed-45.png",
+      "目录": false,
+      "字节数": 1107210,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-closed-minus45.png",
+      "目录": false,
+      "字节数": 1108805,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-0.png",
+      "目录": false,
+      "字节数": 1183334,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-45.png",
+      "目录": false,
+      "字节数": 1115272,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-aligned-0.png",
+      "目录": false,
+      "字节数": 1173715,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-aligned-45.png",
+      "目录": false,
+      "字节数": 1105892,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-aligned-minus45.png",
+      "目录": false,
+      "字节数": 1107529,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-fixed-0.png",
+      "目录": false,
+      "字节数": 1181335,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-fixed-45.png",
+      "目录": false,
+      "字节数": 1113401,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-fixed-minus45.png",
+      "目录": false,
+      "字节数": 1114649,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-kfangle-0.png",
+      "目录": false,
+      "字节数": 1183334,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-kfangle-45.png",
+      "目录": false,
+      "字节数": 1115272,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-mouth-minus45.png",
+      "目录": false,
+      "字节数": 1116646,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/mcp-schema.ps1",
+      "目录": false,
+      "字节数": 3498,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/npm",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/p2l",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/probe-v10.err",
+      "目录": false,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/probe-v10.log",
+      "目录": false,
+      "字节数": 577,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/probe-v10.png",
+      "目录": false,
+      "字节数": 793249,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/probe-v12.err",
+      "目录": false,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/probe-v12.log",
+      "目录": false,
+      "字节数": 569,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/probe-v12.png",
+      "目录": false,
+      "字节数": 794717,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/psd2live-v7-unpack-2",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/serpapi-api-key.dat",
+      "目录": false,
+      "字节数": 95,
+      "去向": "separate-secret",
+      "类型": "metadata-only"
+    },
+    {
+      "来源": "cache/v10-atlas-top-right.png",
+      "目录": false,
+      "字节数": 252085,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v10-v12-肩颈差异放大.png",
+      "目录": false,
+      "字节数": 156783,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v10-v12-肩颈放大.png",
+      "目录": false,
+      "字节数": 664778,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v10前发跟随-右30.png",
+      "目录": false,
+      "字节数": 874505,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v10前发跟随-左30.png",
+      "目录": false,
+      "字节数": 884374,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v11强尾摆-右30.png",
+      "目录": false,
+      "字节数": 875252,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v11强尾摆-左30.png",
+      "目录": false,
+      "字节数": 882653,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-headwear-fixed-zoom.png",
+      "目录": false,
+      "字节数": 686894,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-mouth-angle+30.png",
+      "目录": false,
+      "字节数": 795499,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-mouth-angle-30.png",
+      "目录": false,
+      "字节数": 803888,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-mouth-angle-minus30-closed.png",
+      "目录": false,
+      "字节数": 803537,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-neck-final-front.png",
+      "目录": false,
+      "字节数": 1910324,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-neck-final-left.png",
+      "目录": false,
+      "字节数": 1948683,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-neck-final-right-open.png",
+      "目录": false,
+      "字节数": 1976264,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-restored-front.png",
+      "目录": false,
+      "字节数": 2398901,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-restored-left.png",
+      "目录": false,
+      "字节数": 2391180,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-restored-right.png",
+      "目录": false,
+      "字节数": 2407056,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-runtime-aligned-angle30.png",
+      "目录": false,
+      "字节数": 795462,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-runtime-headwear-fixed.png",
+      "目录": false,
+      "字节数": 796544,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-runtime-left-closed.png",
+      "目录": false,
+      "字节数": 801415,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-runtime-neck-fixed.png",
+      "目录": false,
+      "字节数": 801132,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-runtime-right-open.png",
+      "目录": false,
+      "字节数": 795134,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12-runtime-全开.png",
+      "目录": false,
+      "字节数": 800145,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-全开.png",
+      "目录": false,
+      "字节数": 999255,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-全开2.png",
+      "目录": false,
+      "字节数": 1010153,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-全开3.png",
+      "目录": false,
+      "字节数": 1010153,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-半开.png",
+      "目录": false,
+      "字节数": 1001911,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-半开2.png",
+      "目录": false,
+      "字节数": 1010376,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-半开3.png",
+      "目录": false,
+      "字节数": 1009397,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-微开.png",
+      "目录": false,
+      "字节数": 1007221,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v12嘴-闭合.png",
+      "目录": false,
+      "字节数": 1000761,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/v5预览",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/上下文-460.png",
+      "目录": false,
+      "字节数": 31559,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/上下文-760.png",
+      "目录": false,
+      "字节数": 38212,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/上下文截图用户数据",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/上下文预览.html",
+      "目录": false,
+      "字节数": 7028,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/临时记忆-460.png",
+      "目录": false,
+      "字节数": 44983,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/临时记忆-760.png",
+      "目录": false,
+      "字节数": 53116,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/临时记忆预览.html",
+      "目录": false,
+      "字节数": 2756,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/任务卡-1000.png",
+      "目录": false,
+      "字节数": 216317,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/任务卡-460.png",
+      "目录": false,
+      "字节数": 154735,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/任务卡-620.png",
+      "目录": false,
+      "字节数": 191560,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/任务卡预览.html",
+      "目录": false,
+      "字节数": 4227,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/全身模型-中立态.png",
+      "目录": false,
+      "字节数": 691627,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/全身模型-脸部近景.png",
+      "目录": false,
+      "字节数": 670895,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/全身模型预览.html",
+      "目录": false,
+      "字节数": 2366,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/合成胸部右移候选.cjs",
+      "目录": false,
+      "字节数": 2067,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/嘴层.png",
+      "目录": false,
+      "字节数": 159820,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/复核基线",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/头饰-v9-右转30.png",
+      "目录": false,
+      "字节数": 881799,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/头饰-v9-左转30.png",
+      "目录": false,
+      "字节数": 889185,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/她启动时的输出.log",
+      "目录": false,
+      "字节数": 185081,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工作索引-460.png",
+      "目录": false,
+      "字节数": 53229,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工作索引-620.png",
+      "目录": false,
+      "字节数": 55269,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工作索引预览.html",
+      "目录": false,
+      "字节数": 3161,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工具记录-460.png",
+      "目录": false,
+      "字节数": 47738,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工具记录-620.png",
+      "目录": false,
+      "字节数": 51518,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工具记录预览.html",
+      "目录": false,
+      "字节数": 2904,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/工具输出",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/废弃试验",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/截图上下文.cjs",
+      "目录": false,
+      "字节数": 2340,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/截图临时记忆.cjs",
+      "目录": false,
+      "字节数": 956,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/截图任务卡.cjs",
+      "目录": false,
+      "字节数": 2786,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/截图全身模型.cjs",
+      "目录": false,
+      "字节数": 1387,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/截图工作索引.cjs",
+      "目录": false,
+      "字节数": 777,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/截图工具记录.cjs",
+      "目录": false,
+      "字节数": 805,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/拆层自检",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/探针",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/无界面联通测试",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/没做完的-temp-mv6wueh9-1.json",
+      "目录": false,
+      "字节数": 202,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/测启动子进程的结果.txt",
+      "目录": false,
+      "字节数": 1468,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/测子进程用的小主程序.js",
+      "目录": false,
+      "字节数": 3831,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/聚类门控验收前哈希.json",
+      "目录": false,
+      "字节数": 460,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/肩颈改进",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/脖子对比",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "temporary-or-asset-copy"
+    },
+    {
+      "来源": "cache/表达反馈.json",
+      "目录": false,
+      "字节数": 3655,
+      "去向": "external",
+      "类型": "persistent-cache"
+    },
+    {
+      "来源": "cache/角色卡.json.原作示例之前-20261021-113951",
+      "目录": false,
+      "字节数": 41491,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/角色卡.json.去AI味之前-20261021-112607",
+      "目录": false,
+      "字节数": 36451,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/角色卡.json.去AI味之前-20261021-112812",
+      "目录": false,
+      "字节数": 39148,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/角色卡.json.去AI味之前-20261021-112853",
+      "目录": false,
+      "字节数": 39969,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/角色卡.json.去AI味之前-20261021-113022",
+      "目录": false,
+      "字节数": 40772,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/记忆关系整理状态.json",
+      "目录": false,
+      "字节数": 516,
+      "去向": "state",
+      "类型": "auxiliary",
+      "业务类型": "background-state",
+      "号": "relations"
+    },
+    {
+      "来源": "cache/记忆时间线候选.json",
+      "目录": false,
+      "字节数": 33885,
+      "去向": "state",
+      "类型": "auxiliary",
+      "业务类型": "cluster-state",
+      "号": "timeline"
+    },
+    {
+      "来源": "cache/记忆聚类候选.json",
+      "目录": false,
+      "字节数": 1053,
+      "去向": "state",
+      "类型": "auxiliary",
+      "业务类型": "cluster-state",
+      "号": "clusters"
+    },
+    {
+      "来源": "cache/设置.json",
+      "目录": false,
+      "字节数": 767,
+      "去向": "separate-secret",
+      "类型": "metadata-only"
+    },
+    {
+      "来源": "cache/说话-现状开口1.png",
+      "目录": false,
+      "字节数": 875033,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/账本诊断.log",
+      "目录": false,
+      "字节数": 897,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/转头-当前30.png",
+      "目录": false,
+      "字节数": 870406,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/转头-微身30.png",
+      "目录": false,
+      "字节数": 869563,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/转头-微身左30.png",
+      "目录": false,
+      "字节数": 878996,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/转头-纯头30.png",
+      "目录": false,
+      "字节数": 871450,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/长期记忆关系图布局.json",
+      "目录": false,
+      "字节数": 2724,
+      "去向": "state",
+      "类型": "auxiliary",
+      "业务类型": "relation-layout",
+      "号": "main"
+    },
+    {
+      "来源": "cache/验收-长期记忆关系图.log",
+      "目录": false,
+      "字节数": 800,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "cache/验收-长期记忆关系图.png",
+      "目录": false,
+      "字节数": 930639,
+      "去向": "excluded",
+      "类型": "test-or-temporary-artifact"
+    },
+    {
+      "来源": "workspace/学习/C语言-01-变量.md",
+      "目录": false,
+      "字节数": 2306,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/任务.md",
+      "目录": false,
+      "字节数": 273,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/材料/1.1 映射与函数.pdf",
+      "目录": false,
+      "字节数": 2054278,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/材料/image (2).png",
+      "目录": false,
+      "字节数": 67856,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/材料/image (3).png",
+      "目录": false,
+      "字节数": 24420,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/材料/image.png",
+      "目录": false,
+      "字节数": 101055,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/猜数字.c",
+      "目录": false,
+      "字节数": 1443,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/说明.md",
+      "目录": false,
+      "字节数": 1532,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/读pdf.py",
+      "目录": false,
+      "字节数": 1361,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "workspace/学习/进度.md",
+      "目录": false,
+      "字节数": 717,
+      "去向": "external",
+      "类型": "workspace-file"
+    },
+    {
+      "来源": "resource/persona",
+      "目录": false,
+      "字节数": 41072,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "local/configuration",
+      "目录": false,
+      "字节数": 66,
+      "去向": "separate-secret",
+      "类型": "local-configuration-metadata-only"
+    },
+    {
+      "来源": "source/脑/ASR.cjs",
+      "目录": false,
+      "字节数": 3508,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/ASR专名.cjs",
+      "目录": false,
+      "字节数": 2058,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/ParaformerASR.cjs",
+      "目录": false,
+      "字节数": 6297,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/SenseVoiceASR.cjs",
+      "目录": false,
+      "字节数": 6908,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/TTS.cjs",
+      "目录": false,
+      "字节数": 3857,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/__pycache__",
+      "目录": true,
+      "字节数": 0,
+      "去向": "excluded",
+      "类型": "rebuildable-dependency"
+    },
+    {
+      "来源": "source/脑/funasr_worker.py",
+      "目录": false,
+      "字节数": 4436,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/sensevoice_worker.cjs",
+      "目录": false,
+      "字节数": 3488,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时对话.cjs",
+      "目录": false,
+      "字节数": 3791,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时记忆.cjs",
+      "目录": false,
+      "字节数": 2107,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时记忆召回.cjs",
+      "目录": false,
+      "字节数": 14575,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时记忆提取.cjs",
+      "目录": false,
+      "字节数": 25545,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时记忆晋升.cjs",
+      "目录": false,
+      "字节数": 2439,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时记忆状态.cjs",
+      "目录": false,
+      "字节数": 29660,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/临时记忆自主评估.cjs",
+      "目录": false,
+      "字节数": 7543,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/主动陪伴.cjs",
+      "目录": false,
+      "字节数": 7830,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/主动陪伴去重.cjs",
+      "目录": false,
+      "字节数": 1852,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/主动陪伴生成.cjs",
+      "目录": false,
+      "字节数": 3052,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/产物.cjs",
+      "目录": false,
+      "字节数": 4320,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/人格/从角色卡导出.txt",
+      "目录": false,
+      "字节数": 32034,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/人格.cjs",
+      "目录": false,
+      "字节数": 566,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/人格边界.cjs",
+      "目录": false,
+      "字节数": 1086,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/任务控制.cjs",
+      "目录": false,
+      "字节数": 918,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/修剪工具结果.cjs",
+      "目录": false,
+      "字节数": 12968,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/假渠道适配器.cjs",
+      "目录": false,
+      "字节数": 10056,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/动手.cjs",
+      "目录": false,
+      "字节数": 29184,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/图标-16.png",
+      "目录": false,
+      "字节数": 621,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/图标-32.png",
+      "目录": false,
+      "字节数": 1271,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/图标.ico",
+      "目录": false,
+      "字节数": 27604,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/图标.png",
+      "目录": false,
+      "字节数": 23568,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/子代理.cjs",
+      "目录": false,
+      "字节数": 11116,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/学习任务.cjs",
+      "目录": false,
+      "字节数": 11315,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/学习进度.cjs",
+      "目录": false,
+      "字节数": 17983,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/对话.cjs",
+      "目录": false,
+      "字节数": 80778,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工作索引.cjs",
+      "目录": false,
+      "字节数": 6874,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工作请求.cjs",
+      "目录": false,
+      "字节数": 1756,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工具/命令工具.cjs",
+      "目录": false,
+      "字节数": 20274,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工具/文件工具.cjs",
+      "目录": false,
+      "字节数": 27662,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工具/时间工具.cjs",
+      "目录": false,
+      "字节数": 1773,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工具回执.cjs",
+      "目录": false,
+      "字节数": 8000,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工具表.cjs",
+      "目录": false,
+      "字节数": 24964,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/工具记录.cjs",
+      "目录": false,
+      "字节数": 2974,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/情感状态.cjs",
+      "目录": false,
+      "字节数": 10221,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/提示词.cjs",
+      "目录": false,
+      "字节数": 26952,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/搜索冲突.cjs",
+      "目录": false,
+      "字节数": 4834,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/搜索来源.cjs",
+      "目录": false,
+      "字节数": 4559,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/搜索校验.cjs",
+      "目录": false,
+      "字节数": 2045,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/搜索验证.cjs",
+      "目录": false,
+      "字节数": 2762,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/收摊.cjs",
+      "目录": false,
+      "字节数": 8400,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/故障状态.cjs",
+      "目录": false,
+      "字节数": 1872,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/日记共用规则.cjs",
+      "目录": false,
+      "字节数": 3183,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/日记外发闸门.cjs",
+      "目录": false,
+      "字节数": 6198,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/本机ASR.cjs",
+      "目录": false,
+      "字节数": 404,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/模型连接.cjs",
+      "目录": false,
+      "字节数": 7335,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/没干完.cjs",
+      "目录": false,
+      "字节数": 17823,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/渠道任务调度.cjs",
+      "目录": false,
+      "字节数": 21067,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/渠道会话映射.cjs",
+      "目录": false,
+      "字节数": 8601,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/渠道契约.cjs",
+      "目录": false,
+      "字节数": 9389,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/渠道权限.cjs",
+      "目录": false,
+      "字节数": 10743,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/生成内容.cjs",
+      "目录": false,
+      "字节数": 20078,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/用量.cjs",
+      "目录": false,
+      "字节数": 7074,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/确认.cjs",
+      "目录": false,
+      "字节数": 9846,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/私密日记.cjs",
+      "目录": false,
+      "字节数": 24758,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/私密日记调度.cjs",
+      "目录": false,
+      "字节数": 6032,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/联网搜索.cjs",
+      "目录": false,
+      "字节数": 13926,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/表情路由.cjs",
+      "目录": false,
+      "字节数": 7902,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/表现事件.cjs",
+      "目录": false,
+      "字节数": 3508,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/表达反馈.cjs",
+      "目录": false,
+      "字节数": 4490,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/解析工具调用.cjs",
+      "目录": false,
+      "字节数": 20039,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/认错.cjs",
+      "目录": false,
+      "字节数": 7123,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆.cjs",
+      "目录": false,
+      "字节数": 40400,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆关系图.cjs",
+      "目录": false,
+      "字节数": 20644,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆关系整理.cjs",
+      "目录": false,
+      "字节数": 9211,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆叙述.cjs",
+      "目录": false,
+      "字节数": 4826,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆整理.cjs",
+      "目录": false,
+      "字节数": 7564,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆日记.cjs",
+      "目录": false,
+      "字节数": 29685,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆时间线候选.cjs",
+      "目录": false,
+      "字节数": 18404,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆结构.cjs",
+      "目录": false,
+      "字节数": 2485,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆聚类候选.cjs",
+      "目录": false,
+      "字节数": 12221,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/记忆聚类就绪.cjs",
+      "目录": false,
+      "字节数": 3422,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/语音.cjs",
+      "目录": false,
+      "字节数": 8387,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/路径安全.cjs",
+      "目录": false,
+      "字节数": 19051,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/配置.cjs",
+      "目录": false,
+      "字节数": 4747,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/量长度.cjs",
+      "目录": false,
+      "字节数": 14099,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/钥匙.cjs",
+      "目录": false,
+      "字节数": 3504,
+      "去向": "separate-secret",
+      "类型": "metadata-only"
+    },
+    {
+      "来源": "source/脑/长期记忆关系召回.cjs",
+      "目录": false,
+      "字节数": 8145,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/脑/附件.cjs",
+      "目录": false,
+      "字节数": 13384,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/core/后台任务.cjs",
+      "目录": false,
+      "字节数": 4194,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/core/后台缓冲格式.cjs",
+      "目录": false,
+      "字节数": 696,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/core/记忆后台.cjs",
+      "目录": false,
+      "字节数": 5998,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/core/运行配置.cjs",
+      "目录": false,
+      "字节数": 6923,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/core/隔离对话核心.cjs",
+      "目录": false,
+      "字节数": 9018,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/backup-service.cjs",
+      "目录": false,
+      "字节数": 896,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/backup-worker.cjs",
+      "目录": false,
+      "字节数": 357,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/live2d-window.cjs",
+      "目录": false,
+      "字节数": 3194,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/memory-export.cjs",
+      "目录": false,
+      "字节数": 4749,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/processes.cjs",
+      "目录": false,
+      "字节数": 2113,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/secret-store.cjs",
+      "目录": false,
+      "字节数": 2963,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/settings.cjs",
+      "目录": false,
+      "字节数": 1101,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/user-backup.cjs",
+      "目录": false,
+      "字节数": 3990,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/user-data.cjs",
+      "目录": false,
+      "字节数": 2245,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/voice-launcher.cjs",
+      "目录": false,
+      "字节数": 3932,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main/账本跟随.cjs",
+      "目录": false,
+      "字节数": 879,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/backup-manifest.cjs",
+      "目录": false,
+      "字节数": 2132,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/rollback-files.cjs",
+      "目录": false,
+      "字节数": 3662,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/source-inventory.cjs",
+      "目录": false,
+      "字节数": 7528,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-backup.cjs",
+      "目录": false,
+      "字节数": 16888,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-chat.cjs",
+      "目录": false,
+      "字节数": 17895,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-context.cjs",
+      "目录": false,
+      "字节数": 3531,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-diary.cjs",
+      "目录": false,
+      "字节数": 16923,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-fixture.cjs",
+      "目录": false,
+      "字节数": 19549,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-legacy-source.cjs",
+      "目录": false,
+      "字节数": 1096,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-legacy.cjs",
+      "目录": false,
+      "字节数": 21187,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-memory.cjs",
+      "目录": false,
+      "字节数": 26994,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-shadow.cjs",
+      "目录": false,
+      "字节数": 8604,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-sources.cjs",
+      "目录": false,
+      "字节数": 3920,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-state-import.cjs",
+      "目录": false,
+      "字节数": 9029,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/storage/sqlite-state.cjs",
+      "目录": false,
+      "字节数": 12509,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/elysia.jpg",
+      "目录": false,
+      "字节数": 150092,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/A.png",
+      "目录": false,
+      "字节数": 45265,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Alt.png",
+      "目录": false,
+      "字节数": 36678,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/B.png",
+      "目录": false,
+      "字节数": 46561,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/C.png",
+      "目录": false,
+      "字节数": 38256,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Ctrl.png",
+      "目录": false,
+      "字节数": 44785,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/D.png",
+      "目录": false,
+      "字节数": 39761,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Digit1.png",
+      "目录": false,
+      "字节数": 49035,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Digit2.png",
+      "目录": false,
+      "字节数": 52638,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Digit3.png",
+      "目录": false,
+      "字节数": 49187,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Digit4.png",
+      "目录": false,
+      "字节数": 46195,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Digit5.png",
+      "目录": false,
+      "字节数": 48237,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/E.png",
+      "目录": false,
+      "字节数": 48527,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Enter.png",
+      "目录": false,
+      "字节数": 62104,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/F.png",
+      "目录": false,
+      "字节数": 36135,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/G.png",
+      "目录": false,
+      "字节数": 46909,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Q.png",
+      "目录": false,
+      "字节数": 50238,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/R.png",
+      "目录": false,
+      "字节数": 41200,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/S.png",
+      "目录": false,
+      "字节数": 42142,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Shift.png",
+      "目录": false,
+      "字节数": 53238,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Space.png",
+      "目录": false,
+      "字节数": 32600,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/T.png",
+      "目录": false,
+      "字节数": 49834,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/V.png",
+      "目录": false,
+      "字节数": 35534,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/W.png",
+      "目录": false,
+      "字节数": 49330,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/X.png",
+      "目录": false,
+      "字节数": 42724,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/hands/Z.png",
+      "目录": false,
+      "字节数": 44783,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/A.png",
+      "目录": false,
+      "字节数": 21666,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Alt.png",
+      "目录": false,
+      "字节数": 21787,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/B.png",
+      "目录": false,
+      "字节数": 21236,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/C.png",
+      "目录": false,
+      "字节数": 21335,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Ctrl.png",
+      "目录": false,
+      "字节数": 21861,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/D.png",
+      "目录": false,
+      "字节数": 21231,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Digit1.png",
+      "目录": false,
+      "字节数": 20018,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Digit2.png",
+      "目录": false,
+      "字节数": 21350,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Digit3.png",
+      "目录": false,
+      "字节数": 21449,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Digit4.png",
+      "目录": false,
+      "字节数": 21024,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Digit5.png",
+      "目录": false,
+      "字节数": 21560,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/E.png",
+      "目录": false,
+      "字节数": 20923,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Enter.png",
+      "目录": false,
+      "字节数": 22514,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/F.png",
+      "目录": false,
+      "字节数": 20627,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/G.png",
+      "目录": false,
+      "字节数": 21438,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Q.png",
+      "目录": false,
+      "字节数": 21892,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/R.png",
+      "目录": false,
+      "字节数": 21453,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/S.png",
+      "目录": false,
+      "字节数": 21394,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Shift.png",
+      "目录": false,
+      "字节数": 22702,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Space.png",
+      "目录": false,
+      "字节数": 21758,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/T.png",
+      "目录": false,
+      "字节数": 20285,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/V.png",
+      "目录": false,
+      "字节数": 21295,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/W.png",
+      "目录": false,
+      "字节数": 22386,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/X.png",
+      "目录": false,
+      "字节数": 21784,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/keys/Z.png",
+      "目录": false,
+      "字节数": 21376,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/map.json",
+      "目录": false,
+      "字节数": 2036,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/切图记录.json",
+      "目录": false,
+      "字节数": 7659,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/对齐表.json",
+      "目录": false,
+      "字节数": 2907,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/布局表.json",
+      "目录": false,
+      "字节数": 3350,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/keyboard/测量.json",
+      "目录": false,
+      "字节数": 5534,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/背景/学习.jpg",
+      "目录": false,
+      "字节数": 190719,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/背景/干活.jpg",
+      "目录": false,
+      "字节数": 252826,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/背景/聊天.jpg",
+      "目录": false,
+      "字节数": 285321,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/assets/表情表.json",
+      "目录": false,
+      "字节数": 971,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/chat.js",
+      "目录": false,
+      "字节数": 256345,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/elysia.jpg",
+      "目录": false,
+      "字节数": 150092,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/index.html",
+      "目录": false,
+      "字节数": 31521,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/lib/live2dcubismcore.min.js",
+      "目录": false,
+      "字节数": 207163,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/lib/pixi-live2d-display.min.js",
+      "目录": false,
+      "字节数": 145809,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/lib/pixi.min.js",
+      "目录": false,
+      "字节数": 456150,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/live2d-bootstrap.js",
+      "目录": false,
+      "字节数": 211,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/live2d-粉色玻璃.css",
+      "目录": false,
+      "字节数": 898,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/live2d.css",
+      "目录": false,
+      "字节数": 1414,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/live2d.html",
+      "目录": false,
+      "字节数": 987,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/live2d.js",
+      "目录": false,
+      "字节数": 13080,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/am.motion3.json",
+      "目录": false,
+      "字节数": 2951,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/bhzscx.motion3.json",
+      "目录": false,
+      "字节数": 403,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/bhzsxs.motion3.json",
+      "目录": false,
+      "字节数": 403,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cat.8192/texture_00.png",
+      "目录": false,
+      "字节数": 8938998,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cat.cdi3.json",
+      "目录": false,
+      "字节数": 5835,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cat.moc3",
+      "目录": false,
+      "字节数": 6256704,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cat.model3.json",
+      "目录": false,
+      "字节数": 3179,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cat.physics3.json",
+      "目录": false,
+      "字节数": 12013,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cdcx.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cdxs.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/cjal.motion3.json",
+      "目录": false,
+      "字节数": 1084,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/expression1.exp3.json",
+      "目录": false,
+      "字节数": 277,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/expression2.exp3.json",
+      "目录": false,
+      "字节数": 277,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/expression3.exp3.json",
+      "目录": false,
+      "字节数": 277,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/expression4.exp3.json",
+      "目录": false,
+      "字节数": 277,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/hi.motion3.json",
+      "目录": false,
+      "字节数": 1972,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/jdjd.motion3.json",
+      "目录": false,
+      "字节数": 1524,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/lhancx.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/lhanxs.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/lhcx.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/lheicx.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/lheixs.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/lhxs.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/llycx.motion3.json",
+      "目录": false,
+      "字节数": 399,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/llyxs.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/mmycx.motion3.json",
+      "目录": false,
+      "字节数": 757,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/mmyxs.motion3.json",
+      "目录": false,
+      "字节数": 753,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/srkl.motion3.json",
+      "目录": false,
+      "字节数": 2737,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/syxs.motion3.json",
+      "目录": false,
+      "字节数": 405,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/www.motion3.json",
+      "目录": false,
+      "字节数": 3577,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/xgcx.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/xgxs.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/xxycx.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/xxyxs.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/ywcx.motion3.json",
+      "目录": false,
+      "字节数": 395,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia/ywxs.motion3.json",
+      "目录": false,
+      "字节数": 391,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/cat.model3.json",
+      "目录": false,
+      "字节数": 4156,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/demomodel2.1024/texture_00.png",
+      "目录": false,
+      "字节数": 84914,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/demomodel2.1024/texture_01.png",
+      "目录": false,
+      "字节数": 193034,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/demomodel2.1024/texture_02.png",
+      "目录": false,
+      "字节数": 98548,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/demomodel2.cdi3.json",
+      "目录": false,
+      "字节数": 3667,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/demomodel2.moc3",
+      "目录": false,
+      "字节数": 32128,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/exp_1.exp3.json",
+      "目录": false,
+      "字节数": 206,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/exp_2.exp3.json",
+      "目录": false,
+      "字节数": 121,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/live2d_expression0.exp3.json",
+      "目录": false,
+      "字节数": 51,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/live2d_expression1.exp3.json",
+      "目录": false,
+      "字节数": 133,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/live2d_expression2.exp3.json",
+      "目录": false,
+      "字节数": 133,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/live2d_motion1.motion3.json",
+      "目录": false,
+      "字节数": 811,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-keyboard/live2d_motion2.motion3.json",
+      "目录": false,
+      "字节数": 833,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/headwear-hair-merged.png",
+      "目录": false,
+      "字节数": 671614,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.4096/texture_00.png",
+      "目录": false,
+      "字节数": 4700994,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.blink.motion3.json",
+      "目录": false,
+      "字节数": 1155,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.cdi3.json",
+      "目录": false,
+      "字节数": 4318,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.idle.motion3.json",
+      "目录": false,
+      "字节数": 15999,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.moc3",
+      "目录": false,
+      "字节数": 290752,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.moc3.report.json",
+      "目录": false,
+      "字节数": 363,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.model3.json",
+      "目录": false,
+      "字节数": 805,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.nod.motion3.json",
+      "目录": false,
+      "字节数": 1751,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.physics3.json",
+      "目录": false,
+      "字节数": 8581,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v12/seethrough_blink.shake.motion3.json",
+      "目录": false,
+      "字节数": 1573,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.4096/texture_00.png",
+      "目录": false,
+      "字节数": 5440116,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.blink.motion3.json",
+      "目录": false,
+      "字节数": 1155,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.cdi3.json",
+      "目录": false,
+      "字节数": 4392,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.idle.motion3.json",
+      "目录": false,
+      "字节数": 15999,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.moc3",
+      "目录": false,
+      "字节数": 296896,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.moc3.report.json",
+      "目录": false,
+      "字节数": 363,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.model3.json",
+      "目录": false,
+      "字节数": 805,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.nod.motion3.json",
+      "目录": false,
+      "字节数": 1751,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.physics3.json",
+      "目录": false,
+      "字节数": 8581,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-v13/seethrough_blink.shake.motion3.json",
+      "目录": false,
+      "字节数": 1573,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-旧版备份/cat.8192/texture_00.png",
+      "目录": false,
+      "字节数": 8751340,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-旧版备份/cat.cdi3.json",
+      "目录": false,
+      "字节数": 5880,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-旧版备份/cat.moc3",
+      "目录": false,
+      "字节数": 6204672,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-旧版备份/cat.model3.json",
+      "目录": false,
+      "字节数": 569,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-旧版备份/cat.physics3.json",
+      "目录": false,
+      "字节数": 12013,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/models/elysia-旧版备份/syxs.motion3.json",
+      "目录": false,
+      "字节数": 405,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/preload.js",
+      "目录": false,
+      "字节数": 0,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/style.css",
+      "目录": false,
+      "字节数": 99358,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/流式语音.js",
+      "目录": false,
+      "字节数": 7512,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/粉色玻璃-Live2D快聊.css",
+      "目录": false,
+      "字节数": 4942,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/粉色玻璃-内容.css",
+      "目录": false,
+      "字节数": 14777,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/粉色玻璃-弹层.css",
+      "目录": false,
+      "字节数": 13959,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/粉色玻璃-记忆.css",
+      "目录": false,
+      "字节数": 11435,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/粉色玻璃.css",
+      "目录": false,
+      "字节数": 8805,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/语音输入.js",
+      "目录": false,
+      "字节数": 5682,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/账本-粉色玻璃.css",
+      "目录": false,
+      "字节数": 3480,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/账本.css",
+      "目录": false,
+      "字节数": 3052,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/账本.html",
+      "目录": false,
+      "字节数": 2286,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/renderer/账本.js",
+      "目录": false,
+      "字节数": 3570,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/_验证切图.cjs",
+      "目录": false,
+      "字节数": 1727,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/bridge.cjs",
+      "目录": false,
+      "字节数": 10058,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/build-folder-icon.ps1",
+      "目录": false,
+      "字节数": 3047,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/check-desktop-icon.ps1",
+      "目录": false,
+      "字节数": 3290,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/check-live2d.cjs",
+      "目录": false,
+      "字节数": 4526,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/compare-raw-vs-crop.ps1",
+      "目录": false,
+      "字节数": 4413,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/diagnose.js",
+      "目录": false,
+      "字节数": 3509,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fetch-cyrene.cjs",
+      "目录": false,
+      "字节数": 8890,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-backup-audit.cjs",
+      "目录": false,
+      "字节数": 1586,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-backup-scenario.cjs",
+      "目录": false,
+      "字节数": 8847,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-chat-audit.cjs",
+      "目录": false,
+      "字节数": 1507,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-memory-audit.cjs",
+      "目录": false,
+      "字节数": 2096,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-rollback-reader.cjs",
+      "目录": false,
+      "字节数": 5456,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-schema-v1.cjs",
+      "目录": false,
+      "字节数": 7860,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/sqlite-state-audit.cjs",
+      "目录": false,
+      "字节数": 2067,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/健康启动审计.cjs",
+      "目录": false,
+      "字节数": 1875,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/渠道契约-v1.json",
+      "目录": false,
+      "字节数": 2631,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/渠道调度崩溃.cjs",
+      "目录": false,
+      "字节数": 1815,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/隔离对话回环.cjs",
+      "目录": false,
+      "字节数": 20229,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/fixtures/隔离对话审计.cjs",
+      "目录": false,
+      "字节数": 2607,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/make-character-icon.ps1",
+      "目录": false,
+      "字节数": 5894,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/make-desktop-icon.ps1",
+      "目录": false,
+      "字节数": 4788,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/make-final-icons.ps1",
+      "目录": false,
+      "字节数": 4241,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/make-ico.cjs",
+      "目录": false,
+      "字节数": 1573,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/make-icon.cmd",
+      "目录": false,
+      "字节数": 935,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/make-pixel-icon.ps1",
+      "目录": false,
+      "字节数": 5701,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/pet-service.cjs",
+      "目录": false,
+      "字节数": 2808,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/pet-service.cmd",
+      "目录": false,
+      "字节数": 778,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/qubai.cjs",
+      "目录": false,
+      "字节数": 5955,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/repair-icon.cmd",
+      "目录": false,
+      "字节数": 769,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/start-elysia.cmd",
+      "目录": false,
+      "字节数": 1183,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/test-headless-live.cjs",
+      "目录": false,
+      "字节数": 4267,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/test-headless-live.ps1",
+      "目录": false,
+      "字节数": 935,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/test-sharp.cjs",
+      "目录": false,
+      "字节数": 2583,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/全部关掉.cjs",
+      "目录": false,
+      "字节数": 1709,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/分析手部素材.cjs",
+      "目录": false,
+      "字节数": 3834,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/切图.cjs",
+      "目录": false,
+      "字节数": 4739,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/切手部素材.cjs",
+      "目录": false,
+      "字节数": 5423,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/创建干净副本.cjs",
+      "目录": false,
+      "字节数": 3900,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/加一条守则.cjs",
+      "目录": false,
+      "字节数": 5240,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/启动无界面核心.cjs",
+      "目录": false,
+      "字节数": 3131,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/启动桌宠.cjs",
+      "目录": false,
+      "字节数": 16939,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/备份代码.cjs",
+      "目录": false,
+      "字节数": 4422,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/备份代码.cmd",
+      "目录": false,
+      "字节数": 460,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/备份项目.cjs",
+      "目录": false,
+      "字节数": 6371,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/对比版本.cjs",
+      "目录": false,
+      "字节数": 4239,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/导出人格.cjs",
+      "目录": false,
+      "字节数": 2382,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/抓BongoCat网络.cjs",
+      "目录": false,
+      "字节数": 1713,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/抽取键盘模型.cjs",
+      "目录": false,
+      "字节数": 3752,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/改BongoCat配置.cjs",
+      "目录": false,
+      "字节数": 4450,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/更新原作对话示例.cjs",
+      "目录": false,
+      "字节数": 12092,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/更新表达风格.cjs",
+      "目录": false,
+      "字节数": 9180,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/查启动脚本.cjs",
+      "目录": false,
+      "字节数": 3864,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/查桌宠配置.cjs",
+      "目录": false,
+      "字节数": 5418,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/检查SQLite只读影子.cjs",
+      "目录": false,
+      "字节数": 856,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/检查SQLite来源登记.cjs",
+      "目录": false,
+      "字节数": 877,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/比搜索.cjs",
+      "目录": false,
+      "字节数": 4330,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测ASR专名.cjs",
+      "目录": false,
+      "字节数": 1959,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测ASR适配器.cjs",
+      "目录": false,
+      "字节数": 4636,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测ASR驱动选择.cjs",
+      "目录": false,
+      "字节数": 1733,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测Live2D窗口.cjs",
+      "目录": false,
+      "字节数": 9772,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测Live2D绑定.cjs",
+      "目录": false,
+      "字节数": 5876,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测Live2D缩放.cjs",
+      "目录": false,
+      "字节数": 2735,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测PCM流.cjs",
+      "目录": false,
+      "字节数": 3881,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite会话仓储.cjs",
+      "目录": false,
+      "字节数": 21273,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite只读影子.cjs",
+      "目录": false,
+      "字节数": 7797,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite备份回退.cjs",
+      "目录": false,
+      "字节数": 18438,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite旧格式适配.cjs",
+      "目录": false,
+      "字节数": 17626,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite旧状态接入.cjs",
+      "目录": false,
+      "字节数": 15183,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite旧记忆可变接线.cjs",
+      "目录": false,
+      "字节数": 18061,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite来源登记.cjs",
+      "目录": false,
+      "字节数": 9967,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite样本映射.cjs",
+      "目录": false,
+      "字节数": 15251,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite状态仓储.cjs",
+      "目录": false,
+      "字节数": 26469,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SQLite记忆仓储.cjs",
+      "目录": false,
+      "字节数": 20756,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测SenseVoice驱动.cjs",
+      "目录": false,
+      "字节数": 2340,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测TTS适配器.cjs",
+      "目录": false,
+      "字节数": 5479,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测一整轮.cjs",
+      "目录": false,
+      "字节数": 4075,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测一轮多写.cjs",
+      "目录": false,
+      "字节数": 3860,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测三种模式.cjs",
+      "目录": false,
+      "字节数": 8865,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测两层温度.cjs",
+      "目录": false,
+      "字节数": 8361,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测中文输出.cjs",
+      "目录": false,
+      "字节数": 9973,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测临时对话.cjs",
+      "目录": false,
+      "字节数": 7543,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测临时记忆召回.cjs",
+      "目录": false,
+      "字节数": 14646,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测临时记忆提取.cjs",
+      "目录": false,
+      "字节数": 19618,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测临时记忆数据层.cjs",
+      "目录": false,
+      "字节数": 14128,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测临时记忆界面.cjs",
+      "目录": false,
+      "字节数": 8918,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测主动陪伴去重.cjs",
+      "目录": false,
+      "字节数": 1441,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测主动陪伴接入.cjs",
+      "目录": false,
+      "字节数": 4761,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测主动陪伴生成.cjs",
+      "目录": false,
+      "字节数": 3283,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测主动陪伴调度.cjs",
+      "目录": false,
+      "字节数": 6009,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测人格回归.cjs",
+      "目录": false,
+      "字节数": 8109,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测从产物继续.cjs",
+      "目录": false,
+      "字节数": 3305,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测修剪.cjs",
+      "目录": false,
+      "字节数": 11630,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测修剪真跑.cjs",
+      "目录": false,
+      "字节数": 8035,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测假渠道适配器.cjs",
+      "目录": false,
+      "字节数": 18814,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测停止回复.cjs",
+      "目录": false,
+      "字节数": 3519,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测写文件.cjs",
+      "目录": false,
+      "字节数": 11378,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测动手.cjs",
+      "目录": false,
+      "字节数": 4004,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测后台生命周期.cjs",
+      "目录": false,
+      "字节数": 14576,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测后台记忆整理.cjs",
+      "目录": false,
+      "字节数": 8485,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测启动子进程.cjs",
+      "目录": false,
+      "字节数": 6633,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测命令产物.cjs",
+      "目录": false,
+      "字节数": 5258,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测命令结果.cjs",
+      "目录": false,
+      "字节数": 7344,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测回复不撤回.cjs",
+      "目录": false,
+      "字节数": 6426,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测备份线程.cjs",
+      "目录": false,
+      "字节数": 1798,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测多对话.cjs",
+      "目录": false,
+      "字节数": 21279,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测天气搜索.cjs",
+      "目录": false,
+      "字节数": 3613,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测子代理.cjs",
+      "目录": false,
+      "字节数": 9473,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测学习任务.cjs",
+      "目录": false,
+      "字节数": 10859,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测学习进度.cjs",
+      "目录": false,
+      "字节数": 14945,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测密钥存储.cjs",
+      "目录": false,
+      "字节数": 2713,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测尺子.cjs",
+      "目录": false,
+      "字节数": 12496,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工作区.cjs",
+      "目录": false,
+      "字节数": 6794,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工作失败重试.cjs",
+      "目录": false,
+      "字节数": 2409,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工作索引.cjs",
+      "目录": false,
+      "字节数": 6700,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工作索引侧栏.cjs",
+      "目录": false,
+      "字节数": 5602,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工具可信.cjs",
+      "目录": false,
+      "字节数": 4693,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工具回执.cjs",
+      "目录": false,
+      "字节数": 4917,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工具记录.cjs",
+      "目录": false,
+      "字节数": 3437,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工具顺序.cjs",
+      "目录": false,
+      "字节数": 3728,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测工程师过手.cjs",
+      "目录": false,
+      "字节数": 12122,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测并发确认.cjs",
+      "目录": false,
+      "字节数": 12025,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测情感状态.cjs",
+      "目录": false,
+      "字节数": 7173,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测手动声音入口.cjs",
+      "目录": false,
+      "字节数": 4558,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测按段模型.cjs",
+      "目录": false,
+      "字节数": 9100,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测挑历史.cjs",
+      "目录": false,
+      "字节数": 8006,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测捞价.cjs",
+      "目录": false,
+      "字节数": 4740,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测搜索.cjs",
+      "目录": false,
+      "字节数": 5137,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测搜索冲突.cjs",
+      "目录": false,
+      "字节数": 4118,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测搜索来源.cjs",
+      "目录": false,
+      "字节数": 2683,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测搜索设置.cjs",
+      "目录": false,
+      "字节数": 4218,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测搜索验证.cjs",
+      "目录": false,
+      "字节数": 4173,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测数进程.cjs",
+      "目录": false,
+      "字节数": 4341,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测整条线.cjs",
+      "目录": false,
+      "字节数": 6791,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测文件侧栏.cjs",
+      "目录": false,
+      "字节数": 3919,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测无界面启动.cjs",
+      "目录": false,
+      "字节数": 14064,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测时间意识.cjs",
+      "目录": false,
+      "字节数": 1888,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测本机ASR.cjs",
+      "目录": false,
+      "字节数": 1759,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测权限.cjs",
+      "目录": false,
+      "字节数": 13069,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测模型.cjs",
+      "目录": false,
+      "字节数": 2559,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测模型预算.cjs",
+      "目录": false,
+      "字节数": 8228,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测没干完.cjs",
+      "目录": false,
+      "字节数": 12438,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测流式语音.cjs",
+      "目录": false,
+      "字节数": 7216,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测清空长期记忆.cjs",
+      "目录": false,
+      "字节数": 5280,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测渠道任务调度.cjs",
+      "目录": false,
+      "字节数": 34034,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测渠道会话映射.cjs",
+      "目录": false,
+      "字节数": 22822,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测渠道契约.cjs",
+      "目录": false,
+      "字节数": 11193,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测渠道权限.cjs",
+      "目录": false,
+      "字节数": 16747,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测温度.cjs",
+      "目录": false,
+      "字节数": 6435,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测环境事实.cjs",
+      "目录": false,
+      "字节数": 3007,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测用户备份.cjs",
+      "目录": false,
+      "字节数": 4300,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测用户数据.cjs",
+      "目录": false,
+      "字节数": 2480,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测界面布局.cjs",
+      "目录": false,
+      "字节数": 2853,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测看得到.cjs",
+      "目录": false,
+      "字节数": 7519,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测私密日记正式启用.cjs",
+      "目录": false,
+      "字节数": 11057,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测私密日记渠道闸门.cjs",
+      "目录": false,
+      "字节数": 9511,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测私密日记生成.cjs",
+      "目录": false,
+      "字节数": 12014,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测私密日记界面.cjs",
+      "目录": false,
+      "字节数": 7820,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测私密日记调度.cjs",
+      "目录": false,
+      "字节数": 6347,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测编译路径.cjs",
+      "目录": false,
+      "字节数": 9925,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测网络.cjs",
+      "目录": false,
+      "字节数": 4901,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测聊天搜索与只读工作.cjs",
+      "目录": false,
+      "字节数": 4031,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测联网搜索.cjs",
+      "目录": false,
+      "字节数": 8377,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测表情.cjs",
+      "目录": false,
+      "字节数": 3914,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测表现事件.cjs",
+      "目录": false,
+      "字节数": 2825,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测表达反馈.cjs",
+      "目录": false,
+      "字节数": 3164,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测表达反馈接入.cjs",
+      "目录": false,
+      "字节数": 3063,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测解析.cjs",
+      "目录": false,
+      "字节数": 14412,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测认进程.cjs",
+      "目录": false,
+      "字节数": 4315,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测认错.cjs",
+      "目录": false,
+      "字节数": 7577,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆修改遗忘.cjs",
+      "目录": false,
+      "字节数": 4969,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆关系图.cjs",
+      "目录": false,
+      "字节数": 7525,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆关系整理.cjs",
+      "目录": false,
+      "字节数": 6419,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆叙述口吻.cjs",
+      "目录": false,
+      "字节数": 4721,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆导出.cjs",
+      "目录": false,
+      "字节数": 6268,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆日记.cjs",
+      "目录": false,
+      "字节数": 13818,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆时间线候选.cjs",
+      "目录": false,
+      "字节数": 9708,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆查看.cjs",
+      "目录": false,
+      "字节数": 6464,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆纠错.cjs",
+      "目录": false,
+      "字节数": 6667,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆聚类候选.cjs",
+      "目录": false,
+      "字节数": 6989,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆聚类就绪.cjs",
+      "目录": false,
+      "字节数": 3743,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆自主评估.cjs",
+      "目录": false,
+      "字节数": 11538,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测记忆闸门.cjs",
+      "目录": false,
+      "字节数": 5848,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测设置.cjs",
+      "目录": false,
+      "字节数": 1504,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测试说明.md",
+      "目录": false,
+      "字节数": 4860,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测试键盘监听.cjs",
+      "目录": false,
+      "字节数": 2145,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测语音语境.cjs",
+      "目录": false,
+      "字节数": 2433,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测语音输入.cjs",
+      "目录": false,
+      "字节数": 6210,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测读取验证.cjs",
+      "目录": false,
+      "字节数": 6307,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测账本.cjs",
+      "目录": false,
+      "字节数": 3176,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测账本窗口.cjs",
+      "目录": false,
+      "字节数": 3267,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测路由.cjs",
+      "目录": false,
+      "字节数": 3219,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测重试.cjs",
+      "目录": false,
+      "字节数": 12485,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测错误状态.cjs",
+      "目录": false,
+      "字节数": 2481,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测长期记忆关系召回.cjs",
+      "目录": false,
+      "字节数": 5475,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测长期记忆开关.cjs",
+      "目录": false,
+      "字节数": 4460,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测附件.cjs",
+      "目录": false,
+      "字节数": 15656,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测隔离对话核心.cjs",
+      "目录": false,
+      "字节数": 3363,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/测飘不飘.cjs",
+      "目录": false,
+      "字节数": 6932,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/清测试记录.cjs",
+      "目录": false,
+      "字节数": 6485,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UILive2D小界面对比图.cjs",
+      "目录": false,
+      "字节数": 2719,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UI账本对比图.cjs",
+      "目录": false,
+      "字节数": 1755,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UI阶段1对比图.cjs",
+      "目录": false,
+      "字节数": 1828,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UI阶段2对比图.cjs",
+      "目录": false,
+      "字节数": 2745,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UI阶段3对比图.cjs",
+      "目录": false,
+      "字节数": 2790,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UI阶段4对比图.cjs",
+      "目录": false,
+      "字节数": 2764,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成UI阶段6总览.cjs",
+      "目录": false,
+      "字节数": 2277,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成对齐表.cjs",
+      "目录": false,
+      "字节数": 3110,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成记忆时间线候选.cjs",
+      "目录": false,
+      "字节数": 692,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/生成记忆聚类候选.cjs",
+      "目录": false,
+      "字节数": 660,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/画图标.cjs",
+      "目录": false,
+      "字节数": 10050,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看上下文.cjs",
+      "目录": false,
+      "字节数": 8353,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看原始回话.cjs",
+      "目录": false,
+      "字节数": 4007,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看她写文件.cjs",
+      "目录": false,
+      "字节数": 4486,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看她动手.cjs",
+      "目录": false,
+      "字节数": 2975,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看她怎么接话.cjs",
+      "目录": false,
+      "字节数": 7420,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看模型.cjs",
+      "目录": false,
+      "字节数": 1878,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看账本.cjs",
+      "目录": false,
+      "字节数": 2893,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/看进程.cjs",
+      "目录": false,
+      "字节数": 2159,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/算话费.cjs",
+      "目录": false,
+      "字节数": 4659,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试SenseVoice.cjs",
+      "目录": false,
+      "字节数": 5895,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试三档.ps1",
+      "目录": false,
+      "字节数": 2996,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试命令.cjs",
+      "目录": false,
+      "字节数": 3841,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试小助手看源码.cjs",
+      "目录": false,
+      "字节数": 3847,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试当前FunASR基准.cjs",
+      "目录": false,
+      "字节数": 2101,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试换模型.cjs",
+      "目录": false,
+      "字节数": 6098,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试没干完真跑.cjs",
+      "目录": false,
+      "字节数": 5890,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试看图.cjs",
+      "目录": false,
+      "字节数": 5514,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试记账.cjs",
+      "目录": false,
+      "字节数": 3394,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/试识图.cjs",
+      "目录": false,
+      "字节数": 7158,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/重算手部对齐.cjs",
+      "目录": false,
+      "字节数": 2921,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/量内存.cjs",
+      "目录": false,
+      "字节数": 6148,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/量手部素材.cjs",
+      "目录": false,
+      "字节数": 3475,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/量键盘位置.cjs",
+      "目录": false,
+      "字节数": 2706,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/量面板.cjs",
+      "目录": false,
+      "字节数": 2557,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/键盘监听.ps1",
+      "目录": false,
+      "字节数": 2732,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验工作区.cjs",
+      "目录": false,
+      "字节数": 6889,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UILive2D小界面.cjs",
+      "目录": false,
+      "字节数": 9437,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI全局收口.cjs",
+      "目录": false,
+      "字节数": 7078,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI内容层.cjs",
+      "目录": false,
+      "字节数": 10995,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI基础层.cjs",
+      "目录": false,
+      "字节数": 7195,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI弹层.cjs",
+      "目录": false,
+      "字节数": 13903,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI记忆层.cjs",
+      "目录": false,
+      "字节数": 16622,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI账本.cjs",
+      "目录": false,
+      "字节数": 5938,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收UI阶段6回归.cjs",
+      "目录": false,
+      "字节数": 1719,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收对话交互预载.cjs",
+      "目录": false,
+      "字节数": 1712,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收新建对话与退出.cjs",
+      "目录": false,
+      "字节数": 6794,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收记忆关系图界面.cjs",
+      "目录": false,
+      "字节数": 9540,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收记忆关系图预载.cjs",
+      "目录": false,
+      "字节数": 2504,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收账本跟随流畅度.cjs",
+      "目录": false,
+      "字节数": 3401,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/tools/验收账本预载.cjs",
+      "目录": false,
+      "字节数": 716,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/desktop-check-256.png",
+      "目录": false,
+      "字节数": 145142,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/desktop-check-48.png",
+      "目录": false,
+      "字节数": 6916,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/desktop-check-64.png",
+      "目录": false,
+      "字节数": 11677,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/desktop-check-96.png",
+      "目录": false,
+      "字节数": 24471,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/desktop-check-sheet.png",
+      "目录": false,
+      "字节数": 155043,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/elysia.jpg",
+      "目录": false,
+      "字节数": 150092,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-head-16.png",
+      "目录": false,
+      "字节数": 985,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-head-256.png",
+      "目录": false,
+      "字节数": 145909,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-head-48.png",
+      "目录": false,
+      "字节数": 6943,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-head-64.png",
+      "目录": false,
+      "字节数": 11737,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-sheet.png",
+      "目录": false,
+      "字节数": 31978,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-whole-16.png",
+      "目录": false,
+      "字节数": 918,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-whole-256.png",
+      "目录": false,
+      "字节数": 131307,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-whole-48.png",
+      "目录": false,
+      "字节数": 6082,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/raw-vs-crop-whole-64.png",
+      "目录": false,
+      "字节数": 10346,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candA-16.png",
+      "目录": false,
+      "字节数": 964,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candA-256.png",
+      "目录": false,
+      "字节数": 126386,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candA-32.png",
+      "目录": false,
+      "字节数": 3118,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candA-48.png",
+      "目录": false,
+      "字节数": 6332,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candA-64.png",
+      "目录": false,
+      "字节数": 10576,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candB-16.png",
+      "目录": false,
+      "字节数": 990,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candB-256.png",
+      "目录": false,
+      "字节数": 143125,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candB-32.png",
+      "目录": false,
+      "字节数": 3330,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candB-48.png",
+      "目录": false,
+      "字节数": 6900,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/candB-64.png",
+      "目录": false,
+      "字节数": 11657,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/compare.png",
+      "目录": false,
+      "字节数": 40916,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/elysia-icon-16.png",
+      "目录": false,
+      "字节数": 980,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/elysia-icon-256.png",
+      "目录": false,
+      "字节数": 132763,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/elysia-icon-32.png",
+      "目录": false,
+      "字节数": 3250,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/elysia-icon-48.png",
+      "目录": false,
+      "字节数": 6648,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/elysia-icon-64.png",
+      "目录": false,
+      "字节数": 11137,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel-16.png",
+      "目录": false,
+      "字节数": 307,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel-24.png",
+      "目录": false,
+      "字节数": 458,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel-256.png",
+      "目录": false,
+      "字节数": 126386,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel-32.png",
+      "目录": false,
+      "字节数": 644,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel-48.png",
+      "目录": false,
+      "字节数": 1138,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel-64.png",
+      "目录": false,
+      "字节数": 1728,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon-source/她当图标的样子-备选/pixel.ico",
+      "目录": false,
+      "字节数": 128545,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/main.js",
+      "目录": false,
+      "字节数": 168185,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/preload.js",
+      "目录": false,
+      "字节数": 28703,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/package.json",
+      "目录": false,
+      "字节数": 2481,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/package-lock.json",
+      "目录": false,
+      "字节数": 173107,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/icon.ico",
+      "目录": false,
+      "字节数": 27604,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "source/desktop-icon.ico",
+      "目录": false,
+      "字节数": 186043,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "workspace/start-all.cmd",
+      "目录": false,
+      "字节数": 2120,
+      "去向": "release",
+      "类型": "code-or-resource"
+    },
+    {
+      "来源": "workspace/start-all.cjs",
+      "目录": false,
+      "字节数": 18035,
+      "去向": "release",
+      "类型": "code-or-resource"
+    }
+  ],
+  "缺省": [
+    {
+      "域": "channels",
+      "状态": "未配置",
+      "原因": "尚未接入正式渠道，无正式独立渠道存档根"
+    },
+    {
+      "域": "workspace/工作",
+      "状态": "未配置",
+      "原因": "本次工作索引没有工作区引用"
+    }
+  ],
+  "未登记": [],
+  "未存在的已登记业务": [
+    "cache/后台缓冲.json",
+    "data/核心用量.jsonl",
+    "data/关系整理状态.json",
+    "data/日记/私密/已删除.json"
+  ],
+  "未存在的已登记缓存": [
+    "cache/后台缓冲.json"
+  ],
+  "阻断": [],
+  "后续必须": [
+    "SOURCE_NOT_FROZEN",
+    "CONTENT_HASH_NOT_VERIFIED",
+    "REFERENCE_COVERAGE_NOT_VERIFIED",
+    "BUSINESS_SHADOW_NOT_VERIFIED"
+  ]
+}

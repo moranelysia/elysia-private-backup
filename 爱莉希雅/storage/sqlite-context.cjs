@@ -5,16 +5,20 @@ const { randomBytes, randomUUID } = require('node:crypto')
 const 上下文们 = new WeakMap()
 function 失败(码) { throw new Error(码) }
 function 创建内存上下文(选项) {
+  return 创建上下文(选项, false)
+}
+function 创建本机影子上下文(选项) { return 创建上下文(选项, true) }
+function 创建上下文(选项, 本机) {
   if (process.versions.electron) 失败('SQLITE_CONTEXT_NODE_ONLY')
   const 描述 = 选项 && Object.getOwnPropertyDescriptors(选项)
-  if (!描述 || Object.getPrototypeOf(选项) !== Object.prototype || Reflect.ownKeys(描述).length !== 1 || !描述.用途 || !Object.hasOwn(描述.用途, 'value') || 描述.用途.value !== 'synthetic-sqlite-repository') 失败('SQLITE_CONTEXT_SCOPE_REQUIRED')
+  if (!描述 || Object.getPrototypeOf(选项) !== Object.prototype || Reflect.ownKeys(描述).length !== (本机 ? 2 : 1) || !描述.用途 || !Object.hasOwn(描述.用途, 'value') || 描述.用途.value !== (本机 ? 'local-shadow-repository' : 'synthetic-sqlite-repository') || (本机 && (!描述.包含私密 || !Object.hasOwn(描述.包含私密, 'value') || 描述.包含私密.value !== true))) 失败('SQLITE_CONTEXT_SCOPE_REQUIRED')
   const db = new DatabaseSync(':memory:', { enableForeignKeyConstraints: true, enableDoubleQuotedStringLiterals: false, allowExtension: false })
   let sqlite
   try {
     db.exec('PRAGMA foreign_keys=ON; PRAGMA trusted_schema=OFF; PRAGMA temp_store=MEMORY; PRAGMA user_version=1; CREATE TABLE repository_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;')
     sqlite = db.prepare('SELECT sqlite_version() AS v').get().v
   } catch { db.close(); 失败('SQLITE_CONTEXT_BOOT_FAILED') }
-  const 内部 = { db, 标识: randomUUID(), 游标密钥: randomBytes(32), 已关闭: false, 可用: true, 写入中: false }
+  const 内部 = { db, 本机, 标识: randomUUID(), 游标密钥: randomBytes(32), 已关闭: false, 可用: true, 写入中: false }
   const 上下文 = Object.freeze({
     关闭() { if (!内部.已关闭) { 内部.已关闭 = true; db.close() } },
     取状态() { return { 模式: 'sqlite-memory', sqlite, 已关闭: 内部.已关闭, 可用: 内部.可用 && !内部.已关闭 } },
@@ -52,4 +56,4 @@ function 原子执行(上下文, 做) {
     失败('SQLITE_CONTEXT_TRANSACTION_FAILED')
   } finally { 内部.写入中 = false }
 }
-module.exports = { 创建内存上下文, 取内部, 原子执行 }
+module.exports = { 创建内存上下文, 创建本机影子上下文, 取内部, 原子执行 }
