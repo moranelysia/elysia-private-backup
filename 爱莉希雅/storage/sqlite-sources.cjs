@@ -30,6 +30,7 @@ function 识别来源(p) {
   if (/^data\/(附件|整理历史|清空历史)\/.+/u.test(p) || ['data/尺子对账.jsonl','data/小测试.txt'].includes(p)) return { 去向: 'external', 类型: 'external' }
   if (/^data\/聊天记录\/.+(?:\.已并入|前.*\.jsonl|前.*\.json|\.清理前\.jsonl)$/u.test(p)) return { 去向: 'external', 类型: 'historical' }
   if (/^workspace\/(工作(?:-[a-f0-9]{12})?|学习)\/.+/u.test(p)) return { 去向: 'external', 类型: 'workspace-file' }
+  if (/^workspace\/产物-[a-f0-9]{12}$/u.test(p)) return { 去向:'external', 类型:'work-product' }
   if (['cache/表达反馈.json','cache/没做完的.json'].includes(p) || /^cache\/没做完的-(?!temp-)[a-zA-Z0-9_-]+\.json$/u.test(p)) return { 去向:'external', 类型:'persistent-cache' }
   return { 去向: 'unmapped', 类型: 'unmapped' }
 }

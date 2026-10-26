@@ -36,7 +36,7 @@ function 盘点显式来源(原, scope) {
   const profile = 纯数据(原)
   if (Object.keys(profile).length !== 2 || profile.版本 !== 1 || !Array.isArray(profile.根) || profile.根.length > 80) 失败('INPUT_INVALID')
   const seen = new Set(), roots = profile.根.map((r) => {
-    if (Object.keys(r).sort().join(',') !== ['域','路径','模式','允许缺省','缺省说明'].sort().join(',') || typeof r.域 !== 'string' || (!核心域.includes(r.域) && !/^workspace\/工作-[a-f0-9]{12}$/u.test(r.域)) || seen.has(r.域) || !['tree','file','cache'].includes(r.模式) || typeof r.允许缺省 !== 'boolean' || typeof r.缺省说明 !== 'string') 失败('ROOT_INVALID')
+    if (Object.keys(r).sort().join(',') !== ['域','路径','模式','允许缺省','缺省说明'].sort().join(',') || typeof r.域 !== 'string' || (!核心域.includes(r.域) && !/^workspace\/(工作|产物)-[a-f0-9]{12}$/u.test(r.域)) || seen.has(r.域) || !['tree','file','cache'].includes(r.模式) || typeof r.允许缺省 !== 'boolean' || typeof r.缺省说明 !== 'string' || (/^workspace\/产物-/u.test(r.域) && r.模式 !== 'file')) 失败('ROOT_INVALID')
     seen.add(r.域)
     if (r.域 === 'cache' ? r.模式 !== 'cache' : r.模式 === 'cache') 失败('ROOT_INVALID')
     if (r.路径 === null) { if (!r.允许缺省 || !r.缺省说明.trim()) 失败('ABSENCE_REQUIRED'); return r }

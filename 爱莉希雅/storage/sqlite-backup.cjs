@@ -87,18 +87,29 @@ function 核对文档(文档们, 预期, 本机 = false) {
     }
   } finally { 原.关闭() }
 }
-function 核对外部文件(原 = []) {
+function 核对外部文件(原 = [], 本机 = false) {
   const 值 = 纯数据(原), 已见 = new Set()
   if (!Array.isArray(值) || 值.length > 200) 失败('FILES_INVALID')
+  const 引用 = 值.length > 0 && Object.hasOwn(值[0], 'sha256')
+  if (引用 && !本机) 失败('FILES_INVALID')
+  let 总字节 = 0
   for (const 一 of 值) {
-    if (!相等(Object.keys(一).sort(), ['路径', 'base64'].sort())) 失败('FILES_INVALID')
+    if (!相等(Object.keys(一).sort(), (引用 ? ['路径','sha256','字节数'] : ['路径','base64']).sort())) 失败('FILES_INVALID')
     const 路径 = 相对路径(一.路径), 键 = 路径.toLowerCase()
     // 附件/产物/原Markdown保持外部文件；不把密钥或学习进度塞进假造JSON槽位。
     if (识别来源(路径).去向 !== 'external' || 已见.has(键)) 失败('FILES_INVALID')
-    if (typeof 一.base64 !== 'string' || Buffer.from(一.base64, 'base64').toString('base64') !== 一.base64) 失败('FILES_INVALID')
+    if (引用) { if (!Number.isSafeInteger(一.字节数) || 一.字节数 < 0 || 一.字节数 > 64*1024*1024 || typeof 一.sha256 !== 'string' || !/^[a-f0-9]{64}$/u.test(一.sha256)) 失败('FILES_INVALID'); 总字节 += 一.字节数; if(总字节>256*1024*1024)失败('FILES_INVALID') }
+    else if (typeof 一.base64 !== 'string' || Buffer.from(一.base64, 'base64').toString('base64') !== 一.base64) 失败('FILES_INVALID')
     已见.add(键)
   }
   return 值.sort((a, b) => 排(a.路径, b.路径))
+}
+function 核对资源引用(原, 文件, 本机){
+  const a=纯数据(原),seen=new Set();if(!本机||!Array.isArray(a)||a.length>1000)失败('REFERENCES_INVALID')
+  for(const r of a){if(!相等(Object.keys(r).sort(),['类型','原始路径','逻辑路径','状态'].sort())||!['attachment','work-product'].includes(r.类型)||typeof r.原始路径!=='string'||!r.原始路径||r.原始路径.length>4096||/[\x00-\x1f]/u.test(r.原始路径))失败('REFERENCES_INVALID');const key=JSON.stringify([r.类型,r.原始路径]);if(seen.has(key))失败('REFERENCES_INVALID');seen.add(key)
+    if(r.状态==='present'){相对路径(r.逻辑路径);if(!文件.some(f=>f.路径===r.逻辑路径))失败('REFERENCES_INVALID')}
+    else if(r.状态!=='missing-before-freeze'||r.逻辑路径!==null)失败('REFERENCES_INVALID')
+  }return a
 }
 function 创建隔离仓储(选项) {
   const 上下文 = 创建内存上下文(选项)
@@ -113,7 +124,7 @@ function 组合(上下文) {
   const { db, 本机 } = 取内部(上下文), 原格式用途 = 本机 ? 'local-json-rollback' : 'synthetic-json-rollback'
   const 架构 = db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x }))
   const 表们 = 架构.filter((x) => x.type === 'table').map((x) => ({ 名称: x.name, 列: db.prepare(`PRAGMA table_info("${x.name}")`).all().map((y) => y.name) }))
-  let 原文档 = []
+  let 原文档 = [], 资源引用 = []
   function 核验() {
     取内部(上下文)
     if (!相等(架构, db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x })))) 失败('SCHEMA_MISMATCH')
@@ -159,21 +170,24 @@ function 组合(上下文) {
     },
     创建备份(输入, 范围值) {
       授权(范围值); const 一 = 纯数据(输入)
-      if (!相等(Object.keys(一).sort(), ['时间', '外部文件', '必须文件'].sort()) || !是时间(一.时间)) 失败('INPUT_INVALID')
-      const 文件 = 核对外部文件(一.外部文件)
+      if (!相等(Object.keys(一).sort(), ['时间', '外部文件', '必须文件',...(Object.hasOwn(一,'资源引用')?['资源引用']:[])].sort()) || !是时间(一.时间)) 失败('INPUT_INVALID')
+      const 文件 = 核对外部文件(一.外部文件, 本机)
+      const 引用=本机?核对资源引用(一.资源引用??资源引用,文件,true):[]
+      if(!本机&&Object.hasOwn(一,'资源引用'))失败('REFERENCES_INVALID')
       if (!Array.isArray(一.必须文件) || !相等([...一.必须文件].sort(), 文件.map((x) => x.路径).sort())) 失败('FILES_INCOMPLETE')
-      return 原子执行(上下文, () => {
+      const 回 = 原子执行(上下文, () => {
         const 快照 = 取快照(), 文档 = 当前文档(); 核对文档(文档, 投影文档(db, 会话, 旧格式), 本机)
         // 原文基线只保留未变更业务文档的格式，删除正文不回到回退文档；
         // 完整逻辑快照仍含记忆删除档案及legacy来源原文，不是物理擦除备份。
         // v4包含旧状态绑定清单；旧恢复器不能忽略覆盖约束或重排原私密索引。
-        const 版 = db.prepare("SELECT 1 FROM repository_meta WHERE key='state_import_manifest'").get() ? 4 : db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get() ? 3 : 2
-        const 内容 = { 版本: 版, 用途: 本机 ? 'local-sqlite-shadow-backup' : 'synthetic-sqlite-backup', 时间: 一.时间, 快照, 文档, 外部文件: 文件 }
+        const 版 = 文件.some(x=>Object.hasOwn(x,'sha256')) || 引用.length ? 5 : db.prepare("SELECT 1 FROM repository_meta WHERE key='state_import_manifest'").get() ? 4 : db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get() ? 3 : 2
+        const 内容 = { 版本: 版, 用途: 本机 ? 'local-sqlite-shadow-backup' : 'synthetic-sqlite-backup', 时间: 一.时间, 快照, 文档, 外部文件: 文件,...(版===5?{资源引用:引用}:{}) }
         const 包 = { ...内容, 指纹: 摘要(内容) }; 纯数据(包); return 包
       })
+      if(本机)资源引用=克隆(引用);return 回
     },
   })
-  内部们.set(句柄, { 上下文, 架构, 表们, db, 取快照 })
+  内部们.set(句柄, { 上下文, 架构, 表们, db, 取快照, 设置资源引用:x=>{资源引用=克隆(x)} })
   return 句柄
 }
 const 内部们 = new WeakMap()
@@ -181,13 +195,14 @@ function 恢复隔离仓储(原, 范围值) { return 恢复仓储(原, 范围值
 function 恢复本机影子仓储(原, 范围值) { return 恢复仓储(原, 范围值, true) }
 function 恢复仓储(原, 范围值, 本机) {
   授权(范围值); const 包 = 纯数据(原), { 指纹, ...内容 } = 包
-  if (!相等(Object.keys(包).sort(), ['版本', '用途', '时间', '快照', '文档', '外部文件', '指纹'].sort()) || 包.用途 !== (本机 ? 'local-sqlite-shadow-backup' : 'synthetic-sqlite-backup') || 指纹 !== 摘要(内容)) 失败('HASH_MISMATCH')
-  if (![2, 3, 4].includes(包.版本)) 失败('VERSION_UNSUPPORTED')
+  if (!相等(Object.keys(包).sort(), ['版本', '用途', '时间', '快照', '文档', '外部文件', '指纹',...(包.版本===5?['资源引用']:[])].sort()) || 包.用途 !== (本机 ? 'local-sqlite-shadow-backup' : 'synthetic-sqlite-backup') || 指纹 !== 摘要(内容)) 失败('HASH_MISMATCH')
+  if (![2, 3, 4, 5].includes(包.版本)) 失败('VERSION_UNSUPPORTED')
   if (!是时间(包.时间)) 失败('INPUT_INVALID')
   const 仓 = 本机 ? 创建本机影子仓储({ 用途:'local-shadow-repository', 包含私密:true }) : 创建隔离仓储({ 用途:'synthetic-sqlite-repository' }), { 上下文, 架构, 表们, db } = 内部们.get(仓)
   try {
     if (包.快照.架构指纹 !== 摘要(架构) || !相等(Object.keys(包.快照).sort(), ['架构指纹', '表'].sort()) || !Array.isArray(包.快照.表) || 包.快照.表.length !== 表们.length) 失败('SCHEMA_MISMATCH')
-    核对外部文件(包.外部文件)
+    核对外部文件(包.外部文件, 本机)
+    const 引用=包.版本===5?核对资源引用(包.资源引用,包.外部文件,本机):[]
     for (let i = 0; i < 表们.length; i++) {
       const 表 = 包.快照.表[i], 模板 = 表们[i]
       if (!相等(Object.keys(表).sort(), ['名称', '列', '行'].sort()) || 表.名称 !== 模板.名称 || !相等(表.列, 模板.列) || !Array.isArray(表.行) || 表.行.some((x) => !Array.isArray(x) || x.length !== 模板.列.length || x.some((v) => v !== null && typeof v !== 'string' && typeof v !== 'number'))) 失败('TABLE_INVALID')
@@ -202,10 +217,12 @@ function 恢复仓储(原, 范围值, 本机) {
       db.exec('DELETE FROM sqlite_sequence')
       for (const 行 of 包.快照.表.find((x) => x.名称 === 'sqlite_sequence').行) db.prepare('INSERT INTO sqlite_sequence(name,seq) VALUES(?,?)').run(...行)
       const 状态绑定 = !!db.prepare("SELECT 1 FROM repository_meta WHERE key='state_import_manifest'").get(), 记忆绑定 = !!db.prepare("SELECT 1 FROM repository_meta WHERE key='legacy_memory_binding'").get()
-      if (状态绑定 !== (包.版本 === 4) || (!状态绑定 && 记忆绑定 !== (包.版本 === 3))) 失败('VERSION_UNSUPPORTED')
+      const expected = 包.外部文件.some(x=>Object.hasOwn(x,'sha256')) || 引用.length ? 5 : 状态绑定 ? 4 : 记忆绑定 ? 3 : 2
+      if (包.版本 !== expected || (包.版本 === 5 && !本机)) 失败('VERSION_UNSUPPORTED')
       仓.核验(); 核对文档(包.文档, 投影文档(db, 仓.会话, 仓.旧格式), 本机)
     })
     仓.封存原格式基线({ 版本: 1, 用途: 本机 ? 'local-json-rollback' : 'synthetic-json-rollback', 文档: 包.文档 }, 范围)
+    内部们.get(仓).设置资源引用(引用)
     return 仓
   } catch (错) { 仓.关闭(); throw new Error(/^SQLITE_(BACKUP|CONTEXT)_[A-Z_]+$/u.test(错.message || '') ? 错.message : 'SQLITE_BACKUP_RESTORE_REJECTED') }
 }

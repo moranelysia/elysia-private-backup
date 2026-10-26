@@ -78,3 +78,6 @@
 Thumbs.db
 Desktop.ini
 
+# Local migration rehearsals contain private runtime data; never publish in Git.
+/.local-migration/
+

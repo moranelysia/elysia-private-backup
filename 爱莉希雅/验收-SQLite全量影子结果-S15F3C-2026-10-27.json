@@ -1,0 +1,85 @@
+{
+  "版本": 1,
+  "用途": "local-shadow-rehearsal-report",
+  "时间": "2026-10-26T16:18:41.454Z",
+  "好": true,
+  "可切换": false,
+  "源冻结指纹": "f5d715eebdd726eccbb141133d81687240da99f1bb0eabcbb89a71143619f2b6",
+  "源文件数": 635,
+  "源字节数": 57409077,
+  "来源核对": {
+    "原索引会话": 13,
+    "原始消息": 583,
+    "无对话字段历史": 120,
+    "长期": 40,
+    "临时": 75,
+    "普通日记正文": 13,
+    "私密日记正文": 1,
+    "附件引用": 6,
+    "工作产物引用": 4,
+    "冻结前已缺失产物": 1,
+    "外部文件": 27,
+    "渠道来源": 0
+  },
+  "原读取器基线": {
+    "哈希": {
+      "sessions": "54825aaac719889f41aac686d868d153cd7bffa88cfbbc4102405d27a02dfe53",
+      "history": "7dce628b07dcd2be748b67bacd7dbaed96e466e1e69392ae416cc791f6a9012b",
+      "long": "fd6c11a35edf0110993617db7e02e2b61829b3e4f2bcf03e808b61851cfd9994",
+      "temporary": "2e59129ecbf35eed93e89731d833f9577fbd9748e2edf5b5c1b220b5fb2c30e1",
+      "diary": "7dab1c93172b634e81e989f83f2b7d978cb498da59081ce4600791e9449c801b",
+      "privateView": "cd60c4d0abc9cf03ff068014b4f9c74ef765ef1b46e76f6c70b27cbbf4291cc8",
+      "graph": "c3c33b142bb3b91d7291e043afa0a70d2f0b42f16c5a63924ae77d5752a370e5",
+      "work": "3f7de728f90f7e5a59dfdd0238116ab235e173c7a9111a4f0046ef0e7228110e",
+      "usage": "050abc3451034bb3ccd923334bf2a04027332b50eb343c1a1cd4a1e927b21f76",
+      "privateEvaluations": "0c63841fad73a5115d1ae08cb6d0591df96da6cae6f3e82aa52f9b5afe584c7b"
+    },
+    "计数": {
+      "会话": 13,
+      "消息": 583,
+      "长期": 40,
+      "普通日记": 15,
+      "私密日记": 1,
+      "用量": 753
+    },
+    "人工改动核对": false
+  },
+  "原格式逐字节文档数": 29,
+  "外部逐字节文件数": 27,
+  "附件分离备份版本": 5,
+  "独立回退包恢复": true,
+  "修改删除晋升恢复": {
+    "哈希": {
+      "sessions": "069412c4d4b4737c8e2af19e6cde41ca101c3f74749b9b7e6166a1d020298205",
+      "history": "9cc9cb9e0d46af0f570160134a745d87d67c9780413f13fe6b0f02834137e8cd",
+      "long": "ca545ebf1837562835861571c029c1d79d928a2e8f957828bd962238bb44f36b",
+      "temporary": "9524c613b345113d05e06e06313551e94640115e34ee9c55365e2f02eaf078b8",
+      "diary": "24828d3d51826656420a64f560dc408af4aff912ea601b4e73133c3f530a0012",
+      "privateView": "ca365148ec20d3e2adae248e54b1817e9c573facd30a8334fbee3da62f28cc2f",
+      "graph": "3b6695413c684f0b186dba4502ad1ec27336221d78b197ebb1958b326460b035",
+      "work": "3f7de728f90f7e5a59dfdd0238116ab235e173c7a9111a4f0046ef0e7228110e",
+      "usage": "050abc3451034bb3ccd923334bf2a04027332b50eb343c1a1cd4a1e927b21f76",
+      "privateEvaluations": "e1cebea0611be29b6ba217368f7893f5e32da76d54aa5c3a89b2f616e25fb541"
+    },
+    "计数": {
+      "会话": 14,
+      "消息": 585,
+      "长期": 40,
+      "普通日记": 14,
+      "私密日记": 0,
+      "用量": 753
+    },
+    "人工改动核对": true
+  },
+  "冻结副本未变": true,
+  "源端锁定后复核": true,
+  "原数据未写入": true,
+  "正式切换": "S-23未执行",
+  "独立渠道": "当前未配置；真实渠道验证后置",
+  "保留目录": {
+    "冻结": "F:\\elysia\\.local-migration\\F3C-Ouuuc1\\frozen",
+    "基线回退": "F:\\elysia\\.local-migration\\F3C-Ouuuc1\\elysia-sqlite-local-25fpG2\\ready",
+    "独立包恢复": "F:\\elysia\\.local-migration\\F3C-Ouuuc1\\elysia-sqlite-local-V0z9Th\\ready",
+    "变更回退": "F:\\elysia\\.local-migration\\F3C-Ouuuc1\\elysia-sqlite-local-MYn9Jd\\ready"
+  }
+}

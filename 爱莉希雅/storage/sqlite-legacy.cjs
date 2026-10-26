@@ -102,6 +102,14 @@ function 创建旧格式仓储(上下文) {
     if (a.length !== b.length || !timingSafeEqual(a, b)) 失败('CURSOR_INVALID')
     try { return JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) } catch { 失败('CURSOR_INVALID') }
   }
+  function 分页(所有,q,tag){
+    const size=q.大小??50;if(!Number.isSafeInteger(size)||size<1||size>200)失败('INPUT_INVALID')
+    const source=db.prepare("SELECT value FROM repository_meta WHERE key='legacy_import_hash'").get()?.value??null
+    const w=q.游标!==undefined&&q.游标!==null?解码(q.游标):{v:1,tag:cursorTag,conv:tag,upper:所有.length,before:所有.length,source}
+    if(w.v!==1||w.tag!==cursorTag||JSON.stringify(w.conv)!==JSON.stringify(tag)||w.source!==source||!Number.isSafeInteger(w.upper)||!Number.isSafeInteger(w.before)||w.before<0||w.before>w.upper||w.upper>所有.length)失败('CURSOR_INVALID')
+    const start=Math.max(0,w.before-size);return{消息:所有.slice(start,w.before),下一页:start?编码({...w,before:start}):null,上界:w.upper}
+  }
+  function 无归属消息(){核验();return db.prepare("SELECT * FROM legacy_records WHERE kind='messages' AND (conversation_id IS NULL OR conversation_id='' OR conversation_id='最早') ORDER BY position").all().map(x=>({内部定位:x.locator,来源:'legacy',文件位置:x.position,原始:JSON.parse(x.payload_json)}))}
   const api = Object.freeze({
     核验,
     接入旧记忆(scope) {
@@ -155,13 +163,11 @@ function 创建旧格式仓储(上下文) {
     读消息页(原) {
       const q = 纯数据(原); 精确(q, ['对话', '大小', '游标'], ['对话'])
       if (typeof q.对话 !== 'string' || !q.对话 || q.对话.length > 128) 失败('INPUT_INVALID')
-      const size = q.大小 ?? 50; if (!Number.isSafeInteger(size) || size < 1 || size > 200) 失败('INPUT_INVALID')
-      const 所有 = 消息们(q.对话), importHash = db.prepare("SELECT value FROM repository_meta WHERE key='legacy_import_hash'").get()?.value ?? null
-      const 窗口 = q.游标 !== undefined && q.游标 !== null ? 解码(q.游标) : { v: 1, tag: cursorTag, conv: q.对话, upper: 所有.length, before: 所有.length, source: importHash }
-      if (窗口.v !== 1 || 窗口.tag !== cursorTag || 窗口.conv !== q.对话 || 窗口.source !== importHash || !Number.isSafeInteger(窗口.upper) || !Number.isSafeInteger(窗口.before) || 窗口.before < 0 || 窗口.before > 窗口.upper || 窗口.upper > 所有.length) 失败('CURSOR_INVALID')
-      const start = Math.max(0, 窗口.before - size), 列 = 所有.slice(start, 窗口.before)
-      return { 消息: 列, 下一页: start ? 编码({ ...窗口, before: start }) : null, 上界: 窗口.upper }
+      if(q.对话==='最早')return 分页(无归属消息(),q,['legacy-unassigned-view'])
+      return 分页(消息们(q.对话),q,['conversation',q.对话])
     },
+    // 原JSON既定“最早”只读分组；不制造业务对话编号，也不改变原字段。
+    读最早历史页(原={}){const q=纯数据(原);精确(q,['大小','游标'],[]);return{用途:'legacy-unassigned-view',标题:'最早那些话',...分页(无归属消息(),q,['legacy-unassigned-view'])}},
     读取旧定位(号) { 核验(); if (typeof 号 !== 'string' || !/^legacy-[a-f0-9]{64}$/u.test(号)) return null; const r = db.prepare('SELECT * FROM legacy_records WHERE locator=?').get(号); return r && r.kind === 'messages' ? { 内部定位: r.locator, 文件位置: r.position, 原始: JSON.parse(r.payload_json) } : null },
     列旧长期() { 核验(); return db.prepare("SELECT * FROM legacy_records WHERE kind IN ('facts','episodes','notebook') ORDER BY path,position").all().map((r) => ({ 内部定位: r.locator, 原始: JSON.parse(r.payload_json) })) },
     合并回退文档(文档, scope) {
