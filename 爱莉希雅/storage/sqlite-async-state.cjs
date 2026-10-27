@@ -26,9 +26,10 @@ function 创建异步状态接口(actor) {
     const 写入 = batchEntries(input)
     return actor.调用({ 操作: '状态.保存快照组', 参数: [{ 写入 }], 操作编号: m.操作编号 })
   }
-  async function 保存分段快照组(input, meta) {
-    const m = 纯数据(meta); exact(m, ['操作编号'])
+  async function 保存分段快照组(input, meta, graph = false) {
+    const m = 纯数据(meta); exact(m, graph ? ['操作编号', '记忆版本'] : ['操作编号'])
     if (typeof m.操作编号 !== 'string' || /^[a-zA-Z0-9_-]{1,100}$/u.exec(m.操作编号)?.[0] !== m.操作编号) fail('INPUT_INVALID')
+    if (graph && (!Number.isSafeInteger(m.记忆版本) || m.记忆版本 < 0)) fail('INPUT_INVALID')
     const rows = batchEntries(input), items = []; let total = 0
     for (const row of rows) {
       const bytes = Buffer.from(JSON.stringify(row.数据), 'utf8'); total += bytes.length
@@ -44,7 +45,7 @@ function 创建异步状态接口(actor) {
         const result = await read('状态.写入分段', [{ 上传: id, 序号: i, 偏移: offset, 内容 }])
         if (result.偏移 !== offset + Buffer.from(内容, 'base64').length) fail('CHUNK_INVALID')
       }
-      return await actor.调用({ 操作: '状态.提交分段', 参数: [{ 上传: id, 写入: specs }], 操作编号: m.操作编号 })
+      return await actor.调用({ 操作: graph ? '状态.提交图谱分段' : '状态.提交分段', 参数: [{ 上传: id, 写入: specs, ...(graph ? { 记忆版本: m.记忆版本 } : {}) }], 操作编号: m.操作编号 })
     } finally {
       try { await read('状态.取消分段', [{ 上传: id }]) } catch { /* 未确认提交时保留原错误；Worker退出或超时会回收暂存。 */ }
     }
@@ -56,6 +57,7 @@ function 创建异步状态接口(actor) {
     const b = { scope: { 令牌: opened.令牌, 类型: opened.类型, 编号: opened.编号 }, closed: false, closing: null }
     const api = Object.freeze({
       读取快照: async () => { live(api); return read('状态.读取快照', [b.scope]) },
+      读取图谱记忆页: async (input = { 版本: null, 游标: 0 }) => { live(api); const q = 纯数据(input); exact(q, ['版本', '游标']); return read('状态.读取图谱记忆页', [{ ...b.scope, ...q }]) },
       读取分段快照: async () => {
         let version = null, offset = 0, total = null, hash = null
         const chunks = []
@@ -94,6 +96,6 @@ function 创建异步状态接口(actor) {
     })
     backends.set(api, b); return api
   }
-  return Object.freeze({ 打开后端, 保存快照组, 保存分段快照组 })
+  return Object.freeze({ 打开后端, 保存快照组, 保存分段快照组, 保存图谱快照组: (input, meta) => 保存分段快照组(input, meta, true) })
 }
 module.exports = { 创建异步状态接口 }
