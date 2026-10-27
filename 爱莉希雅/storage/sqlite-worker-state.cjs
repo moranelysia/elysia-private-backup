@@ -1,6 +1,6 @@
 /** D2A：仅Worker内的登记状态命令。租约不持久化，批量写与回执共用一个事务。 */
 'use strict'
-const { randomUUID } = require('node:crypto')
+const { randomUUID, createHash } = require('node:crypto')
 const { 原子执行 } = require('./sqlite-context.cjs')
 const { 内部状态操作, 纯数据 } = require('./sqlite-state.cjs')
 const { 固定状态来源 } = require('./sqlite-sources.cjs')
@@ -64,6 +64,11 @@ function 创建Worker状态命令(ctx) {
       switch (c.q.操作) {
         case '状态.打开后端': openInput(q); break
         case '状态.读取快照': capability(q); break
+        case '状态.读取片段':
+          exact(q, ['令牌', '类型', '编号', '版本', '偏移'])
+          capability({ 令牌: q.令牌, 类型: q.类型, 编号: q.编号 })
+          if ((q.版本 !== null && (!Number.isSafeInteger(q.版本) || q.版本 < 0)) || !Number.isSafeInteger(q.偏移) || q.偏移 < 0 || (q.版本 === null && q.偏移 !== 0)) fail('INPUT_INVALID')
+          break
         case '状态.关闭后端': exact(q, ['令牌']); if (!handles.has(q.令牌)) fail('CAPABILITY_INVALID'); break
         case '状态.保存快照组': batchInput(q); break
         default: fail('OPERATION_FORBIDDEN')
@@ -80,6 +85,20 @@ function 创建Worker状态命令(ctx) {
       const h = capability(q), x = state.读(state.连接(), h.类型, h.编号)
       if (x.数据 !== null) validate(h.类型, x.数据)
       return 纯数据(x)
+    },
+    读取片段(q) {
+      const h = capability({ 令牌: q.令牌, 类型: q.类型, 编号: q.编号 })
+      const x = state.读(state.连接(), h.类型, h.编号)
+      if (q.版本 !== null && q.版本 !== x.版本) fail('VERSION_CONFLICT')
+      if (x.数据 === null) {
+        if (q.偏移 !== 0) fail('INPUT_INVALID')
+        return { 版本: x.版本, 总字节: 0, 指纹: null, 偏移: 0, 内容: '', 完成: true }
+      }
+      validate(h.类型, x.数据)
+      const bytes = Buffer.from(JSON.stringify(x.数据), 'utf8')
+      if (bytes.length > 8 * 1024 * 1024 || q.偏移 >= bytes.length) fail('INPUT_INVALID')
+      const end = Math.min(bytes.length, q.偏移 + 24576)
+      return { 版本: x.版本, 总字节: bytes.length, 指纹: createHash('sha256').update(bytes).digest('hex'), 偏移: q.偏移, 内容: bytes.subarray(q.偏移, end).toString('base64'), 完成: end === bytes.length }
     },
     保存快照组(q) {
       batchInput(q)

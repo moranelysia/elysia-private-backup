@@ -3,7 +3,7 @@
 const {createHash}=require('node:crypto'),{纯数据}=require('./sqlite-state.cjs')
 const MAX_INPUT=65536,MAX_RESULT=262144,MAX_LOG=1048576,MAX_RECEIPTS=2048
 const REGISTRY=Object.freeze({
- '状态.打开后端':[false,1], '状态.读取快照':[false,1], '状态.关闭后端':[false,1], '状态.保存快照组':[true,1],
+ '状态.打开后端':[false,1], '状态.读取快照':[false,1], '状态.读取片段':[false,1], '状态.关闭后端':[false,1], '状态.保存快照组':[true,1],
  '会话.登记对话':[true,2], '会话.更新对话':[true,2], '会话.存对话一轮':[true,1],
  '会话.读取对话':[false,1], '会话.列对话':[false,1], '会话.读消息页':[false,1], '会话.读最近聊天':[false,2], '会话.取统计':[false,0],
  '记忆.取统计':[false,0], '记忆.列长期':[false,1], '日记.读取共享':[false,0],
