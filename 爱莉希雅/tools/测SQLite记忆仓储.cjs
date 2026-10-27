@@ -1,7 +1,7 @@
 'use strict'
 const assert = require('node:assert/strict'), { execFileSync } = require('node:child_process'), path = require('node:path')
-const { 创建内存上下文, 取内部 } = require('../storage/sqlite-context.cjs')
-const { 创建会话仓储 } = require('../storage/sqlite-chat.cjs'), { 创建记忆仓储 } = require('../storage/sqlite-memory.cjs')
+const { 创建内存上下文, 取内部, 原子执行 } = require('../storage/sqlite-context.cjs')
+const { 创建会话仓储 } = require('../storage/sqlite-chat.cjs'), { 创建记忆仓储, 内部事务应用标记 } = require('../storage/sqlite-memory.cjs')
 const 时间 = '2026-10-25T00:00:00.000Z', 测试 = [], 测 = (名, 做) => 测试.push([名, 做])
 async function 用库(做) {
   const ctx = 创建内存上下文({ 用途: 'synthetic-sqlite-repository' })
@@ -16,6 +16,46 @@ async function 用库(做) {
     await 做({ ctx, chat, mem, db, 源, 发, 调, 新, 评 })
   } finally { ctx.关闭() }
 }
+const 标记 = (改 = {}) => ({ 操作编号: 'marker-1', 时间, 预期版本: 0, 对话: 'chat-a', 记住: [], 经历: [], 更正事实: [], ...改 })
+测('模型标记事务能力拒绝伪造、事务外与手动BEGIN', () => 用库(({ ctx, db }) => {
+  assert.throws(() => 内部事务应用标记({}, 标记()), { message: 'SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED' })
+  assert.throws(() => 内部事务应用标记(ctx, 标记()), { message: 'SQLITE_MEMORY_TRANSACTION_REQUIRED' })
+  db.exec('BEGIN IMMEDIATE'); try { assert.throws(() => 内部事务应用标记(ctx, 标记()), { message: 'SQLITE_MEMORY_TRANSACTION_REQUIRED' }) } finally { db.exec('ROLLBACK') }
+}))
+测('模型标记按她的来源写事实和经历，记忆版本与回执完整', () => 用库(({ ctx, mem }) => {
+  const 回 = 原子执行(ctx, () => 内部事务应用标记(ctx, 标记({ 记住: ['用户喜欢茶'], 经历: ['我们一起听歌'] })))
+  assert.deepEqual([回.版本, 回.新增数, 回.更正数], [1, 2, 0]); const 条们 = mem.列长期().列表
+  assert.deepEqual(条们.map(x => x.来源), ['她', '她']); assert.equal(条们[0].内容, '你喜欢茶'); assert(条们.every(x => x.对话 === 'chat-a')); assert.equal(mem.取统计().操作数, 1); assert.equal(mem.核验().好, true)
+}))
+测('精确更正、同内容记住去重，缺失编号不误改', () => 用库(({ ctx, mem, 调 }) => {
+  const 初 = 调('新增长期', { 类别: '事实', 内容: '你喜欢咖啡' }), 原 = mem.列长期().列表[0]
+  const 回 = 原子执行(ctx, () => 内部事务应用标记(ctx, 标记({ 预期版本: 1, 更正事实: [{ 编号: 初.目标编号, 内容: '你喜欢花茶' }, { 编号: '不存在', 内容: '你喜欢牛奶' }], 记住: ['你喜欢花茶', '你喜欢牛奶'] })))
+  assert.deepEqual([回.更正数, 回.跳过更正数, 回.新增数], [1, 1, 1]); const 全 = mem.列长期().列表; assert.equal(全[0].编号, 初.目标编号); assert.equal(全[0].时间, 原.时间); assert.equal(全[0].来源, 原.来源); assert.equal(全[0].修改来源, '我'); assert.equal(全[1].来源, '她'); assert.equal(mem.核验().好, true)
+}))
+测('标记同操作幂等、冲突拒绝，并在回执重放前检查开关', () => 用库(({ ctx, mem, chat }) => {
+  const 一 = 标记({ 记住: ['你喜欢花'] }), first = 原子执行(ctx, () => 内部事务应用标记(ctx, 一))
+  assert.deepEqual(原子执行(ctx, () => 内部事务应用标记(ctx, 一)), first); assert.equal(mem.取统计().长期数, 1)
+  assert.throws(() => 原子执行(ctx, () => 内部事务应用标记(ctx, { ...一, 记住: ['你喜欢雨'] })), { message: 'SQLITE_MEMORY_OPERATION_CONFLICT' })
+  assert.equal(chat.更新对话('chat-a', { 预期版本: 1, 写长期记忆: false }).好, true)
+  assert.throws(() => 原子执行(ctx, () => 内部事务应用标记(ctx, 一)), { message: 'SQLITE_MEMORY_SWITCH_OFF' }); assert.equal(mem.核验().好, true)
+}))
+测('版本冲突或外层失败均不留下记忆、版本或操作回执', () => 用库(({ ctx, mem }) => {
+  assert.throws(() => 原子执行(ctx, () => 内部事务应用标记(ctx, 标记({ 预期版本: 1, 记住: ['你喜欢花'] }))), { message: 'SQLITE_MEMORY_VERSION_CONFLICT' })
+  assert.throws(() => 原子执行(ctx, () => { 内部事务应用标记(ctx, 标记({ 记住: ['你喜欢花'] })); throw Error('fixture later failure') }), { message: 'SQLITE_CONTEXT_TRANSACTION_FAILED' })
+  assert.deepEqual([mem.取统计().长期数, mem.取统计().版本, mem.取统计().操作数], [0, 0, 0]); assert.equal(mem.核验().好, true)
+}))
+测('标记回执插入故障回滚已更正与新增长期记忆', () => 用库(({ ctx, mem, 调, db }) => {
+  const 初 = 调('新增长期', { 类别: '事实', 内容: '你喜欢咖啡' })
+  db.exec("CREATE TRIGGER reject_marker_receipt BEFORE INSERT ON memory_operations WHEN NEW.kind='model-markers' BEGIN SELECT RAISE(ABORT, 'fixture'); END")
+  const 一 = 标记({ 预期版本: 1, 更正事实: [{ 编号: 初.目标编号, 内容: '你喜欢茶' }], 经历: ['我们一起听歌'] })
+  assert.throws(() => 原子执行(ctx, () => 内部事务应用标记(ctx, 一)), { message: 'SQLITE_CONTEXT_TRANSACTION_FAILED' })
+  assert.equal(mem.列长期().列表[0].内容, '你喜欢咖啡'); assert.deepEqual([mem.取统计().长期数, mem.取统计().版本, mem.取统计().操作数], [1, 1, 1]); assert.equal(mem.核验().好, true)
+  db.exec('DROP TRIGGER reject_marker_receipt'); assert.equal(原子执行(ctx, () => 内部事务应用标记(ctx, 一)).好, true); assert.equal(mem.核验().好, true)
+}))
+测('标记超过数量上限或无对话时拒绝', () => 用库(({ ctx, mem }) => {
+  for (const 一 of [标记({ 记住: Array(33).fill('你喜欢花') }), 标记({ 对话: 'missing', 记住: ['你喜欢花'] }), 标记({ 更正事实: [{ 编号: 'id', 内容: 'x', 扩展: true }] })]) assert.throws(() => 原子执行(ctx, () => 内部事务应用标记(ctx, 一)))
+  assert.equal(mem.取统计().版本, 0)
+}))
 测('共享B能力，多个记忆句柄不建第二份库', () => 用库(({ ctx, mem, 新 }) => { const 号 = 新(); assert.equal(创建记忆仓储(ctx).读取临时(号).条.编号, 号); assert.equal(mem.取统计().临时数, 1) }))
 测('手动新增保留原默认确认/30天保留规则', () => 用库(({ mem, 新 }) => { const 号 = 新({ 细节: { 手动: true, 保留天数: 30 }, 扩展: { 空值: null, 空串: '' } }), 条 = mem.读取临时(号).条; assert.equal(条.确认状态, '已确认'); assert.deepEqual(条.扩展, { 空值: null, 空串: '' }); assert.equal(条.到期于, '2026-11-24T00:00:00.000Z') }))
 测('自动新增需真实逐字来源，正文沿用你我视角', () => 用库(({ mem, 新, 源 }) => { const 号 = 新(), 条 = mem.读取临时(号).条; assert.equal(条.内容, '你喜欢雨后的散步'); assert.equal(条.确认状态, '待确认'); assert.equal(条.来源.消息编号, 源[0]); assert.equal(条.到期于, '2026-11-01T00:00:00.000Z') }))

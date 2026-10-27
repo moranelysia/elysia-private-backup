@@ -3,6 +3,7 @@ const assert = require('node:assert/strict'), fs = require('node:fs'), os = requ
 const { 创建隔离仓储, 恢复隔离仓储, 内部备份测试, 备份范围 } = require('../storage/sqlite-backup.cjs')
 const { 旧格式范围 } = require('../storage/sqlite-legacy.cjs'), { 写入隔离回退 } = require('../storage/rollback-files.cjs')
 const { 创建临时记忆状态 } = require('../脑/临时记忆状态.cjs')
+const { 原子执行 } = require('../storage/sqlite-context.cjs'), { 内部事务应用标记 } = require('../storage/sqlite-memory.cjs')
 const 时间 = '2026-10-26T00:00:00.000Z', 拷 = (x) => JSON.parse(JSON.stringify(x)), 测试 = [], 测 = (n, f) => 测试.push([n, f])
 function 样本() {
   let 数据 = { 版本: 1, 根扩展: { 空: null, 字: '' }, 记录: [] }, 序 = 0
@@ -31,6 +32,13 @@ function 用库(f, { 改源, 绑定 = true } = {}) {
 const 备 = (仓) => 仓.创建备份({ 时间, 外部文件: [], 必须文件: [] }, 备份范围)
 const 原格式 = (仓) => 仓.导出原格式(备份范围).文档
 const 文 = (包, 路径) => 包.find((x) => x.路径 === 路径)
+测('虚构旧事实经模型标记更正后保留原时间和来源并能备份恢复', () => 用库((仓, 原) => {
+  assert.equal(仓.会话.登记对话('chat-fixture', { 建于: 时间, 写长期记忆: true }).好, true)
+  const ctx = 内部备份测试(仓).上下文, 输入 = { 操作编号: 'model-legacy', 时间, 预期版本: 0, 对话: 'chat-fixture', 记住: ['你喜欢雨声'], 经历: [], 更正事实: [{ 编号: 'long-fact', 内容: '你喜欢雨声' }] }
+  const 回 = 原子执行(ctx, () => 内部事务应用标记(ctx, 输入)); assert.equal(回.更正数, 1); assert.equal(回.新增数, 0)
+  const 条 = 仓.记忆.列长期({ 类别: '事实' }).列表[0]; assert.equal(条.内容, '你喜欢雨声'); assert.equal(条.时间, '2026-09-01 19:03'); assert.equal(条.来源, '旧记录'); assert.deepEqual(条.扩展, { 空: null, 字: '' }); assert.equal(仓.核验().好, true)
+  const r = 恢复隔离仓储(备(仓), 备份范围); try { assert.equal(r.核验().好, true); assert.equal(r.记忆.列长期({ 类别: '事实' }).列表[0].内容, '你喜欢雨声'); assert.deepEqual(原子执行(内部备份测试(r).上下文, () => 内部事务应用标记(内部备份测试(r).上下文, 输入)), 回) } finally { r.关闭() }
+}))
 function 改文(原, 路径, f) { const d = 文(原.文档, 路径), x = JSON.parse(d.原文.replace(/^\uFEFF/u, '')); f(x); d.原文 = JSON.stringify(x) }
 测('原记录进入C同库，旧时间/未知/null/口吻逐字保存且不产生评分或操作', () => 用库((仓, 原, 调, db) => {
   assert.equal(仓.记忆.取统计().长期数, 3); assert.equal(仓.记忆.取统计().临时数, 3); assert.equal(仓.记忆.取统计().操作数, 0); assert.equal(仓.记忆.取统计().版本, 0)

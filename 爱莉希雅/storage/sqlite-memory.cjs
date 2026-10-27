@@ -10,6 +10,7 @@ const 结构 = require('../脑/记忆结构.cjs')
 const 叙述 = require('../脑/记忆叙述.cjs')
 const { 晋升到长期 } = require('../脑/临时记忆晋升.cjs')
 const 长期分类 = ['事实', '经历', '小本子']
+const 标记事务句柄 = new WeakMap()
 const 定义 = [
   ['memory_temporary', "CREATE TABLE memory_temporary (memory_id TEXT PRIMARY KEY, lifecycle TEXT NOT NULL, confirmation TEXT NOT NULL, expires_raw TEXT NOT NULL, record_json TEXT NOT NULL CHECK(json_valid(record_json))) STRICT"],
   ['memory_evidence', 'CREATE TABLE memory_evidence (memory_id TEXT NOT NULL REFERENCES memory_temporary(memory_id) ON DELETE CASCADE, fingerprint TEXT NOT NULL, position INTEGER NOT NULL, record_json TEXT NOT NULL CHECK(json_valid(record_json)), PRIMARY KEY(memory_id,fingerprint), UNIQUE(memory_id,position)) STRICT'],
@@ -137,6 +138,50 @@ function 创建记忆仓储(上下文) {
       return { 好: false, 状态: ['SQLITE_CONTEXT_COMMIT_UNKNOWN', 'SQLITE_CONTEXT_ROLLBACK_FAILED', 'SQLITE_CONTEXT_UNUSABLE'].includes(代码) ? 'unknown' : 代码 === 'SQLITE_CONTEXT_TRANSACTION_FAILED' ? 'rolled-back' : 'rejected', 代码 }
     }
   }
+  标记事务句柄.set(上下文, 原 => {
+    const 内部 = 取内部(上下文)
+    if (!内部.写入中 || !内部.db.isTransaction) 失败('SQLITE_MEMORY_TRANSACTION_REQUIRED')
+    const db = 连接(), 一 = 纯输入(原)
+    键检查(一, ['操作编号', '时间', '预期版本', '对话', '记住', '经历', '更正事实'])
+    编号(一.操作编号); UTC(一.时间); 整数(一.预期版本); 编号(一.对话)
+    if (!Array.isArray(一.记住) || !Array.isArray(一.经历) || !Array.isArray(一.更正事实) || 一.记住.length + 一.经历.length + 一.更正事实.length > 32) 失败()
+    for (const 内容 of [...一.记住, ...一.经历]) 文本(内容)
+    for (const 更 of 一.更正事实) {
+      键检查(更, ['编号', '内容'])
+      if (typeof 更.编号 !== 'string' || !更.编号.trim() || 更.编号.length > 120 || typeof 更.内容 !== 'string' || Buffer.from(更.内容).toString('utf8') !== 更.内容) 失败()
+    }
+    const 段 = db.prepare('SELECT write_memory FROM chat_sessions WHERE conversation_id=?').get(一.对话)
+    if (!段) 失败('SQLITE_MEMORY_SOURCE_INVALID')
+    if (段.write_memory !== 1) 失败('SQLITE_MEMORY_SWITCH_OFF')
+    const 类型 = 'model-markers', 摘要 = 指纹({ 类型, 输入: 一 }), 旧 = db.prepare('SELECT * FROM memory_operations WHERE operation_id=?').get(一.操作编号)
+    if (旧) {
+      if (旧.kind !== 类型 || 旧.digest !== 摘要) 失败('SQLITE_MEMORY_OPERATION_CONFLICT')
+      if (指纹(JSON.parse(旧.receipt_json)) !== 旧.receipt_hash) 失败('SQLITE_MEMORY_INTEGRITY_FAILED')
+      return JSON.parse(旧.receipt_json)
+    }
+    const 原版本 = 版本(db); if (原版本 !== 一.预期版本) 失败('SQLITE_MEMORY_VERSION_CONFLICT')
+    const 已更正内容 = new Set(); let 更正数 = 0, 跳过更正数 = 0, 新增数 = 0
+    for (const 更 of 一.更正事实) {
+      const 内容 = 更.内容.trim(), 号 = 更.编号.trim()
+      if (!内容 || 内容.length > 2000) { 跳过更正数++; continue }
+      const 行 = db.prepare('SELECT record_json FROM memory_long WHERE category=? AND memory_id=?').get('事实', 号)
+      if (!行) { 跳过更正数++; continue }
+      const 条 = JSON.parse(行.record_json), 元数据 = 结构.规范记忆结构(条, '事实', 条.来源).元数据
+      const 正文 = 叙述.整理正文(内容, { 人物: 元数据.person, 修正旧代词: true })
+      已更正内容.add(内容)
+      if (正文 === String(条.内容 || '').trim()) continue
+      条.内容 = 正文; 条.修改于 = 一.时间; 条.修改来源 = '我'; 条.修改对话 = 一.对话
+      db.prepare('UPDATE memory_long SET record_json=? WHERE category=? AND memory_id=?').run(JSON.stringify(条), '事实', 号); 更正数++
+    }
+    const 库 = 长期库(db, 一.时间)
+    for (const 内容 of 一.记住) if (!已更正内容.has(内容.trim())) { 库.记一条('事实', 内容, '她', { 对话: 一.对话 }); 新增数++ }
+    for (const 内容 of 一.经历) { 库.记一条('经历', 内容, '她', { 对话: 一.对话 }); 新增数++ }
+    const 新版本 = 原版本 + 1; 整数(新版本)
+    db.prepare("UPDATE repository_meta SET value=? WHERE key='memory_revision'").run(String(新版本))
+    const 回执 = { 好: true, 状态: 'committed', 操作编号: 一.操作编号, 版本: 新版本, 新增数, 更正数, 跳过更正数 }
+    db.prepare('INSERT INTO memory_operations VALUES(?,?,?,?,?)').run(一.操作编号, 类型, 摘要, JSON.stringify(回执), 指纹(回执))
+    return 回执
+  })
   function 读(做) { try { return 做(连接()) } catch (错) { if (/^SQLITE_(MEMORY|CONTEXT|CHAT|LEGACY)_[A-Z_]+$/u.test(错.message || '')) throw 错; 失败('SQLITE_MEMORY_READ_FAILED') } }
   return Object.freeze({
     新增临时(原) { return 写操作('create-temp', 原, ['类别', '内容', '细节', '来源消息编号', '依据原文', '扩展'], (db, 一, 库) => {
@@ -250,4 +295,9 @@ function 创建记忆仓储(上下文) {
     }) },
   })
 }
-module.exports = { 创建记忆仓储 }
+function 内部事务应用标记(上下文, 原) {
+  const 执行 = 标记事务句柄.get(上下文)
+  if (!执行) 失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
+  return 执行(原)
+}
+module.exports = { 创建记忆仓储, 内部事务应用标记 }
