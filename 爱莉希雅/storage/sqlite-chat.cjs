@@ -3,6 +3,7 @@
 const { createHash, createHmac, randomUUID, timingSafeEqual } = require('node:crypto')
 const { 取内部, 原子执行 } = require('./sqlite-context.cjs')
 const { 更新旧元数据 } = require('./sqlite-legacy-source.cjs')
+const 事务写句柄 = new WeakMap()
 const 定义 = [
   ['chat_sessions', `CREATE TABLE chat_sessions (
     registration_sequence INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,6 +120,29 @@ function 创建会话仓储(上下文) {
       整数(值.上界, 0, 最新); 整数(值.之前, 1, 值.上界 + 1); return 值
     } catch { 失败('SQLITE_CHAT_CURSOR_INVALID') }
   }
+  function 事务内写轮(db, 一, 摘要) {
+    const 段 = 查对话(db, 一.对话), 旧 = db.prepare('SELECT * FROM chat_turns WHERE conversation_id=? AND turn_id=?').get(一.对话, 一.轮次)
+    if (旧) {
+      if (旧.digest !== 摘要) 失败('SQLITE_CHAT_TURN_CONFLICT')
+      return 核对轮(db, 旧)
+    }
+    整数(段.last_sequence, 0, Number.MAX_SAFE_INTEGER - 2); 整数(段.message_count, 0, Number.MAX_SAFE_INTEGER - 2)
+    const 起序 = 段.last_sequence + 1, 用户号 = randomUUID(), 回复号 = randomUUID()
+    const 回执 = { 好: true, 状态: 'saved', 对话: 一.对话, 轮次: 一.轮次, 条数: 2, 消息编号: [用户号, 回复号], 起序, 止序: 起序 + 1 }
+    db.prepare('INSERT INTO chat_turns VALUES(?,?,?,?,?,?,?)').run(一.对话, 一.轮次, 摘要, 用户号, 回复号, 起序, JSON.stringify(回执))
+    const 用户 = { 编号: 用户号, 时间: 一.发生于 || 一.接收于, 角色: 'user', 内容: 一.用户正文, 对话: 一.对话, 轮次: 一.轮次, 序号: 起序, 发生于: 一.发生于, 接收于: 一.接收于 }
+    const 回复 = { 编号: 回复号, 时间: 一.完成于, 角色: 'assistant', 内容: 一.回复正文, 对话: 一.对话, 轮次: 一.轮次, 序号: 起序 + 1 }
+    const 句 = db.prepare('INSERT INTO chat_messages VALUES(?,?,?,?,?,?,?,?,?,?)')
+    for (const 条 of [用户, 回复]) 句.run(条.编号, 条.对话, 条.轮次, 条.序号, 条.角色, 条.时间, 条.发生于 ?? null, 条.接收于 ?? null, 条.内容, JSON.stringify(条))
+    db.prepare('UPDATE chat_sessions SET message_count=message_count+2,last_sequence=?,last_raw=? WHERE conversation_id=?').run(起序 + 1, 一.完成于, 一.对话)
+    return 回执
+  }
+  事务写句柄.set(上下文, 原 => {
+    const 内部 = 取内部(上下文)
+    if (!内部.写入中 || !内部.db.isTransaction) 失败('SQLITE_CHAT_TRANSACTION_REQUIRED')
+    const db = 连接(), 一 = 轮次输入(原)
+    return 事务内写轮(db, 一, 指纹(一))
+  })
   return Object.freeze({
     登记对话(号, 选项) { return 写(() => {
       编号(号); 键检查(选项, ['建于', '模型', '标题', '模式', '写长期记忆', '扩展'], ['建于'])
@@ -154,23 +178,7 @@ function 创建会话仓储(上下文) {
     }) },
     存对话一轮(原) { return 写(() => {
       const 一 = 轮次输入(原), 摘要 = 指纹(一)
-      return 原子执行(上下文, (db) => {
-        const 段 = 查对话(db, 一.对话), 旧 = db.prepare('SELECT * FROM chat_turns WHERE conversation_id=? AND turn_id=?').get(一.对话, 一.轮次)
-        if (旧) {
-          if (旧.digest !== 摘要) 失败('SQLITE_CHAT_TURN_CONFLICT')
-          return 核对轮(db, 旧)
-        }
-        整数(段.last_sequence, 0, Number.MAX_SAFE_INTEGER - 2); 整数(段.message_count, 0, Number.MAX_SAFE_INTEGER - 2)
-        const 起序 = 段.last_sequence + 1, 用户号 = randomUUID(), 回复号 = randomUUID()
-        const 回执 = { 好: true, 状态: 'saved', 对话: 一.对话, 轮次: 一.轮次, 条数: 2, 消息编号: [用户号, 回复号], 起序, 止序: 起序 + 1 }
-        db.prepare('INSERT INTO chat_turns VALUES(?,?,?,?,?,?,?)').run(一.对话, 一.轮次, 摘要, 用户号, 回复号, 起序, JSON.stringify(回执))
-        const 用户 = { 编号: 用户号, 时间: 一.发生于 || 一.接收于, 角色: 'user', 内容: 一.用户正文, 对话: 一.对话, 轮次: 一.轮次, 序号: 起序, 发生于: 一.发生于, 接收于: 一.接收于 }
-        const 回复 = { 编号: 回复号, 时间: 一.完成于, 角色: 'assistant', 内容: 一.回复正文, 对话: 一.对话, 轮次: 一.轮次, 序号: 起序 + 1 }
-        const 句 = db.prepare('INSERT INTO chat_messages VALUES(?,?,?,?,?,?,?,?,?,?)')
-        for (const 条 of [用户, 回复]) 句.run(条.编号, 条.对话, 条.轮次, 条.序号, 条.角色, 条.时间, 条.发生于 ?? null, 条.接收于 ?? null, 条.内容, JSON.stringify(条))
-        db.prepare('UPDATE chat_sessions SET message_count=message_count+2,last_sequence=?,last_raw=? WHERE conversation_id=?').run(起序 + 1, 一.完成于, 一.对话)
-        return 回执
-      })
+      return 原子执行(上下文, (db) => 事务内写轮(db, 一, 摘要))
     }) },
     读最近聊天(最多 = 20, 选项) { return 读((db) => {
       键检查(选项, ['对话'], ['对话']); 编号(选项.对话); 整数(最多, 1, 400); 查对话(db, 选项.对话)
@@ -195,4 +203,9 @@ function 创建会话仓储(上下文) {
     }) },
   })
 }
-module.exports = { 创建会话仓储, 内部消息对象: 消息对象 }
+function 内部事务存轮(上下文, 原) {
+  const 写 = 事务写句柄.get(上下文)
+  if (!写) 失败('SQLITE_CHAT_TRANSACTION_CAPABILITY_REQUIRED')
+  return 写(原)
+}
+module.exports = { 创建会话仓储, 内部消息对象: 消息对象, 内部事务存轮 }

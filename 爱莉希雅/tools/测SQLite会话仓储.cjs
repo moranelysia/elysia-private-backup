@@ -4,7 +4,7 @@ const { execFileSync } = require('node:child_process')
 const path = require('node:path')
 const { createHmac } = require('node:crypto')
 const { 创建内存上下文, 取内部, 原子执行 } = require('../storage/sqlite-context.cjs')
-const { 创建会话仓储 } = require('../storage/sqlite-chat.cjs')
+const { 创建会话仓储, 内部事务存轮 } = require('../storage/sqlite-chat.cjs')
 const 时间 = '2026-10-25T00:00:00.000Z', 范围 = { 用途: 'synthetic-sqlite-repository' }
 const 测试 = []
 const 测 = (名, 做) => 测试.push([名, 做])
@@ -15,6 +15,22 @@ async function 用库(做, 注册 = true) {
   finally { ctx.关闭() }
 }
 function 成功(库, 一 = 轮()) { const 回 = 库.存对话一轮(一); assert.equal(回.好, true); return 回 }
+测('内部轮次能力仅允许已初始化上下文的原子事务', () => 用库(({ ctx, 库, db }) => {
+  assert.throws(() => 内部事务存轮({}, 轮()), { message: 'SQLITE_CHAT_TRANSACTION_CAPABILITY_REQUIRED' })
+  assert.throws(() => 内部事务存轮(ctx, 轮()), { message: 'SQLITE_CHAT_TRANSACTION_REQUIRED' })
+  db.exec('BEGIN IMMEDIATE'); try { assert.throws(() => 内部事务存轮(ctx, 轮()), { message: 'SQLITE_CHAT_TRANSACTION_REQUIRED' }) } finally { db.exec('ROLLBACK') }
+  assert.equal(库.取统计().轮次数, 0)
+  const 回 = 原子执行(ctx, () => 内部事务存轮(ctx, 轮())); assert.equal(回.好, true); assert.deepEqual(成功(库), 回); assert.equal(库.核验().好, true)
+}))
+测('内部轮次跟随外层事务回滚，之后原轮次可重试', () => 用库(({ ctx, 库 }) => {
+  assert.throws(() => 原子执行(ctx, () => { 内部事务存轮(ctx, 轮()); throw Error('synthetic-later-failure') }), { message: 'SQLITE_CONTEXT_TRANSACTION_FAILED' })
+  assert.deepEqual(库.取统计(), { 会话数: 1, 消息数: 0, 轮次数: 0 }); const 回 = 成功(库); assert.equal(回.起序, 1); assert.equal(库.核验().好, true)
+}))
+测('内部轮次复用原校验与冲突规则且不嵌套提交', () => 用库(({ ctx, 库 }) => {
+  assert.throws(() => 原子执行(ctx, () => 内部事务存轮(ctx, 轮('bad', 'chat-a', { 回复正文: null }))), { message: 'SQLITE_CHAT_INPUT_INVALID' })
+  const first = 成功(库); assert.deepEqual(原子执行(ctx, () => 内部事务存轮(ctx, 轮())), first)
+  assert.throws(() => 原子执行(ctx, () => 内部事务存轮(ctx, 轮('t-01', 'chat-a', { 回复正文: '冲突' }))), { message: 'SQLITE_CHAT_TURN_CONFLICT' }); assert.equal(库.取统计().轮次数, 1); assert.equal(库.核验().好, true)
+}))
 const 输入错 = { message: 'SQLITE_CHAT_INPUT_INVALID' }
 测('内存能力必须显式申请；拒绝路径/伪造能力/getter', () => {
   for (const 值 of [undefined, {}, { ...范围, 文件: 'not-used.sqlite' }, { 用途: 'production' }]) assert.throws(() => 创建内存上下文(值), { message: 'SQLITE_CONTEXT_SCOPE_REQUIRED' })
