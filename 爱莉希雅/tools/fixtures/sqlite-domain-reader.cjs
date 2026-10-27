@@ -1,0 +1,4 @@
+/** D1独立进程只读校验：输出哈希和数量，不输出正文。 */
+'use strict'
+const {createHash}=require('node:crypto'),{启动隔离存储Worker}=require('../../storage/sqlite-worker.cjs'),{创建异步仓储门面}=require('../../storage/sqlite-async-facade.cjs')
+;(async()=>{let a;try{const [目录,local]=process.argv.slice(2);a=await 启动隔离存储Worker({用途:local==='1'?'isolated-local-sqlite-disk':'synthetic-sqlite-disk',目录,...(local==='1'?{包含私密:true}:{})});const f=创建异步仓储门面(a,{本机私密:local==='1'}),value={长期:await f.记忆.列长期(),临时:await f.记忆.查询临时(),日记:await f.日记.读取共享(),私密:local==='1'?await f.日记.读取本机私密():[]};console.log(JSON.stringify({好:true,指纹:createHash('sha256').update(JSON.stringify(value)).digest('hex')}))}catch(e){console.log(JSON.stringify({好:false,代码:/^SQLITE_[A-Z_]+$/u.test(e.message)?e.message:'READER_REJECTED'}));process.exitCode=1}finally{await a?.关闭()}})()
