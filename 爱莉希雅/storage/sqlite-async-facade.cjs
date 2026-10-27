@@ -1,5 +1,6 @@
 /** D1：显式异步门面，不伪装原同步后端；不拥有Worker生命周期。 */
 'use strict'
+const {创建异步状态接口}=require('./sqlite-async-state.cjs')
 const {纯数据}=require('./sqlite-state.cjs'),{取Worker领域能力}=require('./sqlite-worker.cjs'),{exact}=require('./sqlite-worker-protocol.cjs')
 function 创建异步仓储门面(actor,options={}){
  const capability=取Worker领域能力(actor),o=纯数据(options);if(Object.keys(o).some(k=>k!=='本机私密')||(Object.hasOwn(o,'本机私密')&&typeof o.本机私密!=='boolean'))throw Error('SQLITE_FACADE_SCOPE_REQUIRED');if(o.本机私密===true&&!capability.本机私密)throw Error('SQLITE_FACADE_PRIVATE_SCOPE_REQUIRED')
@@ -15,6 +16,6 @@ function 创建异步仓储门面(actor,options={}){
  for(const name of ['写入共享','修改共享','删除共享'])日记[name]=async(q,meta)=>write('日记.'+name,[q],meta)
  if(o.本机私密===true){for(const name of ['写入私密','记录私密评估'])日记[name]=async(q,meta)=>write('日记.'+name,[q],meta);日记.删除私密=async(q,meta)=>write('日记.删除私密',[q,{用途:'local-private-diary'}],meta);for(const name of ['读取本机私密','读取本机评估'])日记[name]=async()=>read('日记.'+name,[{用途:'local-private-diary'}])}
  const 旧格式=Object.freeze({读最早历史页:async(q={})=>read('旧格式.读最早历史页',[q]),读消息页:async q=>read('旧格式.读消息页',[q])})
- return Object.freeze({会话,记忆:Object.freeze(记忆),日记:Object.freeze(日记),旧格式})
+ return Object.freeze({状态:创建异步状态接口(actor),会话,记忆:Object.freeze(记忆),日记:Object.freeze(日记),旧格式})
 }
 module.exports={创建异步仓储门面}

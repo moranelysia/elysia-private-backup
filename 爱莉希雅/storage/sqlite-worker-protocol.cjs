@@ -3,6 +3,7 @@
 const {createHash}=require('node:crypto'),{纯数据}=require('./sqlite-state.cjs')
 const MAX_INPUT=65536,MAX_RESULT=262144,MAX_LOG=1048576,MAX_RECEIPTS=2048
 const REGISTRY=Object.freeze({
+ '状态.打开后端':[false,1], '状态.读取快照':[false,1], '状态.关闭后端':[false,1], '状态.保存快照组':[true,1],
  '会话.登记对话':[true,2], '会话.更新对话':[true,2], '会话.存对话一轮':[true,1],
  '会话.读取对话':[false,1], '会话.列对话':[false,1], '会话.读消息页':[false,1], '会话.读最近聊天':[false,2], '会话.取统计':[false,0],
  '记忆.取统计':[false,0], '记忆.列长期':[false,1], '日记.读取共享':[false,0],
@@ -18,7 +19,14 @@ const hash=x=>createHash('sha256').update(typeof x==='string'?x:JSON.stringify(x
 function fail(c){throw Error('SQLITE_WORKER_'+c)}
 function exact(o,keys){if(!o||Object.getPrototypeOf(o)!==Object.prototype||Object.keys(o).sort().join(',')!==keys.slice().sort().join(','))fail('PROTOCOL_INVALID')}
 function stable(x){return Array.isArray(x)?x.map(stable):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,stable(x[k])])):x}
-function command(input){const q=纯数据(input);if(Buffer.byteLength(JSON.stringify(q))>MAX_INPUT)fail('INPUT_LIMIT');const spec=Object.hasOwn(REGISTRY,q.操作)?REGISTRY[q.操作]:null;if(!spec)fail('OPERATION_FORBIDDEN');exact(q,spec[0]?['操作','参数','操作编号']:['操作','参数']);if(!Array.isArray(q.参数)||q.参数.length!==spec[1])fail('PROTOCOL_INVALID');if(spec[0]&&(typeof q.操作编号!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/u.test(q.操作编号)))fail('ID_INVALID');if(spec[0]&&q.操作.startsWith('记忆.')&&q.参数[0]?.操作编号!==q.操作编号)fail('ID_MISMATCH');return{q,write:spec[0],private:spec[2]===true,bytes:Buffer.byteLength(JSON.stringify(q)),digest:hash(stable({操作:q.操作,参数:q.参数}))}}
+function fingerprint(q){
+ if(q.操作!=='状态.保存快照组')return hash(stable({操作:q.操作,参数:q.参数}))
+ const b=q.参数[0];exact(b,['写入']);if(!Array.isArray(b.写入)||!b.写入.length||b.写入.length>16)fail('PROTOCOL_INVALID')
+ const writes=b.写入.map(x=>{exact(x,['令牌','类型','编号','预期版本','数据']);const {令牌,...business}=x;return business})
+ // 短期能力必须先在Worker授权；稳定业务指纹不含跨代必变的租约令牌。
+ return hash(stable({操作:q.操作,参数:[{写入:writes}]}))
+}
+function command(input){const q=纯数据(input);if(Buffer.byteLength(JSON.stringify(q))>MAX_INPUT)fail('INPUT_LIMIT');const spec=Object.hasOwn(REGISTRY,q.操作)?REGISTRY[q.操作]:null;if(!spec)fail('OPERATION_FORBIDDEN');exact(q,spec[0]?['操作','参数','操作编号']:['操作','参数']);if(!Array.isArray(q.参数)||q.参数.length!==spec[1])fail('PROTOCOL_INVALID');if(spec[0]&&(typeof q.操作编号!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/u.test(q.操作编号)))fail('ID_INVALID');if(spec[0]&&q.操作.startsWith('记忆.')&&q.参数[0]?.操作编号!==q.操作编号)fail('ID_MISMATCH');return{q,write:spec[0],private:spec[2]===true,bytes:Buffer.byteLength(JSON.stringify(q)),digest:fingerprint(q)}}
 function authorize(c,options){if(!c.private)return;if(options.用途!=='isolated-local-sqlite-disk'||options.包含私密!==true)fail('PRIVATE_SCOPE_REQUIRED');const at=c.q.操作==='日记.删除私密'?1:['日记.读取本机私密','日记.读取本机评估'].includes(c.q.操作)?0:null;if(at!==null){const s=c.q.参数[at];exact(s,['用途']);if(s.用途!=='local-private-diary')fail('PRIVATE_SCOPE_REQUIRED')}}
 function result(x){const r=纯数据({值:x}).值;if(Buffer.byteLength(JSON.stringify(r))>MAX_RESULT)fail('RESULT_LIMIT');return r}
 function makeLog(rows){const body={版本:1,回执:rows};const out={...body,指纹:hash(body)};if(rows.length>MAX_RECEIPTS||Buffer.byteLength(JSON.stringify(out))>MAX_LOG)fail('JOURNAL_FULL');return out}
