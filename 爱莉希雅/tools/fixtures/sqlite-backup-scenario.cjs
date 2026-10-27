@@ -1,4 +1,4 @@
-/** 全部为虚构材料；串起原fake渠道/权限/任务和B/C/D，同一内存库。 */
+/** 全部为虚构材料；串起fake渠道与B/C/D，默认内存，可注入隔离盘库。 */
 'use strict'
 const assert = require('node:assert/strict'), path = require('node:path')
 const { 创建隔离仓储, 备份范围 } = require('../../storage/sqlite-backup.cjs')
@@ -23,8 +23,8 @@ async function 渠道(仓, 处理, { 目录 } = {}) {
   try { 调度.启动(); await 适配器.注入接收(消息); await 调度.推进(); return { 任务: 调度.取任务状态(), 观测: 适配器.取观测() } }
   finally { 调度.关闭(); 映射.关闭(); 守卫.关闭(); 权限.关闭(); 适配器.关闭() }
 }
-async function 场景() {
-  const 仓 = 创建隔离仓储({ 用途: 'synthetic-sqlite-repository' }); let 操 = 0, 对话, 轮, 回执, 晋升输入, 晋升, 临时
+async function 场景(注入仓) {
+  const 仓 = 注入仓 ?? 创建隔离仓储({ 用途: 'synthetic-sqlite-repository' }); let 操 = 0, 对话, 轮, 回执, 晋升输入, 晋升, 临时
   const 调 = (方法, 参数) => 仓.记忆[方法]({ 操作编号: 'op-' + (++操), 时间, 预期版本: 仓.记忆.取统计().版本, ...参数 })
   try {
     const 渠道回 = await 渠道(仓, async (消息, { 内部对话编号 }) => {
