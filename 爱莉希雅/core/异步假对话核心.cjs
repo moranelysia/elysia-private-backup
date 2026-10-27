@@ -5,6 +5,7 @@ const { 校验接收消息 } = require('../脑/渠道契约.cjs')
 const { 是假模型连接 } = require('../脑/模型连接.cjs')
 const { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs')
 const { 纯数据 } = require('../storage/sqlite-state.cjs')
+const { 是隔离输出标记 } = require('./隔离输出标记.cjs')
 const fail = code => { throw Error('ASYNC_FAKE_CORE_' + code) }
 const hash = x => createHash('sha256').update(JSON.stringify(x)).digest('hex')
 function ids(m, conversation) {
@@ -12,8 +13,8 @@ function ids(m, conversation) {
   const fingerprint = hash([m.发生于, m.回复消息编号, m.正文, m.附件])
   return { operation: 'fake-turn-' + source, turn: 't-' + source + '-' + fingerprint.slice(0, 32) }
 }
-function 创建异步假对话核心({ actor, 模型连接, 拼提示, 取现在 = () => new Date() } = {}) {
-  if (!是假模型连接(模型连接) || typeof 拼提示 !== 'function' || typeof 取现在 !== 'function') fail('DEPENDENCY_INVALID')
+function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标记, 取现在 = () => new Date() } = {}) {
+  if (!是假模型连接(模型连接) || typeof 拼提示 !== 'function' || typeof 取现在 !== 'function' || (输出标记 !== undefined && !是隔离输出标记(输出标记))) fail('DEPENDENCY_INVALID')
   const f = 创建异步仓储门面(actor), abort = new AbortController(); let closed = false, closing = null, tail = Promise.resolve(), pending = new Set(), fault = false
   function check(signal) { if (closed || signal?.aborted) fail('ABORTED'); if (fault) fail('STORE_UNKNOWN') }
   function now() { const d = 取现在(); if (!(d instanceof Date) || !Number.isFinite(d.getTime())) fail('CLOCK_INVALID'); return d.toISOString() }
@@ -57,9 +58,13 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 取现在
     if (!Array.isArray(prompts) || prompts.length < 1 || prompts.length > 402 || prompts.some(x => !x || Object.keys(x).sort().join(',') !== 'content,role' || !['system', 'user', 'assistant'].includes(x.role) || typeof x.content !== 'string') || Buffer.byteLength(JSON.stringify(prompts)) > 131072) fail('PROMPT_INVALID')
     const answer = await wait(模型连接.要一轮({ 消息们: prompts, 中止: signal }), signal)
     check(signal)
-    const saved = await f.会话.存对话一轮({ 对话: ctx.内部对话编号, 轮次: id.turn, 用户正文: msg.正文, 回复正文: answer.全文, 发生于: msg.发生于, 接收于: msg.接收于, 完成于: now() }, { 操作编号: id.operation })
+    if (!输出标记 && /[\[【]\s*(?:表情|记住|经历|更正事实)\s*[:：]/u.test(answer.全文)) fail('OUTPUT_ADAPTER_REQUIRED')
+    const parsed = 输出标记 ? 输出标记.解析(answer.全文) : { 正文: answer.全文, 待写记忆: false }
+    if (parsed.待写记忆) fail('MEMORY_MARKER_WRITE_NOT_READY')
+    check(signal)
+    const saved = await f.会话.存对话一轮({ 对话: ctx.内部对话编号, 轮次: id.turn, 用户正文: msg.正文, 回复正文: parsed.正文, 发生于: msg.发生于, 接收于: msg.接收于, 完成于: now() }, { 操作编号: id.operation })
     if (!saved.好 || saved.状态 !== 'saved') fail('TURN_SAVE_FAILED')
-    check(signal); return { 可见性: 'shared', 正文: answer.全文, 附件: [] }
+    check(signal); return { 可见性: 'shared', 正文: parsed.正文, 附件: [] }
   }
   async function 处理(input, ctx) {
     check(); const msg = 校验接收消息(input)

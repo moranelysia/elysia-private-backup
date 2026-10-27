@@ -1,13 +1,15 @@
 'use strict'
 const assert = require('node:assert/strict'), fs = require('node:fs'), os = require('node:os'), path = require('node:path'), wt = require('node:worker_threads')
 const envRoot = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'elysia-S16D3-fixture-'))
-for (const [k, v] of Object.entries({ ELYSIA_WORKSPACE_ROOT: envRoot, ELYSIA_CONFIG_FILE: path.join(envRoot, 'absent.json'), ELYSIA_DATA_DIR: path.join(envRoot, 'data'), ELYSIA_CACHE_DIR: path.join(envRoot, 'cache') })) process.env[k] = v
+for (const [k, v] of Object.entries({ ELYSIA_WORKSPACE_ROOT: envRoot, ELYSIA_CONFIG_FILE: path.join(envRoot, 'absent.json'), ELYSIA_PERSONA_PATH: path.join(envRoot, 'absent-persona.json'), ELYSIA_DATA_DIR: path.join(envRoot, 'data'), ELYSIA_CACHE_DIR: path.join(envRoot, 'cache') })) process.env[k] = v
 const NativeWorker = wt.Worker; let injection
 class TestWorker extends NativeWorker {
   constructor(file, options) { const cfg = injection; injection = undefined; super(file, cfg ? { ...options, execArgv: ['--require', path.join(__dirname, 'fixtures/sqlite-worker-fault.cjs')], env: { ...options.env, SQLITE_FIXTURE_FAULT: JSON.stringify(cfg) } } : options); const emit = this.emit; this.fixture = []; this.emit = function (event, ...args) { if (event === 'message' && args[0]?.fixture === true) { this.fixture.push(args[0]); return emit.call(this, 'fixture', args[0]) } return emit.call(this, event, ...args) } }
 }
 wt.Worker = TestWorker
 const { 新建隔离盘库 } = require('../storage/sqlite-disk.cjs'), { 启动隔离存储Worker, 内部Worker测试 } = require('../storage/sqlite-worker.cjs'), { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs'), { 创建假模型连接 } = require('../脑/模型连接.cjs'), { 创建异步假对话核心 } = require('../core/异步假对话核心.cjs')
+const { 创建隔离输出标记 } = require('../core/隔离输出标记.cjs'), 原对话 = require('../脑/对话.cjs'), 原工具解析 = require('../脑/解析工具调用.cjs')
+const output = 创建隔离输出标记({ 拆标记: 原对话.拆标记, 拆工具: x => 原工具解析.拆(x, () => null) })
 const sample = require('./fixtures/渠道契约-v1.json').本人私聊, msg = { ...sample, 端点: { 渠道: 'fake', 账号: 'local-fixture' } }, time = '2026-10-27T00:00:00.000Z', roots = new Set([envRoot]), actors = new Set(), tests = [], test = (name, fn) => tests.push([name, fn])
 function fresh(options = { 用途: 'synthetic-sqlite-disk' }, pack, scope) { const d = 新建隔离盘库(options, pack, scope); d.关闭(); roots.add(d.目录); return { ...options, 目录: d.目录 } }
 async function start(options = fresh()) { const a = await 启动隔离存储Worker(options); actors.add(a); return a }
@@ -44,6 +46,30 @@ test('关闭时不再等待不合作的提示构造器', async () => {
 })
 test('非假模型与非fake渠道拒绝，不读取凭据', async () => {
   const a = await start(); assert.throws(() => 创建异步假对话核心({ actor: a, 模型连接: { 要一轮() {} }, 拼提示: prompt }), { message: 'ASYNC_FAKE_CORE_DEPENDENCY_INVALID' }); const c = core(a); await assert.rejects(c.处理({ ...msg, 端点: { ...msg.端点, 渠道: 'qq' } }, ctx()), { message: 'ASYNC_FAKE_CORE_INPUT_INVALID' }); await c.关闭()
+})
+test('原输出标记与工具清理规则用于显示、持久化及重复读取', async () => {
+  const a = await start(), f = 创建异步仓储门面(a), raw = '好呀！【表情：星星眼】\n<tool_call>虚构工具</tool_call>', expected = 原工具解析.拆(原对话.拆标记(raw).正文, () => null).正文; let calls = 0
+  const c = 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: async () => { calls++; return raw } }), 拼提示: prompt, 输出标记: output, 取现在: () => new Date(time) })
+  assert.equal((await c.处理(msg, ctx())).正文, expected); assert.equal((await c.处理(msg, ctx())).正文, expected); assert.equal(calls, 1)
+  const history = await f.会话.读最近聊天(10, { 对话: 'channel-a' }); assert.equal(history.at(-1).内容, expected); assert(!expected.includes('表情')); assert(!expected.includes('tool_call')); await c.关闭()
+})
+test('记住、经历和更正事实标记明确阻断，不保存聊天或记忆', async () => {
+  const a = await start(), f = 创建异步仓储门面(a)
+  for (const [i, text] of ['好呀[记住:你喜欢花]', '好的【经历：我们赏花】', '明白[更正事实:fixture|你喜欢茶]'].entries()) {
+    const c = 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: async () => text }), 拼提示: prompt, 输出标记: output, 取现在: () => new Date(time) })
+    await assert.rejects(c.处理({ ...msg, 消息编号: 'marked-' + i }, ctx()), { message: 'ASYNC_FAKE_CORE_MEMORY_MARKER_WRITE_NOT_READY' }); await c.关闭()
+  }
+  assert.equal((await f.会话.取统计()).轮次数, 0); assert.equal((await f.记忆.列长期({ 类别: '事实' })).列表.length, 0); assert.equal((await f.记忆.列长期({ 类别: '经历' })).列表.length, 0)
+})
+test('缺少解析器和未闭合标记都拒绝保存，避免内部标记漏出', async () => {
+  const a = await start(), f = 创建异步仓储门面(a), c = core(a, async () => '好[记住:你的喜好]')
+  await assert.rejects(c.处理(msg, ctx()), { message: 'ASYNC_FAKE_CORE_OUTPUT_ADAPTER_REQUIRED' }); await c.关闭()
+  const marked = 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: async () => '好[记住:未闭合' }), 拼提示: prompt, 输出标记: output, 取现在: () => new Date(time) })
+  await assert.rejects(marked.处理({ ...msg, 消息编号: 'unfinished' }, ctx()), { message: 'ISOLATED_OUTPUT_INCOMPLETE_MARKER' }); await marked.关闭(); assert.equal((await f.会话.取统计()).轮次数, 0)
+})
+test('解析依赖不可伪造或返回非法结果', async () => {
+  const a = await start(); assert.throws(() => 创建隔离输出标记({}), { message: 'ISOLATED_OUTPUT_DEPENDENCY_INVALID' }); assert.throws(() => 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: async () => 'x' }), 拼提示: prompt, 输出标记: { 解析: () => ({ 正文: 'x', 待写记忆: false }) } }), { message: 'ASYNC_FAKE_CORE_DEPENDENCY_INVALID' })
+  const invalid = 创建隔离输出标记({ 拆标记: () => ({}), 拆工具: () => ({ 正文: 'x' }) }); assert.throws(() => invalid.解析('x'), { message: 'ISOLATED_OUTPUT_DEPENDENCY_INVALID' })
 })
 test('虚构旧档与新历史按物理顺序进入注入提示，不并入无归属记录', async () => {
   const { 创建本机影子仓储, 备份范围 } = require('../storage/sqlite-backup.cjs'), { 旧格式范围 } = require('../storage/sqlite-legacy.cjs'), m = 创建本机影子仓储({ 用途: 'local-shadow-repository', 包含私密: true }), rows = [{ 角色: 'user', 内容: '无归属', 时间: '' }, { 对话: 'channel-a', 角色: 'user', 内容: '旧问题', 时间: '2026-09-01 19:03' }, { 对话: 'channel-a', 角色: 'assistant', 内容: '旧回答', 时间: '' }]; let pack
