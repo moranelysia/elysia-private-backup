@@ -7,16 +7,18 @@ const { 校验渠道任务存档 } = require('../脑/渠道任务调度.cjs')
 const { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs')
 const { 纯数据 } = require('../storage/sqlite-state.cjs')
 const { exact } = require('../storage/sqlite-worker-protocol.cjs')
+const { 申请渠道共享存储 } = require('./渠道共享存储.cjs')
 const fail = code => { throw Error('ASYNC_CHANNEL_RECEIVE_' + code) }
 const hash = x => createHash('sha256').update(JSON.stringify(x)).digest('hex')
 const addr = x => 契约.会话定位键({ 端点: x.端点, 会话: x.会话, 发送者编号: x.发送者编号 })
 const fingerprint = x => hash([x.端点.渠道, x.端点.账号, x.会话.类型, x.会话.编号, x.发送者编号, x.消息编号, x.发生于, x.回复消息编号, x.正文, x.附件.map(a => [a.编号, a.类型, a.名称, a.媒体类型, a.字节数])])
-async function 创建异步渠道接收(actor, { 编号, 端点, 权限, 取现在 = () => new Date() } = {}) {
+async function 创建异步渠道接收(actor, { 编号, 端点, 权限, 取现在 = () => new Date(), 共享存储 = null } = {}) {
   if (!权限 || typeof 权限.核对接收许可 !== 'function' || typeof 取现在 !== 'function') fail('DEPENDENCY_INVALID')
   const ep = 契约.校验接收消息({ 版本: 1, 端点, 会话: { 类型: 'private', 编号: 'fixture' }, 发送者编号: 'fixture', 消息编号: 'fixture', 发生于: null, 接收于: '2026-01-01T00:00:00.000Z', 回复消息编号: null, 正文: 'fixture', 附件: [] }).端点
-  const f = 创建异步仓储门面(actor), map = await f.状态.打开后端('channel-map', 编号)
-  let tasks
-  try { tasks = await f.状态.打开后端('channel-tasks', 编号) } catch (e) { await map.关闭(); throw e }
+  const shared = 共享存储 === null ? null : 申请渠道共享存储(共享存储, actor, 编号, 'receive')
+  const f = shared?.facade ?? 创建异步仓储门面(actor), map = shared?.map ?? await f.状态.打开后端('channel-map', 编号)
+  let tasks = shared?.tasks
+  if (!shared) try { tasks = await f.状态.打开后端('channel-tasks', 编号) } catch (e) { await map.关闭(); throw e }
   let closed = false, closing = null, active = null, fault = false
   const plans = new WeakMap(), pending = new Set()
   function check() { if (closed) fail('CLOSED'); if (fault) fail('STORE_UNKNOWN') }
@@ -60,7 +62,7 @@ async function 创建异步渠道接收(actor, { 编号, 端点, 权限, 取现�
     }, e => { fault = true; throw e })
   }
   function 释放计划(plan) { if (active !== plan || !plans.has(plan)) fail('PLAN_INVALID'); plans.delete(plan); active = null }
-  function 关闭() { if (closing) return closing; closed = true; closing = (async () => { await Promise.allSettled([...pending]); if (active && plans.has(active)) plans.delete(active); active = null; await tasks.关闭(); await map.关闭() })(); return closing }
+  function 关闭() { if (closing) return closing; closed = true; closing = (async () => { await Promise.allSettled([...pending]); if (active && plans.has(active)) plans.delete(active); active = null; if (shared) shared.释放(); else { await tasks.关闭(); await map.关闭() } })(); return closing }
   return Object.freeze({ 准备接收, 提交, 释放计划, 关闭 })
 }
 module.exports = { 创建异步渠道接收 }

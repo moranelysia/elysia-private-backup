@@ -6,15 +6,21 @@ const { 校验渠道任务存档 } = require('../脑/渠道任务调度.cjs')
 const { 创建异步渠道恢复 } = require('./异步渠道恢复.cjs')
 const { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs')
 const { 纯数据 } = require('../storage/sqlite-state.cjs')
+const { 申请渠道共享存储 } = require('./渠道共享存储.cjs')
 const fail = code => { throw Error('ASYNC_CHANNEL_SEND_' + code) }
-async function 创建异步渠道发送关口(actor, { 编号, 守卫, 权限, 取现在 = () => new Date(), 最小间隔毫秒 = 1000 } = {}) {
+async function 创建异步渠道发送关口(actor, { 编号, 守卫, 权限, 取现在 = () => new Date(), 最小间隔毫秒 = 1000, 发送超时毫秒 = 30000, 最大尝试 = 3, 重试延迟毫秒 = 2000, 共享存储 = null } = {}) {
   if (!守卫 || typeof 守卫.取能力 !== 'function' || typeof 守卫.发送 !== 'function' || !权限 || typeof 权限.审查发送 !== 'function' || typeof 权限.订阅变更 !== 'function' || typeof 取现在 !== 'function') fail('DEPENDENCY_INVALID')
   if (!Number.isSafeInteger(最小间隔毫秒) || 最小间隔毫秒 < 1 || 最小间隔毫秒 > 86400000) fail('OPTIONS_INVALID')
+  if (!Number.isSafeInteger(发送超时毫秒) || 发送超时毫秒 < 1 || 发送超时毫秒 > 300000) fail('OPTIONS_INVALID')
+  if (!Number.isSafeInteger(最大尝试) || 最大尝试 < 1 || 最大尝试 > 5 || !Number.isSafeInteger(重试延迟毫秒) || 重试延迟毫秒 < 1 || 重试延迟毫秒 > 86400000) fail('OPTIONS_INVALID')
   const 端点 = 契约.校验渠道能力(守卫.取能力()).端点
   function now() { const d = 取现在(); if (!(d instanceof Date) || !Number.isFinite(d.getTime())) fail('CLOCK_INVALID'); return d.toISOString() }
-  const recovery = await 创建异步渠道恢复(actor, { 编号, 端点 })
-  try { const plan = await recovery.准备恢复({ 时间: now() }); await recovery.提交(plan, { 操作编号: 'send-recovery-' + randomUUID() }); recovery.释放计划(plan) } finally { await recovery.关闭() }
-  const backend = await 创建异步仓储门面(actor).状态.打开后端('channel-tasks', 编号)
+  if (共享存储 === null) {
+    const recovery = await 创建异步渠道恢复(actor, { 编号, 端点 })
+    try { const plan = await recovery.准备恢复({ 时间: now() }); await recovery.提交(plan, { 操作编号: 'send-recovery-' + randomUUID() }); recovery.释放计划(plan) } finally { await recovery.关闭() }
+  }
+  const shared = 共享存储 === null ? null : 申请渠道共享存储(共享存储, actor, 编号, 'send')
+  const backend = shared?.tasks ?? await 创建异步仓储门面(actor).状态.打开后端('channel-tasks', 编号)
   let closed = false, fault = null, epoch = 0, running = null, controller = null, closing = null, unsubscribe
   function check() { if (closed) fail('CLOSED'); if (fault) fail('STORE_UNKNOWN') }
   async function read() {
@@ -33,7 +39,10 @@ async function 创建异步渠道发送关口(actor, { 编号, 守卫, 权限, �
     if (!task || task.状态 !== 'queued') fail('NOT_QUEUED')
     if (s.数据.记录.some(x => ['processing', 'sending'].includes(x.状态))) fail('RECOVERY_REQUIRED')
     if (s.数据.记录.some((x, i) => i < s.数据.记录.indexOf(task) && x.内部对话编号 === task.内部对话编号 && ['queued', 'processing', 'sending'].includes(x.状态))) fail('ORDER_REQUIRED')
-    const t = now(); if (task.发送.截止于 <= t || task.下次尝试于 > t || task.尝试 >= 5 || (s.数据.最近发送于 !== null && Date.parse(t) < Date.parse(s.数据.最近发送于) + 最小间隔毫秒)) fail('NOT_READY')
+    const t = now()
+    if (task.发送.截止于 <= t) { task.状态 = 'expired'; task.代码 = 'EXPIRED'; task.下次尝试于 = null; task.更新于 = t; await save(s, task, 'expired', t); return { 好: false, 状态: 'expired', 已调用发送: false } }
+    if (task.尝试 >= 最大尝试) { task.状态 = 'failed'; task.代码 = 'RETRY_EXHAUSTED'; task.下次尝试于 = null; task.更新于 = t; await save(s, task, 'failed', t); return { 好: false, 状态: 'failed', 已调用发送: false } }
+    if (task.下次尝试于 > t || (s.数据.最近发送于 !== null && Date.parse(t) < Date.parse(s.数据.最近发送于) + 最小间隔毫秒)) fail('NOT_READY')
     if (!权限.审查发送(task.发送, context)?.允许) fail('FORBIDDEN')
     const generation = epoch
     task.状态 = 'sending'; task.尝试++; task.回执 = null; task.下次尝试于 = null; task.代码 = null; task.更新于 = t; s.数据.最近发送于 = t
@@ -45,21 +54,23 @@ async function 创建异步渠道发送关口(actor, { 编号, 守卫, 权限, �
       await save(s, task, 'unknown', at)
       return { 好: false, 状态: 'unknown', 已调用发送: false }
     }
-    controller = new AbortController(); let receipt
+    controller = new AbortController(); let receipt, timer, onAbort
     try {
-      receipt = 契约.校验发送结果(await 守卫.发送(纯数据(task.发送), { ...context, 中止: controller.signal }))
+      const abort = new Promise((_, reject) => { onAbort = () => reject(Error('SEND_ABORTED')); controller.signal.addEventListener('abort', onAbort, { once: true }) })
+      const timeout = new Promise((_, reject) => { timer = setTimeout(() => { controller?.abort(); reject(Error('SEND_TIMEOUT')) }, 发送超时毫秒) })
+      receipt = 契约.校验发送结果(await Promise.race([守卫.发送(纯数据(task.发送), { ...context, 中止: controller.signal }), abort, timeout]))
       if (receipt.端点.渠道 !== 端点.渠道 || receipt.端点.账号 !== 端点.账号 || receipt.请求编号 !== task.发送.请求编号) throw Error('RECEIPT_MISMATCH')
     } catch { receipt = unknown(task, now()) }
-    finally { controller = null }
+    finally { clearTimeout(timer); if (controller && onAbort) controller.signal.removeEventListener('abort', onAbort); controller = null }
     if (closed || generation !== epoch) receipt = unknown(task, now())
     s = await backend.读取分段快照(); task = s.数据.记录.find(x => x.编号 === id); const at = now()
-    task.状态 = receipt.状态; task.代码 = receipt.错误代码; task.回执 = receipt; task.更新于 = at; task.下次尝试于 = null
-    // A failed attempt is terminal in this isolated gate; retry scheduling remains C2B2.
-    await save(s, task, receipt.状态, at)
-    return { 好: true, 状态: receipt.状态, 已调用发送: true }
+    const retry = receipt.状态 === 'failed' && receipt.可重试 && task.尝试 < 最大尝试 && !closed && generation === epoch
+    task.状态 = retry ? 'queued' : receipt.状态; task.代码 = receipt.错误代码; task.回执 = receipt; task.更新于 = at; task.下次尝试于 = retry ? new Date(Date.parse(at) + 重试延迟毫秒 * (2 ** (task.尝试 - 1))).toISOString() : null
+    await save(s, task, retry ? 'retry' : receipt.状态, at)
+    return { 好: true, 状态: task.状态, 已调用发送: true }
   }
   try { unsubscribe = 权限.订阅变更(() => { epoch++; controller?.abort() }); if (typeof unsubscribe !== 'function') fail('DEPENDENCY_INVALID') }
-  catch (e) { await backend.关闭(); throw e }
+  catch (e) { if (shared) shared.释放(); else await backend.关闭(); throw e }
   async function 发送(id, context = {}) {
     check(); if (running) fail('BUSY')
     const p = execute(id, context); running = p
@@ -68,7 +79,7 @@ async function 创建异步渠道发送关口(actor, { 编号, 守卫, 权限, �
   function 关闭() {
     if (closing) return closing
     closed = true; epoch++; controller?.abort(); unsubscribe()
-    closing = (async () => { if (running) try { await running } catch {} await backend.关闭() })()
+    closing = (async () => { if (running) try { await running } catch {} if (shared) shared.释放(); else await backend.关闭() })()
     return closing
   }
   return Object.freeze({ 发送, 关闭 })
