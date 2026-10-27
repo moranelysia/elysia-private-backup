@@ -7,7 +7,7 @@ function 创建异步仓储门面(actor,options={}){
  const read=(操作,参数)=>actor.调用({操作,参数})
  function write(操作,参数,meta){const m=纯数据(meta);exact(m,['操作编号']);return actor.调用({操作,参数,操作编号:m.操作编号})}
  const 会话=Object.freeze({
-  登记对话:async(id,value,meta)=>write('会话.登记对话',[id,value],meta),更新对话:async(id,value,meta)=>write('会话.更新对话',[id,value],meta),存对话一轮:async(value,meta)=>write('会话.存对话一轮',[value],meta),
+  登记对话:async(id,value,meta)=>write('会话.登记对话',[id,value],meta),更新对话:async(id,value,meta)=>write('会话.更新对话',[id,value],meta),存对话一轮:async(value,meta)=>write('会话.存对话一轮',[value],meta),存对话记忆一轮:async(value)=>{const q=纯数据(value);return write('会话.存对话记忆一轮',[q],{操作编号:q.操作编号})},
   读取对话:async id=>read('会话.读取对话',[id]),列对话:async(q={})=>read('会话.列对话',[q]),读消息页:async q=>read('会话.读消息页',[q]),读最近聊天:async(n,q)=>read('会话.读最近聊天',[n,q]),取统计:async()=>read('会话.取统计',[]),
  })
  const 记忆={取统计:async()=>read('记忆.取统计',[]),列长期:async(q={})=>read('记忆.列长期',[q]),读取临时:async id=>read('记忆.读取临时',[id]),查询临时:async(q={})=>read('记忆.查询临时',[q])}

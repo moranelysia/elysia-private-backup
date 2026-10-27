@@ -6,7 +6,7 @@ const REGISTRY=Object.freeze({
  '状态.打开后端':[false,1], '状态.读取快照':[false,1], '状态.读取片段':[false,1], '状态.关闭后端':[false,1], '状态.保存快照组':[true,1],
  '状态.开始分段':[false,1], '状态.写入分段':[false,1], '状态.取消分段':[false,1], '状态.提交分段':[true,1],
  '状态.读取图谱记忆页':[false,1], '状态.提交图谱分段':[true,1],
- '会话.登记对话':[true,2], '会话.更新对话':[true,2], '会话.存对话一轮':[true,1],
+ '会话.登记对话':[true,2], '会话.更新对话':[true,2], '会话.存对话一轮':[true,1], '会话.存对话记忆一轮':[true,1],
  '会话.读取对话':[false,1], '会话.列对话':[false,1], '会话.读消息页':[false,1], '会话.读最近聊天':[false,2], '会话.取统计':[false,0],
  '记忆.取统计':[false,0], '记忆.列长期':[false,1], '日记.读取共享':[false,0],
  '记忆.新增临时':[true,1], '记忆.评估并晋升':[true,1], '记忆.人工处理临时':[true,1], '记忆.人工确认晋升':[true,1],
@@ -38,7 +38,7 @@ function fingerprint(q){
  // 短期能力必须先在Worker授权；稳定业务指纹不含跨代必变的租约令牌。
  return hash(stable({操作:q.操作,参数:[{写入:writes}]}))
 }
-function command(input){const q=纯数据(input);if(Buffer.byteLength(JSON.stringify(q))>MAX_INPUT)fail('INPUT_LIMIT');const spec=Object.hasOwn(REGISTRY,q.操作)?REGISTRY[q.操作]:null;if(!spec)fail('OPERATION_FORBIDDEN');exact(q,spec[0]?['操作','参数','操作编号']:['操作','参数']);if(!Array.isArray(q.参数)||q.参数.length!==spec[1])fail('PROTOCOL_INVALID');if(spec[0]&&(typeof q.操作编号!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/u.test(q.操作编号)))fail('ID_INVALID');if(spec[0]&&q.操作.startsWith('记忆.')&&q.参数[0]?.操作编号!==q.操作编号)fail('ID_MISMATCH');return{q,write:spec[0],private:spec[2]===true,bytes:Buffer.byteLength(JSON.stringify(q)),digest:fingerprint(q)}}
+function command(input){const q=纯数据(input);if(Buffer.byteLength(JSON.stringify(q))>MAX_INPUT)fail('INPUT_LIMIT');const spec=Object.hasOwn(REGISTRY,q.操作)?REGISTRY[q.操作]:null;if(!spec)fail('OPERATION_FORBIDDEN');exact(q,spec[0]?['操作','参数','操作编号']:['操作','参数']);if(!Array.isArray(q.参数)||q.参数.length!==spec[1])fail('PROTOCOL_INVALID');if(spec[0]&&(typeof q.操作编号!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/u.test(q.操作编号)))fail('ID_INVALID');if(spec[0]&&(q.操作.startsWith('记忆.')||q.操作==='会话.存对话记忆一轮')&&q.参数[0]?.操作编号!==q.操作编号)fail('ID_MISMATCH');return{q,write:spec[0],private:spec[2]===true,bytes:Buffer.byteLength(JSON.stringify(q)),digest:fingerprint(q)}}
 function authorize(c,options){if(!c.private)return;if(options.用途!=='isolated-local-sqlite-disk'||options.包含私密!==true)fail('PRIVATE_SCOPE_REQUIRED');const at=c.q.操作==='日记.删除私密'?1:['日记.读取本机私密','日记.读取本机评估'].includes(c.q.操作)?0:null;if(at!==null){const s=c.q.参数[at];exact(s,['用途']);if(s.用途!=='local-private-diary')fail('PRIVATE_SCOPE_REQUIRED')}}
 function result(x){const r=纯数据({值:x}).值;if(Buffer.byteLength(JSON.stringify(r))>MAX_RESULT)fail('RESULT_LIMIT');return r}
 function makeLog(rows){const body={版本:1,回执:rows};const out={...body,指纹:hash(body)};if(rows.length>MAX_RECEIPTS||Buffer.byteLength(JSON.stringify(out))>MAX_LOG)fail('JOURNAL_FULL');return out}
