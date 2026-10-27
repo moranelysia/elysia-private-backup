@@ -16,6 +16,8 @@ async function start(options = fresh()) { const a = await 启动隔离存储Work
 const ctx = (id = 'channel-a') => ({ 内部对话编号: id })
 const prompt = ({ 历史, 输入 }) => [{ role: 'system', content: '隔离测试提示' }, ...历史.map(x => ({ role: x.role, content: x.content })), { role: 'user', content: 输入 }]
 const core = (a, fn = async () => '虚构回复', build = prompt) => 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: fn }), 拼提示: build, 取现在: () => new Date(time) })
+const markedCore = (a, fn, build = prompt) => 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: fn }), 拼提示: build, 输出标记: output, 取现在: () => new Date(time) })
+async function registerMarked(a, enabled = true) { const f = 创建异步仓储门面(a); await f.会话.登记对话('channel-a', { 建于: time, 写长期记忆: enabled }, { 操作编号: 'marked-register' }); return f }
 async function phase(a) { const w = 内部Worker测试(a).worker; if (w.fixture.some(x => x.kind === 'phase')) return; await new Promise((resolve, reject) => { const timer = setTimeout(() => reject(Error('PHASE_TIMEOUT')), 10000); w.on('fixture', function got(m) { if (m.kind === 'phase') { clearTimeout(timer); w.off('fixture', got); resolve() } }) }) }
 test('多会话历史隔离，重复消息复用已保存回复，冲突不再次调用模型', async () => {
   const a = await start(), seen = [], c = core(a, async messages => { seen.push(messages); return '回复' + seen.length })
@@ -53,13 +55,51 @@ test('原输出标记与工具清理规则用于显示、持久化及重复读�
   assert.equal((await c.处理(msg, ctx())).正文, expected); assert.equal((await c.处理(msg, ctx())).正文, expected); assert.equal(calls, 1)
   const history = await f.会话.读最近聊天(10, { 对话: 'channel-a' }); assert.equal(history.at(-1).内容, expected); assert(!expected.includes('表情')); assert(!expected.includes('tool_call')); await c.关闭()
 })
-test('记住、经历和更正事实标记明确阻断，不保存聊天或记忆', async () => {
-  const a = await start(), f = 创建异步仓储门面(a)
-  for (const [i, text] of ['好呀[记住:你喜欢花]', '好的【经历：我们赏花】', '明白[更正事实:fixture|你喜欢茶]'].entries()) {
-    const c = 创建异步假对话核心({ actor: a, 模型连接: 创建假模型连接({ 生成: async () => text }), 拼提示: prompt, 输出标记: output, 取现在: () => new Date(time) })
-    await assert.rejects(c.处理({ ...msg, 消息编号: 'marked-' + i }, ctx()), { message: 'ASYNC_FAKE_CORE_MEMORY_MARKER_WRITE_NOT_READY' }); await c.关闭()
-  }
-  assert.equal((await f.会话.取统计()).轮次数, 0); assert.equal((await f.记忆.列长期({ 类别: '事实' })).列表.length, 0); assert.equal((await f.记忆.列长期({ 类别: '经历' })).列表.length, 0)
+test('假模型标记原子写事实和经历，正文干净且重复输入不重复', async () => {
+  const a = await start(), f = await registerMarked(a); let calls = 0
+  const c = markedCore(a, async () => { calls++; return '好呀！[记住:你喜欢花]【经历：我们一起赏花】[表情:开心]' })
+  assert.equal((await c.处理(msg, ctx())).正文, '好呀！'); assert.equal((await c.处理(msg, ctx())).正文, '好呀！'); assert.equal(calls, 1)
+  assert.equal((await f.会话.取统计()).轮次数, 1); const facts = (await f.记忆.列长期({ 类别: '事实' })).列表, events = (await f.记忆.列长期({ 类别: '经历' })).列表; assert.equal(facts.length, 1); assert.equal(events.length, 1); assert.equal(facts[0].来源, '她'); assert.equal(events[0].内容, '我们一起赏花'); await c.关闭()
+})
+test('关闭记忆时清除标记但保留聊天，后续开启不补写旧轮', async () => {
+  const a = await start(), f = await registerMarked(a, false), c = markedCore(a, async () => '好呀[记住:你喜欢花]【经历：我们赏花】')
+  assert.equal((await c.处理(msg, ctx())).正文, '好呀'); assert.equal((await f.会话.取统计()).轮次数, 1); assert.equal((await f.记忆.取统计()).长期数, 0)
+  await f.会话.更新对话('channel-a', { 预期版本: 1, 写长期记忆: true }, { 操作编号: 'enable-memory' }); assert.equal((await c.处理(msg, ctx())).正文, '好呀'); assert.equal((await f.记忆.取统计()).长期数, 0); await c.关闭()
+})
+test('生成期间会话开关变动，拒绝整个旧轮', async () => {
+  const a = await start(), f = await registerMarked(a); let started, release; const begin = new Promise(r => { started = r }), paused = new Promise(r => { release = r })
+  const c = markedCore(a, async () => { started(); await paused; return '好[记住:你喜欢花]' }), p = c.处理(msg, ctx()), rejected = assert.rejects(p, { message: 'SQLITE_CHAT_VERSION_CONFLICT' })
+  await begin; await f.会话.更新对话('channel-a', { 预期版本: 1, 写长期记忆: false }, { 操作编号: 'disable-inflight' }); release(); await rejected; assert.equal((await f.会话.取统计()).轮次数, 0); assert.equal((await f.记忆.取统计()).长期数, 0); await c.关闭()
+})
+test('生成期间记忆变动时拒绝基于旧提示的写入', async () => {
+  const a = await start(), f = await registerMarked(a); let started, release; const begin = new Promise(r => { started = r }), paused = new Promise(r => { release = r })
+  const c = markedCore(a, async () => { started(); await paused; return '好[记住:你喜欢花]' }), p = c.处理(msg, ctx()), rejected = assert.rejects(p, { message: 'SQLITE_MEMORY_VERSION_CONFLICT' })
+  await begin; await f.记忆.新增长期({ 操作编号: 'concurrent-memory', 时间: time, 预期版本: 0, 类别: '事实', 内容: '你喜欢茶' }); release(); await rejected; assert.equal((await f.会话.取统计()).轮次数, 0); assert.equal((await f.记忆.取统计()).长期数, 1); await c.关闭()
+})
+test('构造提示期间记忆变化，在调用假模型前拒绝', async () => {
+  const a = await start(), f = await registerMarked(a); let calls = 0
+  const c = markedCore(a, async () => { calls++; return '好' }, async input => { await f.记忆.新增长期({ 操作编号: 'prompt-memory', 时间: time, 预期版本: 0, 类别: '事实', 内容: '你喜欢花' }); return prompt(input) })
+  await assert.rejects(c.处理(msg, ctx()), { message: 'ASYNC_FAKE_CORE_PROMPT_MEMORY_VERSION_CONFLICT' }); assert.equal(calls, 0); assert.equal((await f.会话.取统计()).轮次数, 0); await c.关闭()
+})
+test('标记更正现存事实并避免同内容重复新增', async () => {
+  const a = await start(), f = await registerMarked(a), old = await f.记忆.新增长期({ 操作编号: 'old-fact', 时间: time, 预期版本: 0, 类别: '事实', 内容: '你喜欢咖啡' })
+  const c = markedCore(a, async () => `明白[更正事实:${old.目标编号}|你喜欢茶][记住:你喜欢茶]`); assert.equal((await c.处理(msg, ctx())).正文, '明白')
+  const facts = (await f.记忆.列长期({ 类别: '事实' })).列表; assert.equal(facts.length, 1); assert.equal(facts[0].内容, '你喜欢茶'); assert.equal(facts[0].编号, old.目标编号); await c.关闭()
+})
+test('已写记忆后关闭开关，重复输入不绕过回执授权', async () => {
+  const a = await start(), f = await registerMarked(a), c = markedCore(a, async () => '好[记住:你喜欢花]'); await c.处理(msg, ctx()); await f.会话.更新对话('channel-a', { 预期版本: 1, 写长期记忆: false }, { 操作编号: 'disable-replay' })
+  await assert.rejects(c.处理(msg, ctx()), { message: 'ASYNC_FAKE_CORE_MEMORY_SWITCH_OFF' }); assert.equal((await f.记忆.取统计()).长期数, 1); await c.关闭()
+})
+test('组合回执失败回滚整条假核心输出，恢复后可重试', async () => {
+  const options = fresh(), initial = await start(options), seed = 创建异步仓储门面(initial); await seed.会话.登记对话('fixture-target', { 建于: time }, { 操作编号: 'fault-seed' }); await registerMarked(initial); await initial.关闭()
+  injection = { stage: 'journal-fail' }; const a = await start(options), f = 创建异步仓储门面(a), c = markedCore(a, async () => '好呀[记住:你喜欢花]')
+  await assert.rejects(c.处理(msg, ctx()), { message: 'SQLITE_WORKER_FIXTURE_JOURNAL_FAILURE' }); assert.equal((await f.会话.取统计()).轮次数, 0); assert.equal((await f.记忆.取统计()).长期数, 0); await c.关闭(); await a.关闭()
+  const b = await start(options), retry = markedCore(b, async () => '好呀[记住:你喜欢花]'); assert.equal((await retry.处理(msg, ctx())).正文, '好呀'); assert.equal((await 创建异步仓储门面(b).记忆.取统计()).长期数, 1); await retry.关闭()
+})
+test('标记组合写入期间关闭，等待提交且不返回迟到回复', async () => {
+  const options = fresh(), initial = await start(options), seed = 创建异步仓储门面(initial); await seed.会话.登记对话('fixture-target', { 建于: time }, { 操作编号: 'close-seed' }); await registerMarked(initial); await initial.关闭()
+  injection = { stage: 'before', delay: 500 }; const a = await start(options), c = markedCore(a, async () => '好呀[记住:你喜欢花]'), p = c.处理(msg, ctx()), rejected = assert.rejects(p, { message: 'ASYNC_FAKE_CORE_ABORTED' })
+  await phase(a); await c.关闭(); await rejected; const f = 创建异步仓储门面(a); assert.equal((await f.会话.取统计()).轮次数, 1); assert.equal((await f.记忆.取统计()).长期数, 1)
 })
 test('缺少解析器和未闭合标记都拒绝保存，避免内部标记漏出', async () => {
   const a = await start(), f = 创建异步仓储门面(a), c = core(a, async () => '好[记住:你的喜好]')
@@ -82,5 +122,11 @@ for (const stage of ['before', 'after']) test('整轮提交' + stage + '终止Wo
   injection = { stage }; const a = await start(options); let calls = 0, c = core(a, async () => { calls++; return '一次回复' }); let failure
   const p = c.处理(msg, ctx()), bad = assert.rejects(p, e => { failure = e; return e.状态 === 'unknown' }); await phase(a); await 内部Worker测试(a).worker.terminate(); await bad; await c.关闭(); await a.恢复(); const receipt = await a.查询回执(failure.操作编号); assert.equal(receipt !== null, stage === 'after')
   c = core(a, async () => { calls++; return '一次回复' }); assert.equal((await c.处理(msg, ctx())).正文, '一次回复'); assert.equal(calls, stage === 'after' ? 1 : 2); await c.关闭(); assert.equal((await 创建异步仓储门面(a).会话.取统计()).轮次数, 1)
+})
+for (const stage of ['before', 'after']) test('标记整链提交' + stage + '终止Worker，恢复时不重复聊天或记忆', async () => {
+  const options = fresh(), initial = await start(options), f = 创建异步仓储门面(initial); await f.会话.登记对话('fixture-target', { 建于: time }, { 操作编号: 'fixture-seed' }); await registerMarked(initial); await initial.关闭()
+  injection = { stage }; const a = await start(options); let calls = 0, c = markedCore(a, async () => { calls++; return '好呀[记住:你喜欢花]' }), failure
+  const p = c.处理(msg, ctx()), bad = assert.rejects(p, e => { failure = e; return e.状态 === 'unknown' }); await phase(a); await 内部Worker测试(a).worker.terminate(); await bad; await c.关闭(); await a.恢复(); assert.equal(!!(await a.查询回执(failure.操作编号)), stage === 'after')
+  c = markedCore(a, async () => { calls++; return '好呀[记住:你喜欢花]' }); assert.equal((await c.处理(msg, ctx())).正文, '好呀'); assert.equal(calls, stage === 'after' ? 1 : 2); await c.关闭(); const check = 创建异步仓储门面(a); assert.equal((await check.会话.取统计()).轮次数, 1); assert.equal((await check.记忆.取统计()).长期数, 1)
 })
 ;(async () => { let pass = 0; try { for (const [name, fn] of tests) { try { await fn(); pass++; console.log('PASS ' + name) } catch (e) { process.exitCode = 1; console.error('FAIL ' + name, e) } } console.log(`S16D3 fake core: ${pass}/${tests.length}`) } finally { for (const a of actors) try { await a.关闭() } catch {} for (const root of roots) { const real = fs.realpathSync(root); if (path.dirname(real) !== fs.realpathSync(os.tmpdir()) || !/^elysia-(sqlite-disk|S16D3-fixture)-[a-zA-Z0-9]+$/u.test(path.basename(real)) || fs.lstatSync(root).isSymbolicLink()) throw Error('CLEANUP_OUTSIDE'); fs.rmSync(real, { recursive: true, force: true }) } wt.Worker = NativeWorker } })()

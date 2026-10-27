@@ -47,22 +47,29 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标
   async function run(msg, ctx) {
     const signal = ctx.中止 ? AbortSignal.any([abort.signal, ctx.中止]) : abort.signal; check(signal)
     const id = ids(msg, ctx.内部对话编号), old = await actor.查询回执(id.operation); check(signal)
-    if (old) { const answer = await duplicate(ctx.内部对话编号, id, old); check(signal); return answer }
-    const existing = await f.会话.读取对话(ctx.内部对话编号); check(signal)
-    if (!existing) { const registered = await f.会话.登记对话(ctx.内部对话编号, { 模型: 'fake', 建于: msg.接收于 }, { 操作编号: 'fake-reg-' + randomUUID() }); if (!registered.好) fail('REGISTER_FAILED'); check(signal) }
+    if (old) {
+      if (old.结果?.记忆?.状态 === 'committed') { const s = await f.会话.读取对话(ctx.内部对话编号); check(signal); if (!s || s.写长期记忆 !== true) fail('MEMORY_SWITCH_OFF') }
+      const answer = await duplicate(ctx.内部对话编号, id, old); check(signal); return answer
+    }
+    let existing = await f.会话.读取对话(ctx.内部对话编号); check(signal)
+    if (!existing) { const registered = await f.会话.登记对话(ctx.内部对话编号, { 模型: 'fake', 建于: msg.接收于 }, { 操作编号: 'fake-reg-' + randomUUID() }); if (!registered.好) fail('REGISTER_FAILED'); check(signal); existing = await f.会话.读取对话(ctx.内部对话编号); check(signal) }
     const h = await history(ctx.内部对话编号); check(signal)
     const rows = h.rows.filter(x => x && ['user', 'assistant'].includes(x.角色) && typeof x.内容 === 'string').map(x => ({ role: x.角色, content: x.内容, 时间: typeof x.时间 === 'string' ? x.时间 : '' }))
     if (Buffer.byteLength(JSON.stringify(rows)) > 131072) fail('HISTORY_LIMIT')
+    const memoryBefore = 输出标记 ? await f.记忆.取统计() : null; check(signal)
     const built = await wait(Promise.resolve().then(() => { check(signal); return 拼提示(纯数据({ 历史: rows, 输入: msg.正文 })) }), signal); check(signal)
+    if (输出标记) { const after = await f.记忆.取统计(); check(signal); if (after.版本 !== memoryBefore.版本) fail('PROMPT_MEMORY_VERSION_CONFLICT') }
     const prompts = 纯数据({ 消息: built }).消息
     if (!Array.isArray(prompts) || prompts.length < 1 || prompts.length > 402 || prompts.some(x => !x || Object.keys(x).sort().join(',') !== 'content,role' || !['system', 'user', 'assistant'].includes(x.role) || typeof x.content !== 'string') || Buffer.byteLength(JSON.stringify(prompts)) > 131072) fail('PROMPT_INVALID')
     const answer = await wait(模型连接.要一轮({ 消息们: prompts, 中止: signal }), signal)
     check(signal)
     if (!输出标记 && /[\[【]\s*(?:表情|记住|经历|更正事实)\s*[:：]/u.test(answer.全文)) fail('OUTPUT_ADAPTER_REQUIRED')
-    const parsed = 输出标记 ? 输出标记.解析(answer.全文) : { 正文: answer.全文, 待写记忆: false }
-    if (parsed.待写记忆) fail('MEMORY_MARKER_WRITE_NOT_READY')
+    const parsed = 输出标记 ? 纯数据(输出标记.解析(answer.全文)) : { 正文: answer.全文 }
     check(signal)
-    const saved = await f.会话.存对话一轮({ 对话: ctx.内部对话编号, 轮次: id.turn, 用户正文: msg.正文, 回复正文: parsed.正文, 发生于: msg.发生于, 接收于: msg.接收于, 完成于: now() }, { 操作编号: id.operation })
+    const turn = { 对话: ctx.内部对话编号, 轮次: id.turn, 用户正文: msg.正文, 回复正文: parsed.正文, 发生于: msg.发生于, 接收于: msg.接收于, 完成于: now() }
+    const saved = 输出标记
+      ? await f.会话.存对话记忆一轮({ 操作编号: id.operation, 轮: turn, 预期会话版本: existing.元数据版本, 预期记忆版本: memoryBefore.版本, 标记: parsed.标记 })
+      : await f.会话.存对话一轮(turn, { 操作编号: id.operation })
     if (!saved.好 || saved.状态 !== 'saved') fail('TURN_SAVE_FAILED')
     check(signal); return { 可见性: 'shared', 正文: parsed.正文, 附件: [] }
   }

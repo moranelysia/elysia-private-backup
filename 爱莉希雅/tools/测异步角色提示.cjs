@@ -12,6 +12,7 @@ const 原提示词 = require('../脑/提示词.cjs'), 原对话 = require('../�
 Module._load = load; fs.readFileSync = read
 const { 新建隔离盘库 } = require('../storage/sqlite-disk.cjs'), { 启动隔离存储Worker, 内部Worker测试 } = require('../storage/sqlite-worker.cjs'), { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs'), { 创建异步角色提示 } = require('../core/异步角色提示.cjs'), { 创建异步假对话核心 } = require('../core/异步假对话核心.cjs'), { 创建假模型连接 } = require('../脑/模型连接.cjs')
 const { 创建异步关系图, 读取同仓一跳 } = require('../core/异步关系图.cjs')
+const { 创建隔离输出标记 } = require('../core/隔离输出标记.cjs'), 原工具解析 = require('../脑/解析工具调用.cjs')
 const roots = new Set([root]), actors = new Set(), tests = [], test = (name, fn) => tests.push([name, fn]), time = '2026-10-27T00:00:00.000Z'
 async function setup(local = false) { const options = local ? { 用途: 'isolated-local-sqlite-disk', 包含私密: true } : { 用途: 'synthetic-sqlite-disk' }, disk = 新建隔离盘库(options), dir = disk.目录; disk.关闭(); roots.add(dir); approved.add(dir); const actor = await 启动隔离存储Worker({ ...options, 目录: dir }); actors.add(actor); return { actor, f: 创建异步仓储门面(actor) } }
 const adapter = (actor, at = time, 关系图) => 创建异步角色提示({ actor, 原提示词, 创建临时召回器: 原临时.创建召回器, 关系图, 挑历史: 原对话.挑历史, 历史内容: 原对话.给模型的历史内容, 估算: 尺.估, 默认线: 修.默认线, 取现在: () => new Date(at) })
@@ -39,6 +40,15 @@ test('确有虚构私密日记也不进入普通提示', async () => {
   await privateFacade.日记.写入私密({ 日记: diary, 预期版本: 0 }, { 操作编号: 'private-diary' }); assert.equal((await privateFacade.日记.读取本机私密()).length, 1); assert.equal(f.日记.读取本机私密, undefined)
   const g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 })
   const result = await adapter(actor, time, g).拼提示({ 历史: [], 输入: '你好' }); assert.equal(result.at(-1).content, '你好'); assert.equal(JSON.stringify(result).includes(diary.模块[0].正文), false); await g.关闭()
+})
+test('带真实虚构private日记的角色提示、假模型标记及组合落盘不泄露private', async () => {
+  const { actor, f } = await setup(true), privateFacade = 创建异步仓储门面(actor, { 本机私密: true }), diary = require('./fixtures/sqlite-backup-scenario.cjs').篇(true)
+  await privateFacade.日记.写入私密({ 日记: diary, 预期版本: 0 }, { 操作编号: 'private-b4' }); await f.会话.登记对话('channel-private-check', { 建于: time, 写长期记忆: true }, { 操作编号: 'private-b4-register' })
+  const g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 }), marker = 创建隔离输出标记({ 拆标记: 原对话.拆标记, 拆工具: x => 原工具解析.拆(x, () => null) }); let captured
+  const c = 创建异步假对话核心({ actor, 模型连接: 创建假模型连接({ 生成: async m => { captured = m; return '好呀[记住:你喜欢花]' } }), 拼提示: adapter(actor, time, g).拼提示, 输出标记: marker, 取现在: () => new Date(time) })
+  const base = require('./fixtures/渠道契约-v1.json').本人私聊, msg = { ...base, 端点: { 渠道: 'fake', 账号: 'private-b4' } }, answer = await c.处理(msg, { 内部对话编号: 'channel-private-check' })
+  const visible = JSON.stringify({ captured, answer, memory: await f.记忆.列长期(), history: await f.会话.读最近聊天(10, { 对话: 'channel-private-check' }) })
+  assert.equal(visible.includes(diary.模块[0].正文), false); assert.equal(answer.正文, '好呀'); assert.equal((await f.记忆.取统计()).长期数, 1); assert.equal((await privateFacade.日记.读取本机私密()).length, 1); await c.关闭(); await g.关闭()
 })
 test('临时记忆过期或待确认时不会进入提示', async () => {
   const { actor, f } = await setup(); await temp(f, 'expiring', { 类别: '候选偏好', 内容: '你喜欢雨后的散步', 细节: { 手动: true, 保留天数: 1 } })
