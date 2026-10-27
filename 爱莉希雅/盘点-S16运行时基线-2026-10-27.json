@@ -1,0 +1,24 @@
+{
+  "版本": 1,
+  "用途": "s16-readonly-runtime-baseline",
+  "核查日期": "2026-10-27",
+  "源码基线": "0c10282",
+  "Node": "v26.8.2",
+  "SQLite": "3.53.4",
+  "平台": "win32",
+  "架构": "x64",
+  "Electron安装包": "44.4.3",
+  "能力": {
+    "DatabaseSync": true,
+    "backup": true,
+    "防御模式": true,
+    "worker": true,
+    "子进程": true
+  },
+  "仅创建内存数据库": true,
+  "读取正式正文": false,
+  "创建磁盘数据库": false,
+  "启动Electron": false,
+  "安装依赖": false,
+  "正式切换": false
+}
