@@ -4,6 +4,7 @@ const {createHash}=require('node:crypto'),{纯数据}=require('./sqlite-state.cj
 const MAX_INPUT=65536,MAX_RESULT=262144,MAX_LOG=1048576,MAX_RECEIPTS=2048
 const REGISTRY=Object.freeze({
  '状态.打开后端':[false,1], '状态.读取快照':[false,1], '状态.读取片段':[false,1], '状态.关闭后端':[false,1], '状态.保存快照组':[true,1],
+ '状态.开始分段':[false,1], '状态.写入分段':[false,1], '状态.取消分段':[false,1], '状态.提交分段':[true,1],
  '会话.登记对话':[true,2], '会话.更新对话':[true,2], '会话.存对话一轮':[true,1],
  '会话.读取对话':[false,1], '会话.列对话':[false,1], '会话.读消息页':[false,1], '会话.读最近聊天':[false,2], '会话.取统计':[false,0],
  '记忆.取统计':[false,0], '记忆.列长期':[false,1], '日记.读取共享':[false,0],
@@ -20,6 +21,11 @@ function fail(c){throw Error('SQLITE_WORKER_'+c)}
 function exact(o,keys){if(!o||Object.getPrototypeOf(o)!==Object.prototype||Object.keys(o).sort().join(',')!==keys.slice().sort().join(','))fail('PROTOCOL_INVALID')}
 function stable(x){return Array.isArray(x)?x.map(stable):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,stable(x[k])])):x}
 function fingerprint(q){
+ if(q.操作==='状态.提交分段'){
+  const b=q.参数[0];exact(b,['上传','写入']);if(!Array.isArray(b.写入)||!b.写入.length||b.写入.length>16)fail('PROTOCOL_INVALID')
+  const writes=b.写入.map(x=>{exact(x,['令牌','类型','编号','预期版本','字节数','指纹']);const {令牌,...business}=x;return business})
+  return hash(stable({操作:q.操作,参数:[{写入:writes}]}))
+ }
  if(q.操作!=='状态.保存快照组')return hash(stable({操作:q.操作,参数:q.参数}))
  const b=q.参数[0];exact(b,['写入']);if(!Array.isArray(b.写入)||!b.写入.length||b.写入.length>16)fail('PROTOCOL_INVALID')
  const writes=b.写入.map(x=>{exact(x,['令牌','类型','编号','预期版本','数据']);const {令牌,...business}=x;return business})

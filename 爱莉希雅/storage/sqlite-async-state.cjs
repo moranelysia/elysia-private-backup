@@ -17,14 +17,37 @@ function 创建异步状态接口(actor) {
       if (!row || Object.getPrototypeOf(row) !== Object.prototype) fail('INPUT_INVALID')
       const d = Object.getOwnPropertyDescriptors(row)
       if (Reflect.ownKeys(d).sort().join(',') !== '后端,数据,预期版本' || Object.values(d).some(x => !Object.hasOwn(x, 'value') || !x.enumerable)) fail('INPUT_INVALID')
-      const b = live(d.后端.value), values = 纯数据({ 数据: d.数据.value, 预期版本: d.预期版本.value })
-      return { ...b.scope, ...values }
+      const b = live(d.后端.value), 数据 = 纯数据(d.数据.value), values = 纯数据({ 预期版本: d.预期版本.value })
+      return { ...b.scope, 数据, ...values }
     })
   }
   async function 保存快照组(input, meta) {
     const m = 纯数据(meta); exact(m, ['操作编号'])
     const 写入 = batchEntries(input)
     return actor.调用({ 操作: '状态.保存快照组', 参数: [{ 写入 }], 操作编号: m.操作编号 })
+  }
+  async function 保存分段快照组(input, meta) {
+    const m = 纯数据(meta); exact(m, ['操作编号'])
+    if (typeof m.操作编号 !== 'string' || /^[a-zA-Z0-9_-]{1,100}$/u.exec(m.操作编号)?.[0] !== m.操作编号) fail('INPUT_INVALID')
+    const rows = batchEntries(input), items = []; let total = 0
+    for (const row of rows) {
+      const bytes = Buffer.from(JSON.stringify(row.数据), 'utf8'); total += bytes.length
+      if (total > 8 * 1024 * 1024) fail('UPLOAD_LIMIT')
+      const { 数据, ...scope } = row
+      items.push({ bytes, spec: { ...scope, 字节数: bytes.length, 指纹: createHash('sha256').update(bytes).digest('hex') } })
+    }
+    const specs = items.map(x => x.spec)
+    const opened = await read('状态.开始分段', [{ 写入: specs }]); const id = opened.上传
+    try {
+      for (let i = 0; i < items.length; i++) for (let offset = 0; offset < items[i].bytes.length; offset += 24576) {
+        const 内容 = items[i].bytes.subarray(offset, offset + 24576).toString('base64')
+        const result = await read('状态.写入分段', [{ 上传: id, 序号: i, 偏移: offset, 内容 }])
+        if (result.偏移 !== offset + Buffer.from(内容, 'base64').length) fail('CHUNK_INVALID')
+      }
+      return await actor.调用({ 操作: '状态.提交分段', 参数: [{ 上传: id, 写入: specs }], 操作编号: m.操作编号 })
+    } finally {
+      try { await read('状态.取消分段', [{ 上传: id }]) } catch { /* 未确认提交时保留原错误；Worker退出或超时会回收暂存。 */ }
+    }
   }
   async function 打开后端(kind, id = 'main', options = {}) {
     const o = 纯数据(options)
@@ -59,6 +82,10 @@ function 创建异步状态接口(actor) {
         live(api); const m = 纯数据(meta); exact(m, ['操作编号', '预期版本'])
         return 保存快照组([{ 后端: api, 数据: data, 预期版本: m.预期版本 }], { 操作编号: m.操作编号 })
       },
+      保存分段快照: async (data, meta) => {
+        live(api); const m = 纯数据(meta); exact(m, ['操作编号', '预期版本'])
+        return 保存分段快照组([{ 后端: api, 数据: data, 预期版本: m.预期版本 }], { 操作编号: m.操作编号 })
+      },
       关闭() {
         if (b.closing) return b.closing
         b.closed = true
@@ -67,6 +94,6 @@ function 创建异步状态接口(actor) {
     })
     backends.set(api, b); return api
   }
-  return Object.freeze({ 打开后端, 保存快照组 })
+  return Object.freeze({ 打开后端, 保存快照组, 保存分段快照组 })
 }
 module.exports = { 创建异步状态接口 }

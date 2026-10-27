@@ -19,6 +19,33 @@ function target(kind, id) {
 }
 function 创建Worker状态命令(ctx) {
   const state = 内部状态操作(ctx), handles = new Map()
+  let upload = null
+  function dropUpload() { if (upload) { clearTimeout(upload.timer); upload = null } }
+  function staged(q) {
+    if (!upload || q.上传 !== upload.id) fail('UPLOAD_INVALID')
+    for (const x of upload.items) capability({ 令牌: x.令牌, 类型: x.类型, 编号: x.编号 })
+    return upload
+  }
+  function descriptors(q) {
+    exact(q, ['写入'])
+    if (!Array.isArray(q.写入) || !q.写入.length || q.写入.length > 16) fail('BATCH_LIMIT')
+    const seen = new Set(); let size = 0
+    for (const x of q.写入) {
+      exact(x, ['令牌', '类型', '编号', '预期版本', '字节数', '指纹'])
+      capability({ 令牌: x.令牌, 类型: x.类型, 编号: x.编号 })
+      const key = target(x.类型, x.编号); if (seen.has(key)) fail('DUPLICATE_TARGET'); seen.add(key)
+      if (!Number.isSafeInteger(x.预期版本) || x.预期版本 < 0 || !Number.isSafeInteger(x.字节数) || x.字节数 < 2 || x.字节数 > 8 * 1024 * 1024 || typeof x.指纹 !== 'string' || !/^[a-f0-9]{64}$/u.test(x.指纹)) fail('INPUT_INVALID')
+      size += x.字节数
+    }
+    if (size > 8 * 1024 * 1024) fail('UPLOAD_LIMIT')
+  }
+  function checkComplete(q) {
+    exact(q, ['上传', '写入']); descriptors({ 写入: q.写入 })
+    const u = staged(q)
+    if (q.写入.length !== u.items.length || q.写入.some((x, i) => Object.keys(x).some(k => x[k] !== u.items[i].spec[k]))) fail('UPLOAD_MISMATCH')
+    for (const x of u.items) if (x.used !== x.字节数 || createHash('sha256').update(x.bytes).digest('hex') !== x.指纹) fail('UPLOAD_INCOMPLETE')
+    return u
+  }
   function capability(q) {
     exact(q, ['令牌', '类型', '编号'])
     const h = handles.get(q.令牌)
@@ -71,6 +98,10 @@ function 创建Worker状态命令(ctx) {
           break
         case '状态.关闭后端': exact(q, ['令牌']); if (!handles.has(q.令牌)) fail('CAPABILITY_INVALID'); break
         case '状态.保存快照组': batchInput(q); break
+        case '状态.开始分段': descriptors(q); break
+        case '状态.写入分段': exact(q, ['上传', '序号', '偏移', '内容']); staged(q); break
+        case '状态.取消分段': exact(q, ['上传']); staged(q); break
+        case '状态.提交分段': checkComplete(q); break
         default: fail('OPERATION_FORBIDDEN')
       }
     },
@@ -100,6 +131,35 @@ function 创建Worker状态命令(ctx) {
       const end = Math.min(bytes.length, q.偏移 + 24576)
       return { 版本: x.版本, 总字节: bytes.length, 指纹: createHash('sha256').update(bytes).digest('hex'), 偏移: q.偏移, 内容: bytes.subarray(q.偏移, end).toString('base64'), 完成: end === bytes.length }
     },
+    开始分段(q) {
+      descriptors(q); if (upload) fail('UPLOAD_BUSY')
+      const items = q.写入.map(spec => ({ ...spec, spec, bytes: Buffer.alloc(spec.字节数), used: 0 }))
+      const id = randomUUID(), timer = setTimeout(() => { if (upload?.id === id) dropUpload() }, 120000); timer.unref()
+      upload = { id, items, timer }; return { 好: true, 上传: id }
+    },
+    写入分段(q) {
+      const u = staged(q)
+      if (!Number.isSafeInteger(q.序号) || q.序号 < 0 || q.序号 >= u.items.length || !Number.isSafeInteger(q.偏移) || typeof q.内容 !== 'string' || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(q.内容)) fail('INPUT_INVALID')
+      const x = u.items[q.序号], bytes = Buffer.from(q.内容, 'base64')
+      if (!bytes.length || bytes.length > 24576 || bytes.toString('base64') !== q.内容 || q.偏移 !== x.used || x.used + bytes.length > x.字节数) fail('INPUT_INVALID')
+      bytes.copy(x.bytes, x.used); x.used += bytes.length; return { 好: true, 偏移: x.used }
+    },
+    取消分段(q) { staged(q); dropUpload(); return { 好: true } },
+    提交分段(q) {
+      const u = checkComplete(q)
+      const result = 原子执行(ctx, db => {
+        const ids = new Set(), results = []
+        for (const x of u.items) {
+          const text = x.bytes.toString('utf8'); if (!Buffer.from(text, 'utf8').equals(x.bytes)) fail('INPUT_INVALID')
+          const data = 纯数据(JSON.parse(text)); validate(x.类型, data)
+          const version = state.写(db, x.类型, x.编号, data, x.预期版本)
+          results.push({ 类型: x.类型, 编号: x.编号, 版本: version })
+          if (['channel-map', 'channel-tasks'].includes(x.类型)) ids.add(x.编号)
+        }
+        checkChannels(db, ids); return { 好: true, 结果: results }
+      })
+      dropUpload(); return result
+    },
     保存快照组(q) {
       batchInput(q)
       return 原子执行(ctx, db => {
@@ -114,7 +174,7 @@ function 创建Worker状态命令(ctx) {
         return { 好: true, 结果: results }
       })
     },
-    关闭后端(q) { exact(q, ['令牌']); if (!handles.delete(q.令牌)) fail('CAPABILITY_INVALID'); return { 好: true } },
+    关闭后端(q) { exact(q, ['令牌']); if (!handles.delete(q.令牌)) fail('CAPABILITY_INVALID'); if (upload?.items.some(x => x.令牌 === q.令牌)) dropUpload(); return { 好: true } },
   })
 }
 module.exports = { 创建Worker状态命令, MAX_HANDLES }
