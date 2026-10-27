@@ -54,7 +54,7 @@ function 原子执行(上下文, 做) {
     db.exec('BEGIN IMMEDIATE'); 已开始 = true
     const 果 = 做(db)
     if (果 && typeof 果.then === 'function') 失败('SQLITE_CONTEXT_SYNC_REQUIRED')
-    内部.提交前?.()
+    内部.提交前?.(果)
     正在提交 = true; db.exec('COMMIT')
     return 果
   } catch (错) {
