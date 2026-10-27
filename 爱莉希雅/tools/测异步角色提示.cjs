@@ -7,13 +7,14 @@ const project = path.resolve(__dirname, '..'), read = fs.readFileSync, load = Mo
 const auditedRead = function (file, ...args) { if (typeof file === 'string') { const p = path.resolve(file); if (![...approved].some(r => inside(r, p)) && !(inside(project, p) && (/\.(cjs|js)$/u.test(p) || path.basename(p) === 'package.json'))) throw Error('PROMPT_FIXTURE_READ_OUTSIDE') } return read.call(this, file, ...args) }
 fs.readFileSync = auditedRead
 Module._load = function (id, ...args) { if (/^(node:)?(http|https|net|tls|dns)$/u.test(id)) throw Error('PROMPT_FIXTURE_NETWORK_FORBIDDEN'); return load.call(this, id, ...args) }
-const 原提示词 = require('../脑/提示词.cjs'), 原对话 = require('../脑/对话.cjs'), 原记忆 = require('../脑/记忆.cjs'), 原临时 = require('../脑/临时记忆召回.cjs'), 尺 = require('../脑/量长度.cjs'), 修 = require('../脑/修剪工具结果.cjs')
+const 原提示词 = require('../脑/提示词.cjs'), 原对话 = require('../脑/对话.cjs'), 原记忆 = require('../脑/记忆.cjs'), 原临时 = require('../脑/临时记忆召回.cjs'), 原关系召回 = require('../脑/长期记忆关系召回.cjs'), 原关系图 = require('../脑/记忆关系图.cjs'), 尺 = require('../脑/量长度.cjs'), 修 = require('../脑/修剪工具结果.cjs')
 // Restore Node's loader after module initialization; only explicit fixture paths are used below.
 Module._load = load; fs.readFileSync = read
 const { 新建隔离盘库 } = require('../storage/sqlite-disk.cjs'), { 启动隔离存储Worker, 内部Worker测试 } = require('../storage/sqlite-worker.cjs'), { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs'), { 创建异步角色提示 } = require('../core/异步角色提示.cjs'), { 创建异步假对话核心 } = require('../core/异步假对话核心.cjs'), { 创建假模型连接 } = require('../脑/模型连接.cjs')
+const { 创建异步关系图, 读取同仓一跳 } = require('../core/异步关系图.cjs')
 const roots = new Set([root]), actors = new Set(), tests = [], test = (name, fn) => tests.push([name, fn]), time = '2026-10-27T00:00:00.000Z'
 async function setup(local = false) { const options = local ? { 用途: 'isolated-local-sqlite-disk', 包含私密: true } : { 用途: 'synthetic-sqlite-disk' }, disk = 新建隔离盘库(options), dir = disk.目录; disk.关闭(); roots.add(dir); approved.add(dir); const actor = await 启动隔离存储Worker({ ...options, 目录: dir }); actors.add(actor); return { actor, f: 创建异步仓储门面(actor) } }
-const adapter = (actor, at = time) => 创建异步角色提示({ actor, 原提示词, 创建临时召回器: 原临时.创建召回器, 挑历史: 原对话.挑历史, 历史内容: 原对话.给模型的历史内容, 估算: 尺.估, 默认线: 修.默认线, 取现在: () => new Date(at) })
+const adapter = (actor, at = time, 关系图) => 创建异步角色提示({ actor, 原提示词, 创建临时召回器: 原临时.创建召回器, 关系图, 挑历史: 原对话.挑历史, 历史内容: 原对话.给模型的历史内容, 估算: 尺.估, 默认线: 修.默认线, 取现在: () => new Date(at) })
 async function add(f, id, fields) { const v = (await f.记忆.取统计()).版本; return f.记忆.新增长期({ 操作编号: id, 时间: time, 预期版本: v, ...fields }) }
 async function temp(f, id, fields) { const v = (await f.记忆.取统计()).版本; return f.记忆.新增临时({ 操作编号: id, 时间: time, 预期版本: v, ...fields }) }
 test('虚构角色卡和长期记忆输出与原提示拼法一致，临时召回复用原规则', async () => {
@@ -36,7 +37,8 @@ test('记忆中途变更明确拒绝，不混合不同版本', async () => {
 test('确有虚构私密日记也不进入普通提示', async () => {
   const { actor, f } = await setup(true), privateFacade = 创建异步仓储门面(actor, { 本机私密: true }), diary = require('./fixtures/sqlite-backup-scenario.cjs').篇(true)
   await privateFacade.日记.写入私密({ 日记: diary, 预期版本: 0 }, { 操作编号: 'private-diary' }); assert.equal((await privateFacade.日记.读取本机私密()).length, 1); assert.equal(f.日记.读取本机私密, undefined)
-  const result = await adapter(actor).拼提示({ 历史: [], 输入: '你好' }); assert.equal(result.at(-1).content, '你好'); assert.equal(JSON.stringify(result).includes(diary.模块[0].正文), false)
+  const g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 })
+  const result = await adapter(actor, time, g).拼提示({ 历史: [], 输入: '你好' }); assert.equal(result.at(-1).content, '你好'); assert.equal(JSON.stringify(result).includes(diary.模块[0].正文), false); await g.关闭()
 })
 test('临时记忆过期或待确认时不会进入提示', async () => {
   const { actor, f } = await setup(); await temp(f, 'expiring', { 类别: '候选偏好', 内容: '你喜欢雨后的散步', 细节: { 手动: true, 保留天数: 1 } })
@@ -47,5 +49,42 @@ test('临时记忆过期或待确认时不会进入提示', async () => {
 test('长期事实沿用原来只取最后40条的顺序', async () => {
   const { actor, f } = await setup(); for (let i = 0; i < 41; i++) await add(f, 'fact-' + i, { 类别: '事实', 内容: '你喜欢虚构条目' + i })
   const result = await adapter(actor).拼提示({ 历史: [], 输入: '你好' }); assert.equal(result[0].content.includes('你喜欢虚构条目0'), false); assert(result[0].content.includes('你喜欢虚构条目40'))
+})
+test('一跳关系使用旧召回规则并加入假核心提示', async () => {
+  const { actor, f } = await setup(), a = await add(f, 'rel-seed', { 类别: '事实', 内容: '你喜欢紫罗兰花茶' }), b = await add(f, 'rel-next', { 类别: '经历', 内容: '我们一起听过海风曲子' }); let reference
+  const g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: deps => { reference = 原关系召回.创建召回器(deps); return reference } })
+  const edge = { 类型: '后续发展', 从: { 类别: '事实', 编号: a.目标编号 }, 到: { 类别: '经历', 编号: b.目标编号 } }, p = await g.准备('新增', edge); assert.equal((await g.提交(p, { 操作编号: 'rel-add' })).好, true)
+  const query = '你喜欢紫罗兰花茶吗', messages = await adapter(actor, time, g).拼提示({ 历史: [], 输入: query }), expected = reference.拼给模型(reference.召回({ 查询: query }))
+  assert(expected.includes('海风曲子')); assert(messages.some(m => m.content === expected))
+  let captured; const core = 创建异步假对话核心({ actor, 模型连接: 创建假模型连接({ 生成: async m => { captured = m; return '虚构回答' } }), 拼提示: adapter(actor, time, g).拼提示, 取现在: () => new Date(time) })
+  const msg = { ...require('./fixtures/渠道契约-v1.json').本人私聊, 端点: { 渠道: 'fake', 账号: 'relation-fixture' }, 正文: query }; await core.处理(msg, { 内部对话编号: 'channel-relation' }); assert(captured.some(m => m.content.includes('海风曲子'))); await core.关闭(); await g.关闭()
+})
+test('关系图须属于同一个Worker，关闭后不能召回', async () => {
+  const one = await setup(), two = await setup(), g = await 创建异步关系图(one.actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 })
+  await assert.rejects(adapter(two.actor, time, g).拼提示({ 历史: [], 输入: '你好' }), { message: 'ASYNC_GRAPH_HANDLE_INVALID' }); await g.关闭(); await assert.rejects(读取同仓一跳(one.actor, g, '你好'), { message: 'ASYNC_GRAPH_CLOSED' })
+})
+test('反向更新及矛盾关系不进入一跳提示', async () => {
+  const { actor, f } = await setup(), old = await add(f, 'old-note', { 类别: '事实', 内容: '你喜欢木琴曲调' }), updated = await add(f, 'new-note', { 类别: '经历', 内容: '你喜欢琥珀手工' }), conflict = await add(f, 'conflict-note', { 类别: '小本子', 内容: '我记得鲸鱼展览' })
+  const g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 })
+  for (const [id, type, from, to] of [['update-edge', '更新', { 类别: '事实', 编号: old.目标编号 }, { 类别: '经历', 编号: updated.目标编号 }], ['conflict-edge', '矛盾', { 类别: '经历', 编号: updated.目标编号 }, { 类别: '小本子', 编号: conflict.目标编号 }]]) {
+    const p = await g.准备('新增', { 类型: type, 从: from, 到: to }); assert.equal((await g.提交(p, { 操作编号: id })).好, true)
+  }
+  const forward = await 读取同仓一跳(actor, g, '木琴曲调'); assert(forward.提示.includes('琥珀手工'))
+  const reverse = await 读取同仓一跳(actor, g, '琥珀手工'); assert.equal(reverse.提示, '')
+  await g.关闭()
+})
+test('长期关系召回失败明确拒绝，不退化为空结果', async () => {
+  const { actor } = await setup(), g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: () => ({ 召回: () => ({ 好: false }), 拼给模型: () => '' }) })
+  await assert.rejects(adapter(actor, time, g).拼提示({ 历史: [], 输入: '你好' }), { message: 'ASYNC_GRAPH_RECALL_FAILED' }); await g.关闭()
+})
+test('基础记忆与图谱快照间发生变更时拒绝混合版本', async () => {
+  const { actor, f } = await setup(), g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 }), w = 内部Worker测试(actor).worker, old = w.postMessage; let stats = 0, write
+  w.postMessage = function (message, ...args) { const result = old.call(this, message, ...args); if (message?.data?.操作 === '记忆.取统计' && ++stats === 2) write = f.记忆.新增长期({ 操作编号: 'graph-race', 时间: time, 预期版本: 0, 类别: '事实', 内容: '你喜欢新的茶' }); return result }
+  try { await assert.rejects(adapter(actor, time, g).拼提示({ 历史: [], 输入: '你好' }), { message: 'ASYNC_CHARACTER_PROMPT_VERSION_CONFLICT' }); await write } finally { w.postMessage = old; await g.关闭() }
+})
+test('一跳图谱读取期间关系变化时拒绝旧快照', async () => {
+  const { actor, f } = await setup(), g = await 创建异步关系图(actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 }), raw = await f.状态.打开后端('relations'), w = 内部Worker测试(actor).worker, old = w.postMessage; let write
+  w.postMessage = function (message, ...args) { const result = old.call(this, message, ...args); if (!write && message?.data?.操作 === '状态.读取图谱记忆页') write = raw.保存快照({ 格式版本: 2, 关系: [], 自动抑制: [], 扩展: true }, { 预期版本: 0, 操作编号: 'graph-read-race' }); return result }
+  try { await assert.rejects(adapter(actor, time, g).拼提示({ 历史: [], 输入: '你好' }), { message: 'ASYNC_GRAPH_VERSION_CONFLICT' }); await write } finally { w.postMessage = old; await raw.关闭(); await g.关闭() }
 })
 ;(async () => { let pass = 0; try { for (const [name, fn] of tests) { try { await fn(); pass++; console.log('PASS ' + name) } catch (e) { process.exitCode = 1; console.error('FAIL ' + name, e) } } console.log(`S16D3 prompt: ${pass}/${tests.length}`) } finally { fs.readFileSync = read; Module._load = load; for (const a of actors) try { await a.关闭() } catch {} for (const dir of roots) { const real = fs.realpathSync(dir); if (path.dirname(real) !== fs.realpathSync(os.tmpdir()) || !/^elysia-(sqlite-disk|S16D3-prompt-fixture)-[a-zA-Z0-9]+$/u.test(path.basename(real)) || fs.lstatSync(dir).isSymbolicLink()) throw Error('CLEANUP_OUTSIDE'); fs.rmSync(real, { recursive: true, force: true }) } } })()

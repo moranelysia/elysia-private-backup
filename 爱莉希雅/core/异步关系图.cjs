@@ -4,12 +4,12 @@ const { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs
 const { 纯数据 } = require('../storage/sqlite-state.cjs')
 const { exact } = require('../storage/sqlite-worker-protocol.cjs')
 const { 规范记忆结构 } = require('../脑/记忆结构.cjs')
-const plans = new WeakMap(), owners = new WeakMap()
+const plans = new WeakMap(), owners = new WeakMap(), recallHandles = new WeakMap()
 const fail = code => { throw Error('ASYNC_GRAPH_' + code) }
 const clone = x => x && typeof x === 'object' ? 纯数据(x) : 纯数据({ 值: x }).值
 function freeze(x) { if (x && typeof x === 'object') { for (const v of Object.values(x)) freeze(v); Object.freeze(x) } return x }
-async function 创建异步关系图(actor, { 创建关系图库, 现在, 造编号 } = {}) {
-  if (typeof 创建关系图库 !== 'function' || (现在 !== undefined && typeof 现在 !== 'function') || (造编号 !== undefined && typeof 造编号 !== 'function')) fail('DEPENDENCY_INVALID')
+async function 创建异步关系图(actor, { 创建关系图库, 创建长期关系召回器, 现在, 造编号 } = {}) {
+  if (typeof 创建关系图库 !== 'function' || (创建长期关系召回器 !== undefined && typeof 创建长期关系召回器 !== 'function') || (现在 !== undefined && typeof 现在 !== 'function') || (造编号 !== undefined && typeof 造编号 !== 'function')) fail('DEPENDENCY_INVALID')
   const f = 创建异步仓储门面(actor), relation = await f.状态.打开后端('relations', 'main')
   let layout
   try { layout = await f.状态.打开后端('relation-layout', 'main') } catch (e) { await relation.关闭(); throw e }
@@ -44,7 +44,7 @@ async function 创建异步关系图(actor, { 创建关系图库, 现在, 造编
     const e = engine(s, writes); if (!e || typeof e[method] !== 'function') fail('DEPENDENCY_INVALID')
     return e[method](clone(input))
   }
-  return Object.freeze({
+  const handle = Object.freeze({
     async 读取(method, input = {}) {
       if (!['查询', '读取已保存一跳'].includes(method)) fail('METHOD_INVALID')
       const s = await snapshot(), writes = {}, result = await invoke(method, input, s, writes)
@@ -72,5 +72,26 @@ async function 创建异步关系图(actor, { 创建关系图库, 现在, 造编
     释放计划(plan) { const p = plans.get(plan); if (!p || p.actor !== actor) fail('PLAN_INVALID'); plans.delete(plan); owned.delete(plan) },
     async 关闭() { closed = true; await Promise.all([relation.关闭(), layout.关闭()]) },
   })
+  recallHandles.set(handle, { actor, async 召回(查询) {
+    check()
+    if (typeof 创建长期关系召回器 !== 'function') fail('RECALL_DEPENDENCY_INVALID')
+    if (typeof 查询 !== 'string') fail('INPUT_INVALID')
+    const s = await snapshot(), writes = {}, library = engine(s, writes)
+    const recall = 创建长期关系召回器({ 长期记忆库: { 全部长期记忆: () => clone(s.memories) }, 关系图库: library })
+    if (!recall || typeof recall.召回 !== 'function' || typeof recall.拼给模型 !== 'function') fail('RECALL_DEPENDENCY_INVALID')
+    const result = recall.召回({ 查询 })
+    if (!result || result.好 !== true) fail('RECALL_FAILED')
+    const 提示 = recall.拼给模型(result)
+    check()
+    if (Object.keys(writes).length) fail('UNEXPECTED_WRITE')
+    if (typeof 提示 !== 'string') fail('RECALL_DEPENDENCY_INVALID')
+    return { 记忆版本: s.version, 图谱版本: s.r.版本, 提示 }
+  } })
+  return handle
 }
-module.exports = { 创建异步关系图 }
+async function 读取同仓一跳(actor, handle, 查询) {
+  const binding = recallHandles.get(handle)
+  if (!binding || binding.actor !== actor) fail('HANDLE_INVALID')
+  return binding.召回(查询)
+}
+module.exports = { 创建异步关系图, 读取同仓一跳 }
