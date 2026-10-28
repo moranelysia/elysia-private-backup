@@ -19,6 +19,7 @@ function 创建异步仓储门面(actor,options={}){
  const 轮次执行={读取:async id=>read('轮次执行.读取',[id]),取暂存结果:async id=>read('轮次执行.取暂存结果',[id])}
  for(const name of ['预留','标记可能发送','标记未知','暂存结果','模拟完成'])轮次执行[name]=async(q,meta)=>write('轮次执行.'+name,[q],meta)
  const 备份=Object.freeze({虚构轮次快照:async scope=>read('备份.虚构轮次快照',[scope])})
- return Object.freeze({状态:创建异步状态接口(actor),会话,记忆:Object.freeze(记忆),日记:Object.freeze(日记),旧格式,轮次执行:Object.freeze(轮次执行),备份})
+ const 模型事务={};for(const name of ['开始','成功','未知'])模型事务[name]=async(q,meta)=>write('模型事务.'+name,[q],meta)
+ return Object.freeze({状态:创建异步状态接口(actor),会话,记忆:Object.freeze(记忆),日记:Object.freeze(日记),旧格式,轮次执行:Object.freeze(轮次执行),模型事务:Object.freeze(模型事务),备份})
 }
 module.exports={创建异步仓储门面}
