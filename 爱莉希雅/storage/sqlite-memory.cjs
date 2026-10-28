@@ -11,6 +11,7 @@ const 叙述 = require('../脑/记忆叙述.cjs')
 const { 晋升到长期 } = require('../脑/临时记忆晋升.cjs')
 const 长期分类 = ['事实', '经历', '小本子']
 const 标记事务句柄 = new WeakMap()
+const 事务内记忆句柄 = new WeakMap()
 const 定义 = [
   ['memory_temporary', "CREATE TABLE memory_temporary (memory_id TEXT PRIMARY KEY, lifecycle TEXT NOT NULL, confirmation TEXT NOT NULL, expires_raw TEXT NOT NULL, record_json TEXT NOT NULL CHECK(json_valid(record_json))) STRICT"],
   ['memory_evidence', 'CREATE TABLE memory_evidence (memory_id TEXT NOT NULL REFERENCES memory_temporary(memory_id) ON DELETE CASCADE, fingerprint TEXT NOT NULL, position INTEGER NOT NULL, record_json TEXT NOT NULL CHECK(json_valid(record_json)), PRIMARY KEY(memory_id,fingerprint), UNIQUE(memory_id,position)) STRICT'],
@@ -49,6 +50,7 @@ function 有敏感(一) {
   return Object.entries(一).some(([k, v]) => 自评.有敏感或内部内容(k + ': ' + (typeof v === 'string' ? v : '')) || 有敏感(v))
 }
 function 创建记忆仓储(上下文) {
+  let 允许事务内调用 = false
   创建会话仓储(上下文)
   const 初 = 取内部(上下文).db, 规范SQL = (文) => 文.replace(/\s+/gu, ' ').trim()
   function 架构(db) {
@@ -123,7 +125,7 @@ function 创建记忆仓储(上下文) {
     try {
       const 一 = 纯输入(原); 键检查(一, ['操作编号', '时间', '预期版本', ...允许]); 编号(一.操作编号); UTC(一.时间); 整数(一.预期版本)
       const 摘要 = 指纹({ 类型, 输入: 一 }); 连接()
-      return 原子执行(上下文, (db) => {
+      const 执行 = (db) => {
         const 旧 = db.prepare('SELECT * FROM memory_operations WHERE operation_id=?').get(一.操作编号)
         if (旧) { if (旧.kind !== 类型 || 旧.digest !== 摘要) 失败('SQLITE_MEMORY_OPERATION_CONFLICT'); if (指纹(JSON.parse(旧.receipt_json)) !== 旧.receipt_hash) 失败('SQLITE_MEMORY_INTEGRITY_FAILED'); return JSON.parse(旧.receipt_json) }
         const 原版本 = 版本(db); if (原版本 !== 一.预期版本) 失败('SQLITE_MEMORY_VERSION_CONFLICT')
@@ -132,7 +134,8 @@ function 创建记忆仓储(上下文) {
         db.prepare("UPDATE repository_meta SET value=? WHERE key='memory_revision'").run(String(新版本))
         const 回执 = { 好: true, 状态: 'committed', 操作编号: 一.操作编号, 版本: 新版本, ...结果 }
         db.prepare('INSERT INTO memory_operations VALUES(?,?,?,?,?)').run(一.操作编号, 类型, 摘要, JSON.stringify(回执), 指纹(回执)); return 回执
-      })
+      }
+      return 允许事务内调用 ? 执行(取内部(上下文).db) : 原子执行(上下文, 执行)
     } catch (错) {
       const 代码 = /^SQLITE_(MEMORY|CONTEXT|CHAT|LEGACY)_[A-Z_]+$/u.test(错.message || '') ? 错.message : 'SQLITE_MEMORY_WRITE_FAILED'
       return { 好: false, 状态: ['SQLITE_CONTEXT_COMMIT_UNKNOWN', 'SQLITE_CONTEXT_ROLLBACK_FAILED', 'SQLITE_CONTEXT_UNUSABLE'].includes(代码) ? 'unknown' : 代码 === 'SQLITE_CONTEXT_TRANSACTION_FAILED' ? 'rolled-back' : 'rejected', 代码 }
@@ -183,7 +186,7 @@ function 创建记忆仓储(上下文) {
     return 回执
   })
   function 读(做) { try { return 做(连接()) } catch (错) { if (/^SQLITE_(MEMORY|CONTEXT|CHAT|LEGACY)_[A-Z_]+$/u.test(错.message || '')) throw 错; 失败('SQLITE_MEMORY_READ_FAILED') } }
-  return Object.freeze({
+  const api = Object.freeze({
     新增临时(原) { return 写操作('create-temp', 原, ['类别', '内容', '细节', '来源消息编号', '依据原文', '扩展'], (db, 一, 库) => {
       if (!状态.固定分类.includes(一.类别)) 失败(); 文本(一.内容)
       const 细节 = 一.细节 === undefined ? {} : 一.细节; 键检查(细节, ['记忆类型', '元数据', '标签', '重要性', '保留天数', '手动'])
@@ -294,10 +297,18 @@ function 创建记忆仓储(上下文) {
       return { 好: true, 版本: 版本(db) }
     }) },
   })
+  事务内记忆句柄.set(上下文, (name,input) => {
+    const state=取内部(上下文)
+    if(!state.写入中||!state.db.isTransaction||允许事务内调用)失败('SQLITE_MEMORY_TRANSACTION_REQUIRED')
+    if(!['新增临时','评估并晋升','人工处理临时'].includes(name)||(name==='人工处理临时'&&input?.动作!=='提议替代'))失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
+    try{允许事务内调用=true;const result=api[name](input);if(!result?.好)失败(result?.代码||'SQLITE_MEMORY_WRITE_FAILED');return result}finally{允许事务内调用=false}
+  })
+  return api
 }
 function 内部事务应用标记(上下文, 原) {
   const 执行 = 标记事务句柄.get(上下文)
   if (!执行) 失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
   return 执行(原)
 }
-module.exports = { 创建记忆仓储, 内部事务应用标记 }
+function 内部事务记忆操作(上下文,name,input){const fn=事务内记忆句柄.get(上下文);if(!fn)失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED');return fn(name,input)}
+module.exports = { 创建记忆仓储, 内部事务应用标记, 内部事务记忆操作 }

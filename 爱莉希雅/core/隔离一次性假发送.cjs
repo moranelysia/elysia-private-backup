@@ -52,6 +52,13 @@ function 创建隔离一次性调度({ actor, send, validate, closeTransport, �
       err.请求编号 = id; err.阶段 = stage; if (/^CORE_[A-Z_]+$/u.test(e?.message || '')) err.原因 = e.message; if (dispatched || writes.size || e?.状态 === 'unknown') err.状态 = 'unknown'; throw err
     }
   }
+  function commit(operation, 输入, 中止, expected) {
+    if (closed || abort.signal.aborted) fail('ABORTED'); if (fault) fail('UNCERTAIN'); if (active) fail('BUSY')
+    if (中止 !== undefined && !(中止 instanceof AbortSignal)) fail('INPUT_INVALID')
+    const q = 纯数据(输入), signal = 中止 ? AbortSignal.any([abort.signal, 中止]) : abort.signal, epoch = channel.取世代()
+    const p = (async () => { try { check(signal,epoch); const r = await 等待有界(call(operation,q,q.操作编号),signal); check(signal,epoch); if (!r?.好 || r.状态 !== expected || r.轮次执行?.状态 !== 'committed') fail('RECEIPT_INVALID'); return r } catch (e) { fault = true; throw e } })()
+    active = p; void p.finally(() => { if (active === p) active = null }).catch(() => {}); return p
+  }
   const api = Object.freeze({
     要一轮(input) {
       if (closed || abort.signal.aborted) fail('ABORTED'); if (fault) fail('UNCERTAIN'); if (active) fail('BUSY'); if (sent >= 最大请求) fail('BUDGET')
@@ -65,12 +72,9 @@ function 创建隔离一次性调度({ actor, send, validate, closeTransport, �
       const p = run(x, combined, epoch).finally(() => clearTimeout(timer)); active = p; void p.finally(() => { if (active === p) active = null }).catch(() => {}); return p
     },
     提交绑定聊天(输入, 中止) {
-      if (closed || abort.signal.aborted) fail('ABORTED'); if (fault) fail('UNCERTAIN'); if (active) fail('BUSY')
-      if (中止 !== undefined && !(中止 instanceof AbortSignal)) fail('INPUT_INVALID')
-      const q = 纯数据(输入), signal = 中止 ? AbortSignal.any([abort.signal, 中止]) : abort.signal, epoch = channel.取世代()
-      const p = (async () => { try { check(signal,epoch); const r = await 等待有界(call('模型事务.提交绑定聊天',q,q.操作编号),signal); check(signal,epoch); if (!r?.好 || r.状态 !== 'saved' || r.轮次执行?.状态 !== 'committed') fail('RECEIPT_INVALID'); return r } catch (e) { fault = true; throw e } })()
-      active = p; void p.finally(() => { if (active === p) active = null }).catch(() => {}); return p
+      return commit('模型事务.提交绑定聊天',输入,中止,'saved')
     },
+    提交后台提取(输入, 中止) { return commit('模型事务.提交后台提取',输入,中止,'committed') },
     关闭() { if (!closing) { closed = true; abort.abort(); closeTransport?.(); closing = Promise.resolve(active).catch(() => {}).then(() => Promise.allSettled([...writes, ...inflightTransport])).then(() => undefined) } return closing },
   })
   brokers.set(api, { actor, claimed:false, 真实 })
@@ -83,4 +87,5 @@ function 创建隔离一次性真实发送({ 模型连接, ...options } = {}) {
   catch (e) { controlled.关闭(); throw e }
 }
 function 领取隔离绑定调度(api, actor) { const entry = brokers.get(api); if (!entry || entry.actor !== actor || entry.claimed || !entry.真实) fail('BINDING_CLAIM_FORBIDDEN'); entry.claimed = true; return api }
-module.exports = { 创建虚构传输, 创建隔离一次性假发送, 创建隔离一次性真实发送, 领取隔离绑定调度 }
+function 校验隔离后台调度(api, actor) { const entry = brokers.get(api); if (!entry || entry.actor !== actor || !entry.claimed || !entry.真实) fail('BINDING_CLAIM_FORBIDDEN'); return api }
+module.exports = { 创建虚构传输, 创建隔离一次性假发送, 创建隔离一次性真实发送, 领取隔离绑定调度, 校验隔离后台调度 }
