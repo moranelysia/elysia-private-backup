@@ -115,15 +115,15 @@ function 创建隔离仓储(选项) {
   const 上下文 = 创建内存上下文(选项)
   try { return 组合(上下文) } catch (错) { 上下文.关闭(); throw 错 }
 }
-function 创建虚构轮次仓储() {
+function 创建虚构轮次仓储(分段 = false) {
   const 上下文 = 创建内存上下文({ 用途: 'synthetic-sqlite-repository' })
-  try { require('./sqlite-turn-attempt-memory.cjs').创建隔离内存轮次执行仓储(上下文); return 组合(上下文, true) } catch (错) { 上下文.关闭(); throw 错 }
+  try { require('./sqlite-turn-attempt-memory.cjs').创建隔离内存轮次执行仓储(上下文); if(分段)原子执行(上下文,db=>require('./sqlite-segmented-receipts.cjs').初始化(db)); return 组合(上下文, true, 分段) } catch (错) { 上下文.关闭(); throw 错 }
 }
 function 创建本机影子仓储(选项) {
   const 上下文 = 创建本机影子上下文(选项)
   try { return 组合(上下文) } catch (错) { 上下文.关闭(); throw 错 }
 }
-function 组合(上下文, 虚构轮次 = false) {
+function 组合(上下文, 虚构轮次 = false, 分段 = false) {
   if (typeof 虚构轮次 !== 'boolean' || (虚构轮次 && 取内部(上下文).本机)) 失败('SCOPE_REQUIRED')
   const 会话 = 创建会话仓储(上下文), 记忆 = 创建记忆仓储(上下文), 状态 = 创建状态仓储(上下文), 日记 = 创建日记仓储(上下文), 旧格式 = 创建旧格式仓储(上下文)
   const 内部 = 取内部(上下文), { db, 本机 } = 内部, 原格式用途 = 本机 ? 'local-json-rollback' : 'synthetic-json-rollback'
@@ -139,6 +139,7 @@ function 组合(上下文, 虚构轮次 = false) {
     if (虚构轮次) {
       if (db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_attempt_schema'").get()?.value !== '1') 失败('TURN_FORMAT_INVALID')
       require('./sqlite-turn-attempt-memory.cjs').校验虚构轮次记录(db)
+      if(分段)require('./sqlite-segmented-receipts.cjs').核验(db)
     }
     for (const 一 of db.prepare('SELECT kind,body_json FROM state_documents').all()) {
       const 值 = JSON.parse(一.body_json)

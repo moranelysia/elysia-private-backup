@@ -18,7 +18,7 @@ function 创建异步仓储门面(actor,options={}){
  const 旧格式=Object.freeze({读最早历史页:async(q={})=>read('旧格式.读最早历史页',[q]),读消息页:async q=>read('旧格式.读消息页',[q])})
  const 轮次执行={读取:async id=>read('轮次执行.读取',[id]),取暂存结果:async id=>read('轮次执行.取暂存结果',[id])}
  for(const name of ['预留','标记可能发送','标记未知','暂存结果','模拟完成'])轮次执行[name]=async(q,meta)=>write('轮次执行.'+name,[q],meta)
- const 备份=Object.freeze({虚构轮次快照:async scope=>read('备份.虚构轮次快照',[scope])})
+ const 备份=Object.freeze({虚构轮次快照:async scope=>read('备份.虚构轮次快照',[scope]),虚构分段快照:async scope=>read('备份.虚构分段快照',[scope])})
  const 模型事务={};for(const name of ['开始','成功','未知','提交聊天','开始绑定聊天','提交绑定聊天'])模型事务[name]=async(q,meta)=>write('模型事务.'+name,[q],meta);模型事务.读取聊天绑定=async id=>read('模型事务.读取聊天绑定',[id])
  return Object.freeze({状态:创建异步状态接口(actor),会话,记忆:Object.freeze(记忆),日记:Object.freeze(日记),旧格式,轮次执行:Object.freeze(轮次执行),模型事务:Object.freeze(模型事务),备份})
 }
