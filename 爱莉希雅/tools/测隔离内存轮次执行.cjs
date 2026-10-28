@@ -1,7 +1,7 @@
 'use strict'
 const assert = require('node:assert/strict'), { randomUUID } = require('node:crypto')
-const { 创建内存上下文, 创建本机影子上下文, 取内部 } = require('../storage/sqlite-context.cjs')
-const { 创建隔离内存轮次执行仓储 } = require('../storage/sqlite-turn-attempt-memory.cjs')
+const { 创建内存上下文, 创建本机影子上下文, 取内部, 原子执行 } = require('../storage/sqlite-context.cjs')
+const { 创建隔离内存轮次执行仓储, 内部事务轮次执行 } = require('../storage/sqlite-turn-attempt-memory.cjs')
 const tests = [], test = (name, fn) => tests.push([name, fn]), contexts = []
 function fresh() { const ctx = 创建内存上下文({ 用途: 'synthetic-sqlite-repository' }); contexts.push(ctx); return { ctx, store: 创建隔离内存轮次执行仓储(ctx) } }
 const spec = (id = 'turn-a', overrides = {}) => ({ 轮次键: id, 指纹: 'a'.repeat(64), 请求编号: randomUUID(), 模型: 'deepseek-flash', 用途: 'synthetic-shared', ...overrides })
@@ -23,5 +23,23 @@ test('只接受显式虚构共享范围，字段严格且不执行getter', () =>
 test('拒绝空、超长和非法编码的暂存结果，保留原状态', () => { const { store } = fresh(); store.预留(spec()); mutate(store, '标记可能发送', 'turn-a', 1); for (const 正文 of ['', ' '.repeat(2), 'x'.repeat(8001), '\ud800']) assert.throws(() => store.暂存结果({ 轮次键: 'turn-a', 预期版本: 2, 正文 }), /INPUT_INVALID/u); assert.equal(store.读取('turn-a').状态, 'dispatch_possible'); assert.equal(store.暂存结果({ 轮次键: 'turn-a', 预期版本: 2, 正文: 'x'.repeat(8000) }).状态, 'result_ready') })
 test('容量满时拒绝新轮次且已有轮次仍能识别', () => { const { ctx, store } = fresh(), input = spec(); store.预留(input); const db = 取内部(ctx).db; db.exec('BEGIN'); const q = db.prepare("INSERT INTO synthetic_turn_attempts VALUES(?,?,?,?,'reserved',1,NULL)"); for (let i = 0; i < 9999; i++) q.run('bulk-' + i, 'a'.repeat(64), randomUUID(), 'deepseek-flash'); db.exec('COMMIT'); assert.throws(() => store.预留(spec('new-turn')), /LIMIT/u); assert.equal(store.预留(input).已有, true) })
 test('拒绝伪造及本机影子上下文；关闭后不可读写', () => { assert.throws(() => 创建隔离内存轮次执行仓储({}), /CONTEXT_REQUIRED/u); const shadow = 创建本机影子上下文({ 用途: 'local-shadow-repository', 包含私密: true }); contexts.push(shadow); assert.throws(() => 创建隔离内存轮次执行仓储(shadow), /SCOPE_REQUIRED/u); const { ctx, store } = fresh(); ctx.关闭(); assert.throws(() => store.读取('turn-a'), /CONTEXT_CLOSED/u) })
+test('内部能力只接受初始化上下文和受控事务，手动BEGIN不能伪造', () => {
+  const raw = 创建内存上下文({ 用途: 'synthetic-sqlite-repository' }); contexts.push(raw); assert.throws(() => 内部事务轮次执行(raw, '预留', spec()), /TRANSACTION_CAPABILITY_REQUIRED/u)
+  const { ctx, store } = fresh(), db = 取内部(ctx).db; assert.throws(() => 内部事务轮次执行(ctx, '预留', spec()), /TRANSACTION_REQUIRED/u); db.exec('BEGIN'); try { assert.throws(() => 内部事务轮次执行(ctx, '预留', spec()), /TRANSACTION_REQUIRED/u) } finally { db.exec('ROLLBACK') }
+  assert.throws(() => 原子执行(ctx, () => 内部事务轮次执行(ctx, '__proto__', {})), /OPERATION_INVALID/u); assert.equal(store.读取('turn-a'), null)
+})
+test('事务内多次转移和其他数据随外层失败一起回滚', () => {
+  const { ctx, store } = fresh(), input = spec(), db = 取内部(ctx).db
+  assert.throws(() => 原子执行(ctx, sql => { 内部事务轮次执行(ctx, '预留', input); 内部事务轮次执行(ctx, '标记可能发送', { 轮次键: input.轮次键, 预期版本: 1 }); 内部事务轮次执行(ctx, '暂存结果', { 轮次键: input.轮次键, 预期版本: 2, 正文: '虚构回复' }); sql.prepare('INSERT INTO repository_meta VALUES(?,?)').run('synthetic_transaction_marker', 'test'); throw Error('outer') }), /SQLITE_CONTEXT_TRANSACTION_FAILED/u)
+  assert.equal(store.读取(input.轮次键), null); assert.equal(db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_transaction_marker'").get(), undefined)
+})
+test('事务内成功复用原规则，外层事务返回后状态生效', () => {
+  const { ctx, store } = fresh(), input = spec(); const r = 原子执行(ctx, () => { 内部事务轮次执行(ctx, '预留', input); 内部事务轮次执行(ctx, '标记可能发送', { 轮次键: input.轮次键, 预期版本: 1 }); return 内部事务轮次执行(ctx, '暂存结果', { 轮次键: input.轮次键, 预期版本: 2, 正文: '虚构回复' }) })
+  assert.equal(r.状态, 'result_ready'); assert.equal(store.取暂存结果(input.轮次键), '虚构回复'); assert.throws(() => 原子执行(ctx, () => 内部事务轮次执行(ctx, '标记可能发送', { 轮次键: input.轮次键, 预期版本: 3 })), /TRANSITION_INVALID/u)
+})
+test('内部能力不能跨上下文写入，外层不能嵌套公共事务', () => {
+  const a = fresh(), b = fresh(); const input = spec(); assert.throws(() => 原子执行(a.ctx, () => 内部事务轮次执行(b.ctx, '预留', input)), /TRANSACTION_REQUIRED/u); assert.equal(b.store.读取(input.轮次键), null)
+  assert.throws(() => 原子执行(a.ctx, () => a.store.预留(input)), /SQLITE_CONTEXT_NESTED_FORBIDDEN/u); assert.equal(a.store.读取(input.轮次键), null)
+})
 let passed = 0
 try { for (const [name, fn] of tests) { try { fn(); passed++; console.log('PASS ' + name) } catch (e) { process.exitCode = 1; console.error('FAIL ' + name, e) } } console.log(`S16D3 C3A synthetic in-memory attempts: ${passed}/${tests.length}`) } finally { for (const ctx of contexts) ctx.关闭() }
