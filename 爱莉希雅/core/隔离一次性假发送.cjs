@@ -56,7 +56,7 @@ function 创建隔离一次性调度({ actor, send, validate, closeTransport, �
     if (closed || abort.signal.aborted) fail('ABORTED'); if (fault) fail('UNCERTAIN'); if (active) fail('BUSY')
     if (中止 !== undefined && !(中止 instanceof AbortSignal)) fail('INPUT_INVALID')
     const q = 纯数据(输入), signal = 中止 ? AbortSignal.any([abort.signal, 中止]) : abort.signal, epoch = channel.取世代()
-    const p = (async () => { try { check(signal,epoch); const r = await 等待有界(call(operation,q,q.操作编号),signal); check(signal,epoch); if (!r?.好 || r.状态 !== expected || r.轮次执行?.状态 !== 'committed') fail('RECEIPT_INVALID'); return r } catch (e) { fault = true; throw e } })()
+    const p = (async () => { try { check(signal,epoch); const r = await 等待有界(call(operation,q,q.操作编号),signal); check(signal,epoch); if (!r?.好 || r.状态 !== expected || r.轮次执行?.状态 !== 'committed') fail('RECEIPT_INVALID'); return r } catch (e) { if(!(operation==='模型事务.提交后台提取'&&e?.状态==='rejected'&&e.message==='SQLITE_STATE_BACKGROUND_MEMORY_CONFLICT'&&!signal.aborted&&channel.取世代()===epoch))fault = true; throw e } })()
     active = p; void p.finally(() => { if (active === p) active = null }).catch(() => {}); return p
   }
   const api = Object.freeze({

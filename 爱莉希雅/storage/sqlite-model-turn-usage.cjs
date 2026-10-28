@@ -25,8 +25,8 @@ function 创建虚构模型组合事务(ctx, turn, binding) {
       const u = append(x, 'started', null, null)
       if (withBinding) {
         if (!binding) fail('SCOPE_REQUIRED')
-        const hasTime=Object.hasOwn(x.绑定,'处理时间'),b = exact(x.绑定, ['对话','聊天轮次','预期会话版本','预期记忆版本','预期消息数',...(hasTime?['处理时间']:[])])
-        if(hasTime&&(!x.轮次键.startsWith('extract-')||b.聊天轮次!==x.轮次键))fail('INPUT_INVALID')
+        const hasTime=Object.hasOwn(x.绑定,'处理时间'),hasPrompt=Object.hasOwn(x.绑定,'提示摘要'),b = exact(x.绑定, ['对话','聊天轮次','预期会话版本','预期记忆版本','预期消息数',...(hasTime?['处理时间']:[]),...(hasPrompt?['提示摘要']:[])])
+        if((hasTime||hasPrompt)&&(!x.轮次键.startsWith('extract-')||b.聊天轮次!==x.轮次键))fail('INPUT_INVALID')
         binding.内部插入({ 轮次键:x.轮次键, 指纹:x.指纹, 请求编号:x.请求编号, 模型:x.模型, ...b, ...(!hasTime&&x.轮次键.startsWith('extract-')&&b.聊天轮次===x.轮次键?{处理时间:x.时间}:{}) })
       }
       return { 好: true, 回放: false, 轮次: t, 用量版本: u.版本 }
