@@ -29,11 +29,11 @@ function 创建隔离一次性调度({ actor, send, validate, closeTransport, �
     c.used = true; claims.delete(token); sent++
   }
   async function run(x, signal, epoch) {
-    const id = randomUUID(), q = { 轮次键: x.轮次键, 指纹: x.指纹, 请求编号: id, 模型: x.模型, 用途: 'synthetic-shared', 时间: clock(), 预期用量版本: x.预期用量版本 }
+    const id = randomUUID(), q = { 轮次键: x.轮次键, 指纹: x.指纹, 请求编号: id, 模型: x.模型, 用途: 'synthetic-shared', 时间: clock(), 预期用量版本: x.预期用量版本, ...(x.绑定 ? {绑定:x.绑定} : {}) }
     let dispatched = false, stage = 'before-start'
     try {
       check(signal, epoch)
-      stage = 'started'; const start = await 等待有界(call('模型事务.开始', q, 'synth-start-' + id), signal); check(signal, epoch)
+      stage = 'started'; const start = await 等待有界(call(x.绑定 ? '模型事务.开始绑定聊天' : '模型事务.开始', q, 'synth-start-' + id), signal); check(signal, epoch)
       if (!start?.好 || start.回放 !== false || start.轮次?.已有 !== false || start.轮次.请求编号 !== id || start.轮次.轮次键 !== q.轮次键 || start.轮次.指纹 !== q.指纹 || start.轮次.模型 !== q.模型 || start.轮次.状态 !== 'reserved' || start.轮次.版本 !== 1 || !Number.isSafeInteger(start.用量版本) || start.用量版本 !== q.预期用量版本 + 1) fail('RECEIPT_INVALID')
       stage = 'dispatch'; const mark = await 等待有界(call('轮次执行.标记可能发送', { 轮次键: x.轮次键, 预期版本: 1 }, 'synth-dispatch-' + id), signal); check(signal, epoch)
       if (!mark?.好 || mark.回放 !== false || mark.请求编号 !== id || mark.轮次键 !== q.轮次键 || mark.指纹 !== q.指纹 || mark.模型 !== q.模型 || mark.状态 !== 'dispatch_possible' || mark.版本 !== 2) fail('RECEIPT_INVALID')
@@ -56,12 +56,20 @@ function 创建隔离一次性调度({ actor, send, validate, closeTransport, �
     要一轮(input) {
       if (closed || abort.signal.aborted) fail('ABORTED'); if (fault) fail('UNCERTAIN'); if (active) fail('BUSY'); if (sent >= 最大请求) fail('BUDGET')
       if (!input || Object.getPrototypeOf(input) !== Object.prototype) fail('INPUT_INVALID')
-      const desc = Object.getOwnPropertyDescriptors(input); if (Reflect.ownKeys(desc).some(k => typeof k !== 'string' || !['轮次键','指纹','模型','预期用量版本','中止',...(真实?['消息们']:[])].includes(k) || !Object.hasOwn(desc[k], 'value') || !desc[k].enumerable)) fail('INPUT_INVALID')
+      const desc = Object.getOwnPropertyDescriptors(input); if (Reflect.ownKeys(desc).some(k => typeof k !== 'string' || !['轮次键','指纹','模型','预期用量版本','中止','绑定',...(真实?['消息们']:[])].includes(k) || !Object.hasOwn(desc[k], 'value') || !desc[k].enumerable)) fail('INPUT_INVALID')
       const { 中止, ...plain } = input; if (中止 !== undefined && !(中止 instanceof AbortSignal)) fail('INPUT_INVALID')
-      const x = 纯数据(plain); if (Object.keys(x).sort().join(',') !== ['轮次键','指纹','模型','预期用量版本',...(真实?['消息们']:[])].sort().join(',')) fail('INPUT_INVALID')
+      const x = 纯数据(plain); if (Object.keys(x).sort().join(',') !== ['轮次键','指纹','模型','预期用量版本',...(Object.hasOwn(x,'绑定')?['绑定']:[]),...(真实?['消息们']:[])].sort().join(',')) fail('INPUT_INVALID')
+      if (Object.hasOwn(x,'绑定') && (!x.绑定 || Object.getPrototypeOf(x.绑定) !== Object.prototype)) fail('INPUT_INVALID')
       if (真实) { if (x.模型 !== validate.模型) fail('INPUT_INVALID'); validate.验证({ 消息们:x.消息们, 中止 }) }
       const signal = 中止 ? AbortSignal.any([abort.signal, 中止]) : abort.signal, timeout = new AbortController(), timer = setTimeout(() => timeout.abort(), 超时毫秒), combined = AbortSignal.any([signal, timeout.signal]), epoch = channel.取世代()
       const p = run(x, combined, epoch).finally(() => clearTimeout(timer)); active = p; void p.finally(() => { if (active === p) active = null }).catch(() => {}); return p
+    },
+    提交绑定聊天(输入, 中止) {
+      if (closed || abort.signal.aborted) fail('ABORTED'); if (fault) fail('UNCERTAIN'); if (active) fail('BUSY')
+      if (中止 !== undefined && !(中止 instanceof AbortSignal)) fail('INPUT_INVALID')
+      const q = 纯数据(输入), signal = 中止 ? AbortSignal.any([abort.signal, 中止]) : abort.signal, epoch = channel.取世代()
+      const p = (async () => { try { check(signal,epoch); const r = await 等待有界(call('模型事务.提交绑定聊天',q,q.操作编号),signal); check(signal,epoch); if (!r?.好 || r.状态 !== 'saved' || r.轮次执行?.状态 !== 'committed') fail('RECEIPT_INVALID'); return r } catch (e) { fault = true; throw e } })()
+      active = p; void p.finally(() => { if (active === p) active = null }).catch(() => {}); return p
     },
     关闭() { if (!closing) { closed = true; abort.abort(); closeTransport?.(); closing = Promise.resolve(active).catch(() => {}).then(() => Promise.allSettled([...writes, ...inflightTransport])).then(() => undefined) } return closing },
   })
