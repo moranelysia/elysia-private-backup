@@ -115,11 +115,16 @@ function 创建隔离仓储(选项) {
   const 上下文 = 创建内存上下文(选项)
   try { return 组合(上下文) } catch (错) { 上下文.关闭(); throw 错 }
 }
+function 创建虚构轮次仓储() {
+  const 上下文 = 创建内存上下文({ 用途: 'synthetic-sqlite-repository' })
+  try { require('./sqlite-turn-attempt-memory.cjs').创建隔离内存轮次执行仓储(上下文); return 组合(上下文, true) } catch (错) { 上下文.关闭(); throw 错 }
+}
 function 创建本机影子仓储(选项) {
   const 上下文 = 创建本机影子上下文(选项)
   try { return 组合(上下文) } catch (错) { 上下文.关闭(); throw 错 }
 }
-function 组合(上下文) {
+function 组合(上下文, 虚构轮次 = false) {
+  if (typeof 虚构轮次 !== 'boolean' || (虚构轮次 && 取内部(上下文).本机)) 失败('SCOPE_REQUIRED')
   const 会话 = 创建会话仓储(上下文), 记忆 = 创建记忆仓储(上下文), 状态 = 创建状态仓储(上下文), 日记 = 创建日记仓储(上下文), 旧格式 = 创建旧格式仓储(上下文)
   const 内部 = 取内部(上下文), { db, 本机 } = 内部, 原格式用途 = 本机 ? 'local-json-rollback' : 'synthetic-json-rollback'
   const 架构 = db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x }))
@@ -131,6 +136,7 @@ function 组合(上下文) {
     if (!内部.磁盘 && db.prepare('SELECT key FROM repository_meta').all().some(r => 是盘键(r.key))) 失败('DISK_METADATA_FORBIDDEN')
     if (!相等(架构, db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x })))) 失败('SCHEMA_MISMATCH')
     会话.核验(); 记忆.核验(); 状态.核验(); 日记.核验(); 旧格式.核验(); 核验旧状态绑定(db)
+    if (虚构轮次 && (db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_attempt_schema'").get()?.value !== '1' || db.prepare('SELECT count(*) AS n FROM synthetic_turn_attempts').get().n !== 0)) 失败('TURN_FORMAT_INVALID')
     for (const 一 of db.prepare('SELECT kind,body_json FROM state_documents').all()) {
       const 值 = JSON.parse(一.body_json)
       if (一.kind === 'channel-map') 校验渠道映射存档(值)
@@ -190,6 +196,7 @@ function 组合(上下文) {
       return { 好: true, 文档数: 原文档.length }
     },
     创建备份(输入, 范围值) {
+      if (虚构轮次) 失败('VERSION_UNSUPPORTED')
       授权(范围值); const 一 = 纯数据(输入)
       if (!相等(Object.keys(一).sort(), ['时间', '外部文件', '必须文件',...(Object.hasOwn(一,'资源引用')?['资源引用']:[])].sort()) || !是时间(一.时间)) 失败('INPUT_INVALID')
       const 文件 = 核对外部文件(一.外部文件, 本机)
@@ -249,4 +256,4 @@ function 恢复仓储(原, 范围值, 本机) {
     return 仓
   } catch (错) { 仓.关闭(); throw new Error(/^SQLITE_(BACKUP|CONTEXT)_[A-Z_]+$/u.test(错.message || '') ? 错.message : 'SQLITE_BACKUP_RESTORE_REJECTED') }
 }
-module.exports = { 创建隔离仓储, 恢复隔离仓储, 创建本机影子仓储, 恢复本机影子仓储, 相对路径, 内部备份测试: (仓) => 内部们.get(仓), 备份范围: 范围, 组合隔离盘连接: 组合 }
+module.exports = { 创建隔离仓储, 创建虚构轮次仓储, 恢复隔离仓储, 创建本机影子仓储, 恢复本机影子仓储, 相对路径, 内部备份测试: (仓) => 内部们.get(仓), 备份范围: 范围, 组合隔离盘连接: 组合 }
