@@ -1,7 +1,7 @@
 'use strict'
 const assert = require('node:assert/strict'), { execFileSync } = require('node:child_process'), path = require('node:path')
 const { 创建内存上下文, 取内部, 原子执行 } = require('../storage/sqlite-context.cjs')
-const { 创建会话仓储 } = require('../storage/sqlite-chat.cjs'), { 创建记忆仓储, 内部事务应用标记 } = require('../storage/sqlite-memory.cjs')
+const { 创建会话仓储 } = require('../storage/sqlite-chat.cjs'), { 创建记忆仓储, 内部事务应用标记, 内部事务记忆操作 } = require('../storage/sqlite-memory.cjs')
 const 时间 = '2026-10-25T00:00:00.000Z', 测试 = [], 测 = (名, 做) => 测试.push([名, 做])
 async function 用库(做) {
   const ctx = 创建内存上下文({ 用途: 'synthetic-sqlite-repository' })
@@ -17,6 +17,9 @@ async function 用库(做) {
   } finally { ctx.关闭() }
 }
 const 标记 = (改 = {}) => ({ 操作编号: 'marker-1', 时间, 预期版本: 0, 对话: 'chat-a', 记住: [], 经历: [], 更正事实: [], ...改 })
+测('旧自主确认中断后在事务内续做，保留原来源和编号',()=>用库(({ctx,mem,db,新,评,源})=>{const id=新({类别:'近期状态',内容:'你喜欢雨后的散步',依据原文:'喜欢雨后的散步'});assert.equal(评(id,[源[0]]).好,true);const 状态=require('../脑/临时记忆状态.cjs'),old=mem.读取临时(id).条;let data={版本:1,记录:[old]};const lib=状态.创建临时记忆状态({文件:':memory:',现在:()=>new Date(时间),读数据:()=>structuredClone(data),写数据:v=>{data=structuredClone(v)}});assert.equal(lib.自主确认(id,{分数:60,重要性:2,提及次数:2,依据:['虚构依据']}).好,true);db.prepare('UPDATE memory_temporary SET confirmation=?,record_json=? WHERE memory_id=?').run('已确认',JSON.stringify(data.记录[0]),id);const result=原子执行(ctx,()=>内部事务记忆操作(ctx,'续做自主晋升',{操作编号:'resume-test',时间,预期版本:2,编号:id}));assert.equal(result.晋升,true);assert.equal(mem.读取临时(id).条.生命周期,'已晋升');assert.equal(mem.取统计().长期数,1);assert.equal(mem.核验().好,true)}))
+测('续做只接受已有足够评分及可核验来源',()=>用库(({ctx,mem,新,评,源})=>{const id=新({类别:'近期状态',内容:'你喜欢雨后的散步'});assert.equal(评(id,[源[0]]).好,true);assert.throws(()=>原子执行(ctx,()=>内部事务记忆操作(ctx,'续做自主晋升',{操作编号:'resume-low',时间,预期版本:2,编号:id})),/SQLITE_MEMORY_AUTOMATION_BLOCKED/u);assert.equal(mem.读取临时(id).条.生命周期,'有效');assert.equal(mem.取统计().长期数,0)}))
+测('旧待确认高分账本可续做确认与晋升',()=>用库(({ctx,mem,db,新,评,源})=>{const id=新({类别:'近期状态',内容:'你喜欢雨后的散步'});assert.equal(评(id,[源[0]]).好,true);const record=mem.读取临时(id).条;record.评估账本.当前分数=60;db.prepare('UPDATE memory_temporary SET record_json=? WHERE memory_id=?').run(JSON.stringify(record),id);assert.throws(()=>mem.续做自主晋升({操作编号:'outside',时间,预期版本:2,编号:id}),/TRANSACTION_CAPABILITY_REQUIRED/u);const result=原子执行(ctx,()=>内部事务记忆操作(ctx,'续做自主晋升',{操作编号:'resume-pending',时间,预期版本:2,编号:id}));assert.equal(result.晋升,true);assert.equal(mem.读取临时(id).条.生命周期,'已晋升');assert.equal(mem.核验().好,true)}))
 测('模型标记事务能力拒绝伪造、事务外与手动BEGIN', () => 用库(({ ctx, db }) => {
   assert.throws(() => 内部事务应用标记({}, 标记()), { message: 'SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED' })
   assert.throws(() => 内部事务应用标记(ctx, 标记()), { message: 'SQLITE_MEMORY_TRANSACTION_REQUIRED' })

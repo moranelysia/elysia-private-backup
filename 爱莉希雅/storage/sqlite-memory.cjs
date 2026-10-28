@@ -225,6 +225,13 @@ function 创建记忆仓储(上下文) {
       const 回 = 晋升(db, 库, 库.取一条(条.编号), 评估.去向, 一.时间)
       return { 临时编号: 条.编号, 目标编号: 回.目标编号, 分数: 评估.分数, 晋升: true, 复活, 新增证据数: 评估.新增提及次数 }
     }) },
+    续做自主晋升(原) { if(!允许事务内调用||!取内部(上下文).写入中||!取内部(上下文).db.isTransaction)失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED');return 写操作('resume-auto', 原, ['编号'], (db, 一, 库) => {
+      编号(一.编号);const 条=库.取一条(一.编号);if(!条||条.生命周期!=='有效'||Date.parse(条.到期于)<=Date.parse(一.时间)||状态.读取关系(条.关系).状态!=='当前'||有敏感(条))失败('SQLITE_MEMORY_AUTOMATION_BLOCKED')
+      if(!条.来源?.消息编号||!条.依据原文||!来源(db,条.来源.消息编号,true).内容.includes(条.依据原文))失败('SQLITE_MEMORY_EVIDENCE_INVALID')
+      if(条.确认状态==='待确认'){const 分数=Number(条.评估账本?.当前分数),历史=条.评估账本?.评估历史;if(!Number.isInteger(分数)||分数<自评.自动阈值||分数>100||!Array.isArray(条.评估账本?.证据)||!条.评估账本.证据.length)失败('SQLITE_MEMORY_AUTOMATION_BLOCKED');状态调用(()=>库.自主确认(条.编号,{分数,重要性:分数>=90?3:2,提及次数:Number(条.评估账本.提及次数)||1,依据:Array.isArray(历史)&&历史.length?历史.at(-1).依据||[]:[]}))}
+      else if(条.确认状态!=='已确认'||!Number.isInteger(条.自主评估?.分数)||条.自主评估.分数<自评.自动阈值||条.自主评估.分数>100)失败('SQLITE_MEMORY_AUTOMATION_BLOCKED')
+      const 确认条=库.取一条(条.编号),回=晋升(db,库,确认条,自评.默认去向(确认条),一.时间);return {临时编号:条.编号,目标编号:回.目标编号,晋升:true}
+    }) },
     人工处理临时(原) { return 写操作('manual-temp', 原, ['动作', '参数'], (db, 一, 库) => {
       const 允许 = ['修改', '删除', '提议替代', '决定替代', '恢复', '提议晋升', '决定晋升', '归档到期']
       if (!允许.includes(一.动作) || !Array.isArray(一.参数) || 一.参数.length > 2) 失败()
@@ -260,7 +267,12 @@ function 创建记忆仓储(上下文) {
       return { 类别: 一.类别, 目标编号: 一.编号, 遗忘: true }
     }) },
     读取临时(号) { return 读((db) => { 编号(号); return { 版本: 版本(db), 条: 临时库(db, '2000-01-01T00:00:00.000Z').取一条(号) } }) },
-    查询临时(原 = {}) { return 读((db) => ({ 版本: 版本(db), ...状态调用(() => 临时库(db, '2000-01-01T00:00:00.000Z').查询(纯输入(原))) })) },
+    查询临时(原 = {}) { return 读((db) => { const 条件=纯输入(原),快照时间=条件.快照时间;delete 条件.快照时间
+      if(快照时间===undefined)return {版本:版本(db),...状态调用(()=>临时库(db,'2000-01-01T00:00:00.000Z').查询(条件))}
+      if(typeof 快照时间!=='string'||!Number.isFinite(Date.parse(快照时间))||new Date(快照时间).toISOString()!==快照时间)失败()
+      let 副本=读数据(db);const 库=状态.创建临时记忆状态({文件:':memory:',现在:()=>new Date(快照时间),新编号:randomUUID,读数据:()=>克隆(副本),写数据:数据=>{副本=克隆(数据)}})
+      状态调用(()=>库.归档到期(快照时间));return {版本:版本(db),...状态调用(()=>库.查询(条件))}
+    }) },
     列长期(原 = {}) { return 读((db) => {
       const 一 = 纯输入(原); 键检查(一, ['类别', '上限']); const 上限 = 一.上限 === undefined ? 500 : 整数(一.上限, 1, 1000)
       if (一.类别 !== undefined && !长期分类.includes(一.类别)) 失败()
@@ -300,7 +312,7 @@ function 创建记忆仓储(上下文) {
   事务内记忆句柄.set(上下文, (name,input) => {
     const state=取内部(上下文)
     if(!state.写入中||!state.db.isTransaction||允许事务内调用)失败('SQLITE_MEMORY_TRANSACTION_REQUIRED')
-    if(!['新增临时','评估并晋升','人工处理临时'].includes(name)||(name==='人工处理临时'&&!['提议替代','归档到期'].includes(input?.动作)))失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
+    if(!['新增临时','评估并晋升','续做自主晋升','人工处理临时'].includes(name)||(name==='人工处理临时'&&!['提议替代','归档到期'].includes(input?.动作)))失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
     try{允许事务内调用=true;const result=api[name](input);if(!result?.好)失败(result?.代码||'SQLITE_MEMORY_WRITE_FAILED');return result}finally{允许事务内调用=false}
   })
   return api
