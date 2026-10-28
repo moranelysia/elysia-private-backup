@@ -21,9 +21,9 @@ function 创建上下文(选项, 本机) {
   return 绑定连接(db, 本机)
 }
 // 内部连接能力：磁盘路径、只读预检及持有锁由sqlite-disk校验；不可传到IPC。
-function 接入隔离磁盘连接(db, { 本机, 检查, 关闭后 } = {}) {
-  if (process.versions.electron || !(db instanceof DatabaseSync) || typeof 本机 !== 'boolean' || typeof 检查 !== 'function' || (关闭后 !== undefined && typeof 关闭后 !== 'function')) 失败('SQLITE_CONTEXT_SCOPE_REQUIRED')
-  return 绑定连接(db, 本机, { 磁盘: true, 检查, 关闭后 })
+function 接入隔离磁盘连接(db, { 本机, 检查, 关闭后, 虚构轮次 = false } = {}) {
+  if (process.versions.electron || !(db instanceof DatabaseSync) || typeof 本机 !== 'boolean' || typeof 检查 !== 'function' || typeof 虚构轮次 !== 'boolean' || (本机 && 虚构轮次) || (关闭后 !== undefined && typeof 关闭后 !== 'function')) 失败('SQLITE_CONTEXT_SCOPE_REQUIRED')
+  return 绑定连接(db, 本机, { 磁盘: true, 检查, 关闭后, 虚构轮次 })
 }
 function 绑定连接(db, 本机, 磁盘选项 = {}) {
   const sqlite = db.prepare('SELECT sqlite_version() AS v').get().v

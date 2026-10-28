@@ -16,17 +16,31 @@ const version = x => { if (!Number.isSafeInteger(x) || x < 1 || x >= Number.MAX_
 const digest = x => { if (typeof x !== 'string' || !/^[a-f0-9]{64}$/u.test(x)) fail('INPUT_INVALID'); return x }
 const uuid = x => { if (typeof x !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(x)) fail('INPUT_INVALID'); return x }
 const summary = x => ({ 轮次键: x.turn_key, 指纹: x.fingerprint, 请求编号: x.request_id, 模型: x.model, 状态: x.phase, 版本: x.version })
+function 校验虚构轮次记录(db) {
+  try {
+    const rows = db.prepare('SELECT * FROM synthetic_turn_attempts').all()
+    if (rows.length > 10000) fail('DATA_INVALID')
+    const versions = { reserved: 1, dispatch_possible: 2, result_ready: 3, unknown: 3, committed: 4 }
+    for (const r of rows) {
+      key(r.turn_key); digest(r.fingerprint); uuid(r.request_id)
+      if (!['deepseek-flash', 'deepseek-v4-pro'].includes(r.model) || !Object.hasOwn(versions, r.phase) || r.version !== versions[r.phase]) fail('DATA_INVALID')
+      if (r.phase === 'result_ready') { if (typeof r.result_text !== 'string' || !r.result_text.trim() || r.result_text.length > 8000 || Buffer.byteLength(r.result_text) > 32000 || Buffer.from(r.result_text).toString('utf8') !== r.result_text) fail('DATA_INVALID') }
+      else if (r.result_text !== null) fail('DATA_INVALID')
+    }
+  } catch { fail('DATA_INVALID') }
+}
 function 创建隔离内存轮次执行仓储(ctx) {
   const state = 取内部(ctx)
-  if (state.本机 || state.磁盘) fail('SCOPE_REQUIRED')
+  if (state.本机 || (state.磁盘 && !state.虚构轮次)) fail('SCOPE_REQUIRED')
   const normal = s => s.replace(/\s+/gu, ' ').trim()
   function db() {
-    const s = 取内部(ctx); if (s.本机 || s.磁盘) fail('SCOPE_REQUIRED')
+    const s = 取内部(ctx); if (s.本机 || (s.磁盘 && !s.虚构轮次)) fail('SCOPE_REQUIRED')
     const row = s.db.prepare("SELECT sql FROM sqlite_schema WHERE type='table' AND name='synthetic_turn_attempts'").get()
     if (!row || normal(row.sql) !== normal(schema) || s.db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_attempt_schema'").get()?.value !== '1') fail('SCHEMA_INVALID')
     return s.db
   }
   if (state.db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_attempt_schema'").get()) db()
+  else if (state.磁盘) fail('SCHEMA_INVALID')
   else 原子执行(ctx, sql => {
     if (sql.prepare("SELECT 1 FROM sqlite_schema WHERE name='synthetic_turn_attempts'").get()) fail('SCHEMA_INVALID')
     sql.exec(schema); sql.prepare('INSERT INTO repository_meta(key,value) VALUES(?,?)').run('synthetic_attempt_schema', '1')
@@ -81,4 +95,4 @@ function 内部事务轮次执行(ctx, 操作, input) {
   const handle = 事务句柄.get(ctx); if (!handle) fail('TRANSACTION_CAPABILITY_REQUIRED')
   return handle(操作, input)
 }
-module.exports = { 创建隔离内存轮次执行仓储, 内部事务轮次执行 }
+module.exports = { 创建隔离内存轮次执行仓储, 内部事务轮次执行, 校验虚构轮次记录 }

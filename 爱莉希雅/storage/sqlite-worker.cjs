@@ -7,7 +7,6 @@ function error(code,state,id){const e=Error(code);if(state)e.状态=state;if(id)
 async function 启动隔离存储Worker(input){
  if(!isMainThread||process.versions.electron)P.fail('DEDICATED_NODE_REQUIRED')
  const x=纯数据(input),required=['用途','目录'],allowed=[...required,'包含私密','队列上限','字节上限','命令超时','启动超时'];if(Object.keys(x).some(k=>!allowed.includes(k))||required.some(k=>!Object.hasOwn(x,k)))P.fail('PROTOCOL_INVALID')
- if(x.用途==='synthetic-turn-disk-v3')P.fail('FORMAT_NOT_READY')
  const options={用途:x.用途,目录:x.目录,...(Object.hasOwn(x,'包含私密')?{包含私密:x.包含私密}:{})}
  function bound(k,def,min,max){const v=x[k]??def;if(!Number.isInteger(v)||v<min||v>max)P.fail('LIMIT_INVALID');return v}
  const limit=bound('队列上限',32,1,256),byteLimit=bound('字节上限',1048576,1024,8388608),timeout=bound('命令超时',5000,50,60000),bootTimeout=bound('启动超时',10000,100,30000)

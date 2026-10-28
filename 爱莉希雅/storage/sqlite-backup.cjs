@@ -136,7 +136,10 @@ function 组合(上下文, 虚构轮次 = false) {
     if (!内部.磁盘 && db.prepare('SELECT key FROM repository_meta').all().some(r => 是盘键(r.key))) 失败('DISK_METADATA_FORBIDDEN')
     if (!相等(架构, db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all().map((x) => ({ ...x })))) 失败('SCHEMA_MISMATCH')
     会话.核验(); 记忆.核验(); 状态.核验(); 日记.核验(); 旧格式.核验(); 核验旧状态绑定(db)
-    if (虚构轮次 && (db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_attempt_schema'").get()?.value !== '1' || db.prepare('SELECT count(*) AS n FROM synthetic_turn_attempts').get().n !== 0)) 失败('TURN_FORMAT_INVALID')
+    if (虚构轮次) {
+      if (db.prepare("SELECT value FROM repository_meta WHERE key='synthetic_attempt_schema'").get()?.value !== '1') 失败('TURN_FORMAT_INVALID')
+      require('./sqlite-turn-attempt-memory.cjs').校验虚构轮次记录(db)
+    }
     for (const 一 of db.prepare('SELECT kind,body_json FROM state_documents').all()) {
       const 值 = JSON.parse(一.body_json)
       if (一.kind === 'channel-map') 校验渠道映射存档(值)
