@@ -14,7 +14,7 @@ const { 新建隔离盘库 } = require('../storage/sqlite-disk.cjs'), { 启动�
 const { 创建异步关系图, 读取同仓一跳 } = require('../core/异步关系图.cjs')
 const { 创建隔离输出标记 } = require('../core/隔离输出标记.cjs'), 原工具解析 = require('../脑/解析工具调用.cjs')
 const roots = new Set([root]), actors = new Set(), tests = [], test = (name, fn) => tests.push([name, fn]), time = '2026-10-27T00:00:00.000Z'
-async function setup(local = false) { const options = local ? { 用途: 'isolated-local-sqlite-disk', 包含私密: true } : { 用途: 'synthetic-sqlite-disk' }, disk = 新建隔离盘库(options), dir = disk.目录; disk.关闭(); roots.add(dir); approved.add(dir); const actor = await 启动隔离存储Worker({ ...options, 目录: dir }); actors.add(actor); return { actor, f: 创建异步仓储门面(actor) } }
+async function setup(local = false) { const options = local ? { 用途: 'isolated-local-sqlite-disk', 包含私密: true } : { 用途: process.argv.includes('--segmented') ? 'synthetic-turn-disk-v4' : 'synthetic-sqlite-disk' }, disk = 新建隔离盘库(options), dir = disk.目录; disk.关闭(); roots.add(dir); approved.add(dir); const actor = await 启动隔离存储Worker({ ...options, 目录: dir }); actors.add(actor); return { actor, f: 创建异步仓储门面(actor) } }
 const adapter = (actor, at = time, 关系图) => 创建异步角色提示({ actor, 原提示词, 创建临时召回器: 原临时.创建召回器, 关系图, 挑历史: 原对话.挑历史, 历史内容: 原对话.给模型的历史内容, 估算: 尺.估, 默认线: 修.默认线, 取现在: () => new Date(at) })
 async function add(f, id, fields) { const v = (await f.记忆.取统计()).版本; return f.记忆.新增长期({ 操作编号: id, 时间: time, 预期版本: v, ...fields }) }
 async function temp(f, id, fields) { const v = (await f.记忆.取统计()).版本; return f.记忆.新增临时({ 操作编号: id, 时间: time, 预期版本: v, ...fields }) }
@@ -68,6 +68,13 @@ test('一跳关系使用旧召回规则并加入假核心提示', async () => {
   assert(expected.includes('海风曲子')); assert(messages.some(m => m.content === expected))
   let captured; const core = 创建异步假对话核心({ actor, 模型连接: 创建假模型连接({ 生成: async m => { captured = m; return '虚构回答' } }), 拼提示: adapter(actor, time, g).拼提示, 取现在: () => new Date(time) })
   const msg = { ...require('./fixtures/渠道契约-v1.json').本人私聊, 端点: { 渠道: 'fake', 账号: 'relation-fixture' }, 正文: query }; await core.处理(msg, { 内部对话编号: 'channel-relation' }); assert(captured.some(m => m.content.includes('海风曲子'))); await core.关闭(); await g.关闭()
+})
+if (process.argv.includes('--segmented')) test('分段绑定核心使用同库角色提示、关系图和后台缓冲', async () => {
+  const {创建严格凭据,创建真实模型连接}=require('../脑/模型连接.cjs'),{创建隔离一次性真实发送}=require('../core/隔离一次性假发送.cjs'),{创建隔离绑定对话核心}=require('../core/隔离绑定对话核心.cjs')
+  const {actor,f}=await setup(),a=await add(f,'bound-fact',{类别:'事实',内容:'你喜欢紫罗兰花茶'}),b=await add(f,'bound-story',{类别:'经历',内容:'我们一起听过海风曲子'});await f.会话.登记对话('channel-bound-prompt',{建于:time,写长期记忆:true},{操作编号:'bound-register'})
+  const graph=await 创建异步关系图(actor,{创建关系图库:原关系图.创建关系图库,创建长期关系召回器:原关系召回.创建召回器}),p=await graph.准备('新增',{类型:'后续发展',从:{类别:'事实',编号:a.目标编号},到:{类别:'经历',编号:b.目标编号}});await graph.提交(p,{操作编号:'bound-edge'});let captured
+  const model=创建真实模型连接({凭据:创建严格凭据({读取:()=> 'fixture-key-only-1234567890'}),fetch函数:async(_url,options)=>{captured=JSON.parse(options.body).messages;return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'嗯，我记得'}}],usage:null}),{headers:{'content-type':'application/json'}})}}),broker=创建隔离一次性真实发送({actor,模型连接:model,取现在:()=>new Date(time)}),core=创建隔离绑定对话核心({actor,调度器:broker,模型:'deepseek-flash',写后台缓冲:true,输出标记:创建隔离输出标记({拆标记:原对话.拆标记,拆工具:x=>原工具解析.拆(x,()=>null)}),拼提示:adapter(actor,time,graph).拼提示,取现在:()=>new Date(time)})
+  try{const msg={...require('./fixtures/渠道契约-v1.json').本人私聊,端点:{渠道:'fake',账号:'bound-prompt'},正文:'你喜欢紫罗兰花茶吗'};await core.处理(msg,{内部对话编号:'channel-bound-prompt'});assert(captured.some(m=>m.content.includes('虚构人物个性')));assert(captured.some(m=>m.content.includes('海风曲子')));assert.equal((await f.会话.取统计()).轮次数,1);const buffer=await f.状态.打开后端('extraction-buffer','main');try{assert.equal((await buffer.读取分段快照()).数据.轮次.length,1)}finally{await buffer.关闭()}}finally{await core.关闭();await graph.关闭()}
 })
 test('关系图须属于同一个Worker，关闭后不能召回', async () => {
   const one = await setup(), two = await setup(), g = await 创建异步关系图(one.actor, { 创建关系图库: 原关系图.创建关系图库, 创建长期关系召回器: 原关系召回.创建召回器 })

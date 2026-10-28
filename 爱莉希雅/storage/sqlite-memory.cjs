@@ -300,7 +300,7 @@ function 创建记忆仓储(上下文) {
   事务内记忆句柄.set(上下文, (name,input) => {
     const state=取内部(上下文)
     if(!state.写入中||!state.db.isTransaction||允许事务内调用)失败('SQLITE_MEMORY_TRANSACTION_REQUIRED')
-    if(!['新增临时','评估并晋升','人工处理临时'].includes(name)||(name==='人工处理临时'&&input?.动作!=='提议替代'))失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
+    if(!['新增临时','评估并晋升','人工处理临时'].includes(name)||(name==='人工处理临时'&&!['提议替代','归档到期'].includes(input?.动作)))失败('SQLITE_MEMORY_TRANSACTION_CAPABILITY_REQUIRED')
     try{允许事务内调用=true;const result=api[name](input);if(!result?.好)失败(result?.代码||'SQLITE_MEMORY_WRITE_FAILED');return result}finally{允许事务内调用=false}
   })
   return api

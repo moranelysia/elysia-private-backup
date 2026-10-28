@@ -26,7 +26,7 @@ function 创建虚构模型组合事务(ctx, turn, binding) {
       if (withBinding) {
         if (!binding) fail('SCOPE_REQUIRED')
         const b = exact(x.绑定, ['对话','聊天轮次','预期会话版本','预期记忆版本','预期消息数'])
-        binding.内部插入({ 轮次键:x.轮次键, 指纹:x.指纹, 请求编号:x.请求编号, 模型:x.模型, ...b })
+        binding.内部插入({ 轮次键:x.轮次键, 指纹:x.指纹, 请求编号:x.请求编号, 模型:x.模型, ...b, ...(x.轮次键.startsWith('extract-') && b.聊天轮次 === x.轮次键 ? {处理时间:x.时间} : {}) })
       }
       return { 好: true, 回放: false, 轮次: t, 用量版本: u.版本 }
     })
