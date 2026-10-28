@@ -3,9 +3,9 @@
 const { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs')
 const { 纯数据 } = require('../storage/sqlite-state.cjs')
 const { exact } = require('../storage/sqlite-worker-protocol.cjs')
+const { 校验无界面用量事件 } = require('../storage/sqlite-usage-event.cjs')
 const plans = new WeakMap(), owners = new WeakMap()
 const fail = code => { throw Error('ASYNC_USAGE_' + code) }
-const errors = new Set(['CORE_AUTH_FAILED', 'CORE_BALANCE_EMPTY', 'CORE_RATE_LIMITED', 'CORE_HTTP_FAILED', 'CORE_RESPONSE_INVALID', 'CORE_RESPONSE_LIMIT', 'CORE_TIMEOUT', 'CORE_ABORTED', 'CORE_MODEL_FAILED'])
 function freeze(x) { if (x && typeof x === 'object') { for (const v of Object.values(x)) freeze(v); Object.freeze(x) } return x }
 function utc(x) { return typeof x === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/u.test(x) && Number.isFinite(Date.parse(x)) && new Date(x).toISOString() === x }
 async function 创建异步用量(actor, { 用途, 算钱, 哪一天 } = {}) {
@@ -27,12 +27,7 @@ async function 创建异步用量(actor, { 用途, 算钱, 哪一天 } = {}) {
     return { 条: { 时间: time, 输入: bill.输入, 命中: bill.命中, 未命中: bill.未命中, 输出: bill.输出, 元: Number(bill.合计.toFixed(8)) }, 账: bill }
   }
   function headlessRecord(input, time) {
-    if (!utc(time)) fail('TIME_INVALID')
-    const x = 纯数据(input); exact(x, ['请求编号', '模型', '状态', '代码', '用量'])
-    if (typeof x.请求编号 !== 'string' || /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.exec(x.请求编号)?.[0] !== x.请求编号 || !['deepseek-flash', 'deepseek-v4-pro'].includes(x.模型) || !['started', 'succeeded', 'unknown'].includes(x.状态) || (x.代码 !== null && !errors.has(x.代码))) fail('DATA_INVALID')
-    if ((x.状态 === 'started' && (x.代码 !== null || x.用量 !== null)) || (x.状态 === 'succeeded' && x.代码 !== null) || (x.状态 === 'unknown' && (x.用量 !== null || x.代码 === null))) fail('DATA_INVALID')
-    if (x.用量 !== null) { exact(x.用量, ['prompt_tokens', 'completion_tokens', 'total_tokens']); if (!Object.values(x.用量).every(v => Number.isSafeInteger(v) && v >= 0) || x.用量.total_tokens !== x.用量.prompt_tokens + x.用量.completion_tokens) fail('DATA_INVALID') }
-    return { 条: { 时间: time, ...x }, 账: null }
+    return { 条: 校验无界面用量事件(input, time), 账: null }
   }
   const api = {
     async 读取() { return snapshot() },
