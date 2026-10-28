@@ -160,6 +160,10 @@ function 创建旧格式仓储(上下文) {
       for (const x of db.prepare('SELECT conversation_id FROM chat_sessions ORDER BY registration_sequence').all()) if (!ids.includes(x.conversation_id)) ids.push(x.conversation_id)
       return ids.map((id) => { const r = api.读取对话(id), p = 补丁(id); return { 对话: id, ...r, 当前: r.原始 ? { ...r.原始, ...(p?.字段 || {}) } : r.新仓储 } })
     },
+    日记旧对话摘要() {
+      核验();const rows=db.prepare("SELECT DISTINCT conversation_id AS id FROM legacy_records WHERE kind='messages' AND conversation_id IS NOT NULL AND conversation_id<>'' AND conversation_id<>'最早' ORDER BY conversation_id LIMIT 201").all();if(rows.length>200)失败('DIARY_SESSION_LIMIT')
+      const 列表=[],未确认=[];for(const {id} of rows){if(db.prepare('SELECT 1 FROM chat_sessions WHERE conversation_id=?').get(id))continue;const meta=旧对话(id);if(!meta){未确认.push(id);continue}const flag=Object.hasOwn(meta,'写长期记忆')?meta.写长期记忆:meta.长期记忆;if(flag===true)列表.push(id);else if(flag!==false)未确认.push(id)}return{列表,未确认}
+    },
     读消息页(原) {
       const q = 纯数据(原); 精确(q, ['对话', '大小', '游标'], ['对话'])
       if (typeof q.对话 !== 'string' || !q.对话 || q.对话.length > 128) 失败('INPUT_INVALID')

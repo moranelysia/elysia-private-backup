@@ -16,6 +16,7 @@ function 用库(f, 原 = 样本()) { const 仓 = 创建隔离仓储({ 用途: 's
 const 包 = (仓) => 仓.创建备份({ 时间, 外部文件: [], 必须文件: [] }, 备份范围)
 function 新消息(仓, 轮次 = 'new-one') { 仓.会话.登记对话('old-chat', { 建于: 时间, 写长期记忆: true }); const 轮 = { 对话: 'old-chat', 轮次, 用户正文: '新的原话', 回复正文: '新的回复', 接收于: 时间, 完成于: 时间 }; const 回 = 仓.会话.存对话一轮(轮); assert.equal(回.好, true); return { 轮, 回 } }
 function 旧页(仓) { return 仓.旧格式.读消息页({ 对话: 'old-chat', 大小: 200 }).消息 }
+测('日记旧对话枚举只接收明确允许的旧会话，未登记和权限缺失标记待核验',()=>{const p=样本(),doc=p.文档.find(x=>x.类型==='messages');doc.原文+='\n'+JSON.stringify({对话:'orphan-chat',角色:'user',时间:'2026-09-01 19:03',内容:'没有会话索引'});用库(仓=>{assert.deepEqual(仓.旧格式.日记旧对话摘要(),{列表:['old-chat'],未确认:['orphan-chat']});新消息(仓);assert.deepEqual(仓.旧格式.日记旧对话摘要(),{列表:[],未确认:['orphan-chat']})},p)})
 测('缺编号/轮次/序号不补入原始消息，原时间/缺省/null/扩展不变', () => 用库((仓, 原) => {
   assert.deepEqual(仓.旧格式.导出旧原文(旧格式范围).文档, [...原.文档].sort((a, b) => a.路径 < b.路径 ? -1 : 1))
   const m = 旧页(仓); assert.equal(m.length, 3); assert.match(m[0].内部定位, /^legacy-[a-f0-9]{64}$/u); for (const x of m) for (const k of ['编号', '轮次', '序号']) assert.equal(Object.hasOwn(x.原始, k), false)
