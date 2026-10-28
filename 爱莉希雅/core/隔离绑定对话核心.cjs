@@ -42,7 +42,7 @@ function 创建隔离绑定对话核心({ actor, 调度器, 模型, 拼提示, �
       const prompts=纯数据({消息:await 等待有界(Promise.resolve().then(()=>拼提示(纯数据({历史:history,输入:msg.正文}))),signal)}).消息;check(signal)
       if(!Array.isArray(prompts)||prompts.length<1||prompts.length>402||prompts.some(x=>!x||Object.keys(x).sort().join(',')!=='content,role'||!['system','user','assistant'].includes(x.role)||typeof x.content!=='string')||Buffer.byteLength(JSON.stringify(prompts))>131072)fail('PROMPT_INVALID')
       const version=await usageVersion();check(signal)
-      const answer=await broker.要一轮({轮次键:id.operation,指纹:fingerprint,模型,预期用量版本:version,绑定:{对话:conversation,聊天轮次:id.turn,预期会话版本:session.元数据版本,预期记忆版本:memory.版本},消息们:prompts,中止:signal});check(signal)
+      const answer=await broker.要一轮({轮次键:id.operation,指纹:fingerprint,模型,预期用量版本:version,绑定:{对话:conversation,聊天轮次:id.turn,预期会话版本:session.元数据版本,预期记忆版本:memory.版本,预期消息数:session.条数},消息们:prompts,中止:signal});check(signal)
       attempt=await f.轮次执行.读取(id.operation);binding=await f.模型事务.读取聊天绑定(id.operation);check(signal)
       if(!attempt||attempt.状态!=='result_ready'||attempt.请求编号!==answer.请求编号||!binding||binding.对话!==conversation||binding.聊天轮次!==id.turn||binding.指纹!==fingerprint||binding.请求编号!==attempt.请求编号)fail('BINDING_CONFLICT')
     }

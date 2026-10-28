@@ -18,6 +18,8 @@ function 创建虚构模型聊天提交(ctx, turn, binding) {
       if (requireBinding) {
         const b = binding?.读取(x.轮次键)
         if (!b || b.轮次键 !== x.操作编号 || b.指纹 !== x.指纹 || b.请求编号 !== x.请求编号 || b.模型 !== x.模型 || b.对话 !== x.轮?.对话 || b.聊天轮次 !== x.轮?.轮次 || b.预期会话版本 !== x.预期会话版本 || b.预期记忆版本 !== x.预期记忆版本) throw Error('SQLITE_STATE_MODEL_CHAT_BINDING_CONFLICT')
+        const session = db.prepare('SELECT message_count FROM chat_sessions WHERE conversation_id=?').get(b.对话)
+        if (!session || session.message_count !== b.预期消息数) throw Error('SQLITE_CHAT_HISTORY_CONFLICT')
       }
       const text = turn.取暂存结果(x.轮次键)
       if (createHash('sha256').update(text, 'utf8').digest('hex') !== x.结果摘要) throw Error('SQLITE_STATE_MODEL_CHAT_RESULT_CONFLICT')
