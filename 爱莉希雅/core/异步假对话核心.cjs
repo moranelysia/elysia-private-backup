@@ -1,8 +1,9 @@
-/** Isolated fake-model core. Never used by the default JSON core or real model. */
+/** Isolated fake-channel core. Real models require an explicit same-Worker ledger adapter. */
 'use strict'
 const { createHash, randomUUID } = require('node:crypto')
 const { 校验接收消息 } = require('../脑/渠道契约.cjs')
 const { 是假模型连接 } = require('../脑/模型连接.cjs')
+const { 领取隔离真实模型用量适配 } = require('./隔离真实模型用量适配.cjs')
 const { 创建异步仓储门面 } = require('../storage/sqlite-async-facade.cjs')
 const { 纯数据 } = require('../storage/sqlite-state.cjs')
 const { 是隔离输出标记 } = require('./隔离输出标记.cjs')
@@ -14,7 +15,9 @@ function ids(m, conversation) {
   return { operation: 'fake-turn-' + source, turn: 't-' + source + '-' + fingerprint.slice(0, 32) }
 }
 function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标记, 取现在 = () => new Date() } = {}) {
-  if (!是假模型连接(模型连接) || typeof 拼提示 !== 'function' || typeof 取现在 !== 'function' || (输出标记 !== undefined && !是隔离输出标记(输出标记))) fail('DEPENDENCY_INVALID')
+  if (typeof 拼提示 !== 'function' || typeof 取现在 !== 'function' || (输出标记 !== undefined && !是隔离输出标记(输出标记))) fail('DEPENDENCY_INVALID')
+  const 真实适配 = !是假模型连接(模型连接)
+  if (真实适配 && !领取隔离真实模型用量适配(模型连接, actor)) fail('DEPENDENCY_INVALID')
   const f = 创建异步仓储门面(actor), abort = new AbortController(); let closed = false, closing = null, tail = Promise.resolve(), pending = new Set(), fault = false
   function check(signal) { if (closed || signal?.aborted) fail('ABORTED'); if (fault) fail('STORE_UNKNOWN') }
   function now() { const d = 取现在(); if (!(d instanceof Date) || !Number.isFinite(d.getTime())) fail('CLOCK_INVALID'); return d.toISOString() }
@@ -52,7 +55,7 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标
       const answer = await duplicate(ctx.内部对话编号, id, old); check(signal); return answer
     }
     let existing = await f.会话.读取对话(ctx.内部对话编号); check(signal)
-    if (!existing) { const registered = await f.会话.登记对话(ctx.内部对话编号, { 模型: 'fake', 建于: msg.接收于 }, { 操作编号: 'fake-reg-' + randomUUID() }); if (!registered.好) fail('REGISTER_FAILED'); check(signal); existing = await f.会话.读取对话(ctx.内部对话编号); check(signal) }
+    if (!existing) { const registered = await f.会话.登记对话(ctx.内部对话编号, { 模型: 真实适配 ? 模型连接.模型 : 'fake', 建于: msg.接收于 }, { 操作编号: 'fake-reg-' + randomUUID() }); if (!registered.好) fail('REGISTER_FAILED'); check(signal); existing = await f.会话.读取对话(ctx.内部对话编号); check(signal) }
     const h = await history(ctx.内部对话编号); check(signal)
     const rows = h.rows.filter(x => x && ['user', 'assistant'].includes(x.角色) && typeof x.内容 === 'string').map(x => ({ role: x.角色, content: x.内容, 时间: typeof x.时间 === 'string' ? x.时间 : '' }))
     if (Buffer.byteLength(JSON.stringify(rows)) > 131072) fail('HISTORY_LIMIT')
@@ -61,6 +64,8 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标
     if (输出标记) { const after = await f.记忆.取统计(); check(signal); if (after.版本 !== memoryBefore.版本) fail('PROMPT_MEMORY_VERSION_CONFLICT') }
     const prompts = 纯数据({ 消息: built }).消息
     if (!Array.isArray(prompts) || prompts.length < 1 || prompts.length > 402 || prompts.some(x => !x || Object.keys(x).sort().join(',') !== 'content,role' || !['system', 'user', 'assistant'].includes(x.role) || typeof x.content !== 'string') || Buffer.byteLength(JSON.stringify(prompts)) > 131072) fail('PROMPT_INVALID')
+    // Once a real request might have started, a failed turn must not silently trigger a second paid request.
+    try {
     const answer = await wait(模型连接.要一轮({ 消息们: prompts, 中止: signal }), signal)
     check(signal)
     if (!输出标记 && /[\[【]\s*(?:表情|记住|经历|更正事实)\s*[:：]/u.test(answer.全文)) fail('OUTPUT_ADAPTER_REQUIRED')
@@ -72,6 +77,7 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标
       : await f.会话.存对话一轮(turn, { 操作编号: id.operation })
     if (!saved.好 || saved.状态 !== 'saved') fail('TURN_SAVE_FAILED')
     check(signal); return { 可见性: 'shared', 正文: parsed.正文, 附件: [] }
+    } catch (e) { if (真实适配) fault = true; throw e }
   }
   async function 处理(input, ctx) {
     check(); const msg = 校验接收消息(input)
@@ -81,7 +87,7 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标
     const task = tail.then(async () => { try { return await run(msg, context) } catch (e) { if (e.状态 === 'unknown' || e.状态 === 'interrupted') fault = true; throw e } })
     pending.add(task); tail = task.catch(() => {}); try { return await task } finally { pending.delete(task) }
   }
-  function 关闭() { if (closing) return closing; closed = true; abort.abort(); closing = Promise.allSettled([...pending]).then(() => undefined); return closing }
+  function 关闭() { if (closing) return closing; closed = true; abort.abort(); closing = Promise.allSettled([...pending]).then(() => 真实适配 ? 模型连接.关闭() : undefined); return closing }
   return Object.freeze({ 处理, 关闭 })
 }
 module.exports = { 创建异步假对话核心 }

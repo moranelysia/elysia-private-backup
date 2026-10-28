@@ -2,6 +2,7 @@
 'use strict'
 const { 是真实模型连接 } = require('../脑/模型连接.cjs')
 const { 创建异步用量 } = require('./异步用量.cjs')
+const owners = new WeakMap()
 
 function 操作编号(请求编号, 阶段) {
   if (typeof 请求编号 !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(请求编号) || !['started', 'succeeded', 'unknown'].includes(阶段)) throw Error('ISOLATED_REAL_USAGE_ID_INVALID')
@@ -22,12 +23,20 @@ async function 创建隔离真实模型用量适配({ actor, 模型连接, 取�
       } finally { if (plan) usage.释放计划(plan) }
     })
   } catch (e) { await usage.关闭(); throw e }
-  return Object.freeze({
+  const api = Object.freeze({
+    模型: 模型连接.模型,
+    要一轮: (options) => 模型连接.要一轮(options),
     读取用量: () => usage.读取(),
     关闭() {
       if (!closing) { 模型连接.关闭(); closing = 模型连接.等待记账排空().then(() => usage.关闭()) }
       return closing
     },
   })
+  owners.set(api, { actor, claimed: false }); return api
 }
-module.exports = { 创建隔离真实模型用量适配, 操作编号 }
+function 领取隔离真实模型用量适配(api, actor) {
+  const owner = owners.get(api)
+  if (!owner || owner.actor !== actor || owner.claimed) return false
+  owner.claimed = true; return true
+}
+module.exports = { 创建隔离真实模型用量适配, 领取隔离真实模型用量适配, 操作编号 }
