@@ -27,7 +27,7 @@ function 核验虚构回执分段(raw) {
   const rows=[],seen=new Set();let previous=GENESIS
   for(let i=0;i<pack.段.length;i++){
     const s=pack.段[i];fields(s,['版本','序号','前指纹','回执','指纹'])
-    if(s.版本!==1||s.序号!==i+1||s.前指纹!==previous||!Array.isArray(s.回执)||s.回执.length<1||s.回执.length>SEGMENT_ROWS||(i<pack.段.length-1&&s.回执.length!==SEGMENT_ROWS)||typeof s.指纹!=='string')fail('CHAIN_INVALID')
+    if(s.版本!==1||s.序号!==i+1||s.前指纹!==previous||!Array.isArray(s.回执)||s.回执.length<1||s.回执.length>SEGMENT_ROWS||typeof s.指纹!=='string')fail('CHAIN_INVALID')
     const expected=seal(s.序号,s.前指纹,s.回执);if(expected.指纹!==s.指纹)fail('HASH_INVALID')
     validateRows(s.回执)
     for(const r of s.回执){if(seen.has(r.编号))fail('DUPLICATE');seen.add(r.编号);rows.push(r)}
