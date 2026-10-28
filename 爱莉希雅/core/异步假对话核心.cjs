@@ -90,4 +90,4 @@ function 创建异步假对话核心({ actor, 模型连接, 拼提示, 输出标
   function 关闭() { if (closing) return closing; closed = true; abort.abort(); closing = Promise.allSettled([...pending]).then(() => 真实适配 ? 模型连接.关闭() : undefined); return closing }
   return Object.freeze({ 处理, 关闭 })
 }
-module.exports = { 创建异步假对话核心 }
+module.exports = { 创建异步假对话核心, 隔离消息身份: ids }
