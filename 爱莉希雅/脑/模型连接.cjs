@@ -2,6 +2,7 @@
 'use strict'
 const 连接们 = new WeakSet()
 const 真实连接们 = new WeakSet(), 凭据们 = new WeakSet()
+const 受控领取 = new WeakMap()
 const { randomUUID } = require('node:crypto')
 const { 等待有界 } = require('./任务控制.cjs')
 function 失败(码) { throw new Error(码) }
@@ -34,7 +35,7 @@ function 创建真实模型连接({ 凭据, 模型 = 'deepseek-flash', 最大请
   if (!凭据们.has(凭据) || typeof fetch函数 !== 'function') 失败('CORE_CREDENTIAL_PROVIDER_REQUIRED')
   if (!['deepseek-flash', 'deepseek-v4-pro'].includes(模型)) 失败('CORE_MODEL_INVALID')
   for (const [值, 最小, 最大] of [[最大请求, 1, 64], [最大输入字节, 128, 262144], [输出Token, 1, 4096], [总超时毫秒, 10, 60000]]) if (!Number.isSafeInteger(值) || 值 < 最小 || 值 > 最大) 失败('CORE_BUDGET_INVALID')
-  let 已发请求 = 0, 起点 = null, 记录 = null, 同步账本故障 = false, 异步记录 = null, 异步进行中 = false, 异步账本故障 = false, 异步请求未知 = false, 已关闭 = false
+  let 已发请求 = 0, 起点 = null, 记录 = null, 同步账本故障 = false, 异步记录 = null, 异步进行中 = false, 异步账本故障 = false, 异步请求未知 = false, 已关闭 = false, 已受控 = false, 受控进行中 = false
   const 待落盘 = new Set()
   const 总中止 = new AbortController()
   async function 异步要一轮({ 消息们, 中止 }) {
@@ -104,8 +105,8 @@ function 创建真实模型连接({ 凭据, 模型 = 'deepseek-flash', 最大请
     } finally { clearTimeout(闹钟); 异步进行中 = false; if (reader) { void reader.cancel().catch(() => {}); reader.releaseLock() } }
   }
   const 连接 = Object.freeze({ 模式: 'real', 模型,
-    绑定记录(函数) { if (记录 || 异步记录 || typeof 函数 !== 'function') 失败('CORE_LEDGER_REQUIRED'); 记录 = 函数 },
-    绑定异步记录(函数) { if (记录 || 异步记录 || typeof 函数 !== 'function') 失败('CORE_LEDGER_REQUIRED'); 异步记录 = 函数 },
+    绑定记录(函数) { if (已受控 || 记录 || 异步记录 || typeof 函数 !== 'function') 失败('CORE_LEDGER_REQUIRED'); 记录 = 函数 },
+    绑定异步记录(函数) { if (已受控 || 记录 || 异步记录 || typeof 函数 !== 'function') 失败('CORE_LEDGER_REQUIRED'); 异步记录 = 函数 },
     关闭() { 已关闭 = true; 总中止.abort() },
     async 等待记账排空({ 中止 } = {}) {
       if (!已关闭 || !异步记录) 失败('CORE_LEDGER_REQUIRED')
@@ -114,6 +115,7 @@ function 创建真实模型连接({ 凭据, 模型 = 'deepseek-flash', 最大请
     },
     取状态: () => ({ 已发请求, 最大请求, 输出Token, 最大输入字节, 总超时毫秒, 已关闭 }),
     async 要一轮({ 消息们, 中止 }) {
+      if (已受控) 失败('CORE_MODEL_CONTROLLED')
       if (异步记录) return 异步要一轮({ 消息们, 中止 })
       if (已关闭 || 中止?.aborted) 失败('CORE_ABORTED')
       if (!记录) 失败('CORE_LEDGER_REQUIRED')
@@ -167,6 +169,48 @@ function 创建真实模型连接({ 凭据, 模型 = 'deepseek-flash', 最大请
       } finally { clearTimeout(闹钟); if (reader) { void reader.cancel().catch(() => {}); reader.releaseLock() } }
     },
   })
+  受控领取.set(连接, () => {
+    if (已受控 || 已关闭 || 记录 || 异步记录 || 已发请求 || 受控进行中) 失败('CORE_MODEL_CONTROLLED')
+    已受控 = true
+    function 验证({ 消息们, 中止 }) {
+      if (已关闭 || 中止?.aborted) 失败('CORE_ABORTED')
+      if (中止 !== undefined && !(中止 instanceof AbortSignal)) 失败('CORE_MODEL_INPUT_INVALID')
+      if (受控进行中) 失败('CORE_REQUEST_BUSY')
+      if (已发请求 >= 最大请求) 失败('CORE_REQUEST_BUDGET')
+      if (!Array.isArray(消息们) || !消息们.length || 消息们.some(x => !x || Object.keys(x).sort().join(',') !== 'content,role' || !['system','user','assistant'].includes(x.role) || typeof x.content !== 'string')) 失败('CORE_MODEL_INPUT_INVALID')
+      const 消息 = 消息们.map(({role,content}) => ({role,content}))
+      if (Buffer.byteLength(JSON.stringify(消息)) > 最大输入字节) 失败('CORE_INPUT_BUDGET')
+      if (起点 !== null && performance.now() - 起点 >= 总超时毫秒) 失败('CORE_TIMEOUT')
+      return 消息
+    }
+    async function 发送({ 消息们, 中止, 请求编号 }) {
+      const 消息 = 验证({ 消息们, 中止 })
+      if (typeof 请求编号 !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(请求编号)) 失败('CORE_MODEL_INPUT_INVALID')
+      const 钥匙 = 凭据.取(); 起点 ??= performance.now(); const 剩余 = 总超时毫秒 - (performance.now() - 起点)
+      if (剩余 <= 0) 失败('CORE_TIMEOUT')
+      受控进行中 = true; 已发请求++
+      const 超时 = new AbortController(), 闹钟 = setTimeout(() => 超时.abort(), 剩余), 信号 = AbortSignal.any([总中止.signal, 超时.signal, ...(中止 ? [中止] : [])]); let reader
+      try {
+        const 挂起 = Promise.resolve(fetch函数('https://api.deepseek.com/chat/completions', { method:'POST', redirect:'error', headers:{ 'content-type':'application/json', authorization:'Bearer ' + 钥匙 }, body:JSON.stringify({ model:模型, messages:消息, stream:false, thinking:{type:'disabled'}, max_tokens:输出Token }), signal:信号 }))
+        void 挂起.then(r => { if (信号.aborted) void r?.body?.cancel().catch(() => {}) }, () => {})
+        const r = await 等待有界(挂起, 信号)
+        if (!r.ok) { void r.body?.cancel().catch(() => {}); 失败(({401:'CORE_AUTH_FAILED',402:'CORE_BALANCE_EMPTY',429:'CORE_RATE_LIMITED'})[r.status] || 'CORE_HTTP_FAILED') }
+        if (!r.body || !/application\/json/iu.test(r.headers.get('content-type') || '')) 失败('CORE_RESPONSE_INVALID')
+        reader = r.body.getReader(); const 块们=[]; let 字节数=0
+        while (true) { const part = await 等待有界(reader.read(), 信号); if (part.done) break; 字节数 += part.value.byteLength; if (字节数 > 131072) 失败('CORE_RESPONSE_LIMIT'); 块们.push(Buffer.from(part.value)) }
+        const 包 = JSON.parse(Buffer.concat(块们).toString('utf8')), 选择 = 包?.choices?.[0], 文本 = 选择?.message?.content
+        if (typeof 文本 !== 'string' || !文本.trim() || 文本.length > 8000 || 选择.finish_reason !== 'stop' || 选择.message.tool_calls?.length) 失败('CORE_RESPONSE_INVALID')
+        const 原 = 包.usage, 用量 = 原 && ['prompt_tokens','completion_tokens','total_tokens'].every(k => Number.isSafeInteger(原[k]) && 原[k] >= 0) && 原.total_tokens === 原.prompt_tokens + 原.completion_tokens ? { prompt_tokens:原.prompt_tokens, completion_tokens:原.completion_tokens, total_tokens:原.total_tokens } : null
+        if (信号.aborted) 失败('CORE_ABORTED')
+        return { 全文:文本, 用量 }
+      } catch (e) {
+        const allowed = new Set(['CORE_AUTH_FAILED','CORE_BALANCE_EMPTY','CORE_RATE_LIMITED','CORE_HTTP_FAILED','CORE_RESPONSE_INVALID','CORE_RESPONSE_LIMIT','CORE_TIMEOUT'])
+        失败(超时.signal.aborted ? 'CORE_TIMEOUT' : 信号.aborted ? 'CORE_ABORTED' : allowed.has(e?.message) ? e.message : 'CORE_MODEL_FAILED')
+      } finally { clearTimeout(闹钟); 受控进行中 = false; if (reader) { void reader.cancel().catch(() => {}); reader.releaseLock() } }
+    }
+    return Object.freeze({ 模型, 验证, 发送, 关闭: () => 连接.关闭() })
+  })
   真实连接们.add(连接); return 连接
 }
-module.exports = { 创建严格凭据, 创建假模型连接, 是假模型连接, 创建真实模型连接, 是真实模型连接 }
+function 领取受控模型发送器(连接) { const 领取 = 受控领取.get(连接); if (!领取) 失败('CORE_MODEL_REQUIRED'); return 领取() }
+module.exports = { 创建严格凭据, 创建假模型连接, 是假模型连接, 创建真实模型连接, 是真实模型连接, 领取受控模型发送器 }
